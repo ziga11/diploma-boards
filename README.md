@@ -1,25 +1,19 @@
-# Project Board System (Sistem Projektnih Tabel)
+# Dynamic Project Board System
 
-A dynamic web-based dashboard designed for HR teams to visualize recruitment pipelines and manage organizational data in real-time.
+A highly flexible, general-purpose platform for data management and workflow visualization, inspired by tools like monday.com.
 
 ## 📋 Overview
-The Project Board System serves as a central hub for HR operations. It allows staff to track new candidates, manage internal organizational structures, and monitor employee absences (e.g., maternity leave). The system is built to be highly flexible, allowing users to define their own data structures without backend modifications.
+The Project Board System is a dynamic environment where users can define their own data structures without writing code. While it was utilized in the diploma for HR recruitment and tracking employee absences, the core engine is designed to handle any type of tabular data through user-defined schemas.
 
 ## 🛠 Tech Stack
 * **Framework:** Vite
 * **Language:** TypeScript
-* **Backend-as-a-Service:** Supabase (Realtime DB & Auth)
-* **Authentication:** Google OAuth 2.0
-* **UI Components:** Bootstrap (Modals and Layout)
+* **Real-time Backend:** Supabase (Realtime Database & Google OAuth)
+* **UI Components:** Bootstrap
 
 ## ✨ Key Features
-* **Dynamic Table Creation:** Define custom columns (status, text, dates, buttons) for any business process.
-* **Real-time Synchronization:** Powered by Supabase, ensuring all team members see updates instantly without page refreshes.
-* **Event-Driven Webhooks:** Trigger external actions or automated workflows based on status changes or entry updates.
-* **Batch Operations:** Efficiently duplicate or delete multiple entries simultaneously.
-
-## 🚀 Getting Started
-1. Clone the repository.
-2. Run `npm install` to install dependencies.
-3. Configure your Supabase URL and Anon Key in a `.env` file.
-4. Launch the development server with `npm run dev`.
+* **Custom Schema Definition:** Create arbitrary tables with specialized column types including text, status labels, dates, and action buttons.
+* **Real-time Collaboration:** All changes are synchronized across all connected clients instantly via Supabase.
+* **Event-Driven Automation:** Configurable webhooks that trigger external actions based on data changes (e.g., sending a notification when a status column is updated).
+* **Mass Data Operations:** Built-in support for bulk selection, duplication, and deletion of records.
+* **Flexible UI:** Dynamic rendering of components based on the user-defined table structure.
