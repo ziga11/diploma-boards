@@ -1,0 +1,115 @@
+*,
+h1,
+h2,
+h3,
+h4,
+h5 {
+        color: var(--white);
+}
+
+svg {
+        cursor: pointer;
+}
+
+:root {
+        --bg: #272a4d;
+        --bg-dark: #1d203d;
+        --bg-light: #30324E;
+        --bg-highlight: #797E93;
+        --primary: #667eea;
+        --secondary: #35366a;
+        --dark-gray: #26283e;
+        --red: #ff4757;
+        --white: #dadada;
+}
+
+body {
+        background-color: var(--bg);
+        color: var(--white);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+}
+
+.modal-header {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-bottom: 2.5rem;
+        border: none;
+}
+
+.modal-body {
+        padding: 10vh 2vh 5vh 2vh;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--bg-dark) transparent;
+}
+
+.modal-footer {
+        border-top: none;
+}
+
+input[type="checkbox"] {
+        accent-color: var(--primary);
+        border-color: var(--secondary);
+}
+
+#toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+}
+
+.toast {
+        background: var(--bg-light);
+        color: var(--white);
+        padding: 12px 20px;
+        border-radius: 8px;
+        border-left: 4px solid var(--primary);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-width: 250px;
+        animation: slideIn 0.5s ease-in-out forwards;
+        font-family: sans-serif;
+}
+
+.toast.success {
+        border-left-color: var(--primary);
+}
+
+.toast.error {
+        border-left-color: var(--red);
+}
+
+@keyframes slideIn {
+        from {
+                transform: translateY(-20px);
+                opacity: 0;
+        }
+
+        to {
+                transform: translateY(0);
+                opacity: 1;
+        }
+}
+
+@keyframes fadeOut {
+        from {
+                opacity: 1;
+        }
+
+        to {
+                opacity: 0;
+        }
+}
+
+.toast-exit {
+        animation: fadeOut 0.5s ease forwards;
+}

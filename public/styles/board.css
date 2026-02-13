@@ -1,0 +1,897 @@
+#toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 2%;
+}
+
+#back-button {
+        position: fixed;
+        top: 4%;
+        left: 2%;
+        z-index: 1000;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        background: color-mix(in srgb, var(--primary) 70%, transparent);
+        transition: transform 0.3s ease;
+}
+
+#back-button:hover {
+        background: var(--primary);
+}
+
+#new-entry-btn {
+        background-color: var(--primary);
+        border: none;
+        transition: all 0.3s;
+}
+
+#new-entry-btn:hover {
+        filter: saturate(200%);
+        transform: translateY(-4px);
+        box-shadow: 0 4px 20px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+#automate-btn {
+        background-color: var(--bg-dark);
+        border: none;
+        transition: all 0.3s;
+}
+
+#automate-btn:hover {
+        transform: translateY(-2px);
+        background-color: var(--bg-light);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+#delete-btn {
+        background-color: color-mix(in srgb, var(--red) 70%, transparent);
+        border: none;
+        transition: all 0.3s;
+}
+
+#delete-btn:hover {
+        transform: translateY(-2px);
+        background-color: color-mix(in srgb, var(--red) 80%, transparent);
+        box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
+}
+
+.board-wrapper {
+        overflow: visible;
+}
+
+.board-container {
+        overflow-x: scroll !important;
+        overflow-y: visible !important;
+        white-space: nowrap;
+        padding-bottom: 3px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--bg-highlight) transparent;
+        transform: rotateX(180deg);
+
+        -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
+        mask-image: linear-gradient(to right, black 90%, transparent 100%);
+
+        transition: -webkit-mask-image 0.4s ease, mask-image 0.4s ease;
+}
+
+.is-at-end {
+        -webkit-mask-image: linear-gradient(to right, black 100%, transparent 100%);
+        mask-image: linear-gradient(to right, black 100%, transparent 100%);
+}
+
+#col-labels-div {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 0;
+        pointer-events: none;
+        z-index: 100;
+}
+
+.columns {
+        transform: rotateX(180deg);
+        display: flex;
+        width: 100%;
+        margin-top: 4px;
+}
+
+.entries {
+        transform: rotateX(180deg);
+}
+
+.automation-type-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+        grid-auto-flow: row;
+        justify-items: center;
+}
+
+.automation-option div {
+        justify-content: center;
+        align-self: center;
+}
+
+#automate .modal-content {
+        background-color: var(--bg-dark);
+}
+
+.url-call-div {
+        display: none;
+}
+
+.url-call-div>div {
+        display: flex;
+}
+
+.url-call-div.shown {
+        display: grid;
+}
+
+#finish-automation,
+#back-url-call {
+        padding: 5px 10px;
+}
+
+#url-call {
+        align-self: center;
+        margin: 0 auto;
+        height: 30px;
+        padding: 15px;
+        width: 70%;
+        box-sizing: border-box;
+        border-radius: 8px;
+        background-color: var(--secondary);
+        border: 1px solid var(--bg-highlight);
+}
+
+#finish-automation {
+        width: auto;
+        justify-self: center;
+        align-self: center;
+        border-radius: 4px;
+        border: 1px solid var(--bg-highlight);
+        background-color: var(--secondary);
+}
+
+#finish-automation:hover {
+        background-color: var(--primary);
+}
+
+.end-automation-btn-div {
+        display: flex;
+        gap: 4rem;
+        padding-top: 15px;
+        margin: 0 auto;
+}
+
+.automation-menu {
+        position: absolute;
+        bottom: 0.5rem;
+        left: 50%;
+        transform: translate(-50%, 45%);
+        display: flex;
+        gap: 1rem;
+}
+
+.modal-header .btn-close {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+}
+
+.existing-automations {
+        display: none;
+        grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+        grid-auto-flow: row;
+        justify-items: center;
+}
+
+.existing-automations.shown {
+        display: grid;
+}
+
+.board-automation-option {
+        display: flex;
+        position: relative;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: var(--secondary);
+        border-radius: 10px;
+        align-content: center;
+        text-align: center;
+        padding: 20px;
+        box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.1);
+        width: 150px;
+        height: 150px;
+        margin-bottom: 5vh;
+}
+
+.board-automation-option button {
+        position: absolute;
+        right: 5px;
+        top: 5px;
+}
+
+.board-automation-option:hover:not(:has(button:hover)) {
+        background-color: var(--primary);
+        cursor: pointer;
+}
+
+.board-automation-option button:hover {
+        filter: invert(1);
+        pointer-events: auto;
+}
+
+
+.entry,
+.column-div {
+        display: flex;
+        align-items: center;
+        position: relative;
+        color: var(--white);
+        text-align: center;
+        justify-content: center;
+        background-color: var(--bg-light);
+        border: 1px solid var(--bg-highlight);
+        flex: 0 0 auto;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+        width: 220px;
+        box-sizing: border-box;
+}
+
+.column {
+        padding: 0;
+        line-height: 1;
+        background-color: transparent;
+        text-align: center;
+        font-weight: 500;
+        border: none;
+        height: 100%;
+        width: 100%;
+}
+
+.column-label {
+        opacity: 0;
+        height: 24;
+        position: absolute;
+        background-color: var(--secondary);
+        border-radius: 10px 10px 0 0;
+        text-align: center;
+        z-index: 1000;
+        pointer-events: none;
+        transition: opacity 0.5s ease;
+}
+
+.column:focus {
+        outline: none;
+}
+
+.column-div {
+        background-color: var(--dark-gray);
+}
+
+.entry:focus,
+.column:focus,
+.column-div:focus {
+        color: white;
+        outline: none;
+        background-color: var(--bg-highlight);
+        border: 1px solid var(--white);
+}
+
+.entry:hover,
+.column-div:hover {
+        background-color: var(--bg-highlight);
+}
+
+.btn-entry {
+        outline: none;
+        border: none;
+        border-radius: 8px;
+        background-color: color-mix(in srgb, var(--primary) 50%, transparent);
+}
+
+.btn-entry:hover {
+        background-color: var(--primary);
+}
+
+.entry-set {
+        display: flex;
+}
+
+.entry-set .btn-close {
+        justify-content: center;
+        align-self: center;
+}
+
+.add-column-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: var(--white);
+        background-color: var(--dark-gray);
+        border: 1px solid var(--bg-highlight);
+        padding: 8px 10px;
+        font-size: 14px;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+        border-radius: 0 10px 10px 0px;
+        text-align: center;
+}
+
+.add-column-btn:hover {
+        background-color: var(--bg-highlight);
+        border-color: var(--white);
+        outline: none;
+}
+
+.add-column-btn svg {
+        fill: white;
+        transition: fill 0.2s ease;
+        padding: 0;
+}
+
+.column-check-div,
+.entry-check-div {
+        display: flex;
+        min-width: 2rem;
+        background-color: var(--bg-light);
+        border: 1px solid var(--bg-highlight);
+        align-items: center;
+        justify-content: center;
+}
+
+.column-check-div {
+        background-color: var(--dark-gray);
+        border-radius: 8px 0 0 0;
+}
+
+.entry-check,
+.column-check {
+        width: 1rem;
+        height: 1rem;
+        cursor: pointer;
+}
+
+.add-column-menu {
+        display: none;
+        position: absolute;
+        background-color: var(--secondary);
+        z-index: -1;
+        width: 180px;
+        height: 160px;
+        border-radius: 15px;
+        align-content: center;
+}
+
+.add-column-menu.shown {
+        display: block;
+        z-index: 100;
+}
+
+.add-column-menu div {
+        display: flex;
+        border-radius: 5px;
+        flex: 1;
+        margin-bottom: 5px;
+        padding: 0;
+        padding-left: min(15px, 20%);
+}
+
+.add-column-menu div svg {
+        padding: 0;
+}
+
+.add-column-menu div:hover {
+        cursor: pointer;
+        background-color: var(--primary);
+}
+
+.add-column-menu div svg {
+        margin-right: 4px;
+}
+
+.remove-column {
+        display: none;
+        position: absolute;
+        margin-right: 3px;
+        align-self: center;
+        text-align: center;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        font-size: 16px;
+        line-height: 1;
+        left: 190px;
+        top: 6px;
+}
+
+.remove-column.shown {
+        display: block;
+}
+
+.dropdown-option {
+        width: 220;
+        background-color: var(--bg-light);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 5px;
+}
+
+.dropdown-option-input {
+        background-color: var(--bg-light);
+        width: 70%;
+}
+
+.dropdown-option:hover,
+.dropdown-option:hover .dropdown-option-input {
+        background-color: var(--bg-highlight);
+}
+
+.dropdown-option .bi-check-square-fill,
+.dropdown-option .bi-x-lg {
+        display: none;
+}
+
+.dropdown-option.edit .bi-pencil {
+        display: none;
+}
+
+.dropdown-option.edit .bi-check-square-fill,
+.dropdown-option.edit .bi-x-lg {
+        display: block;
+}
+
+.dropdown-option.edit input {
+        cursor: pointer;
+}
+
+.bi-pencil:hover,
+.cancel-add-option-btn:hover,
+.bi-check-square-fill:hover {
+        filter: invert(1);
+}
+
+.entry-btn-div {
+        color: var(--white);
+        text-align: center;
+        background-color: var(--bg-light);
+        border: 1px solid var(--bg-highlight);
+        flex: 0 0 auto;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+        width: 220px;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+}
+
+.entry-btn-div button {
+        min-width: 100px;
+        height: 80%;
+        width: auto;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+}
+
+.entry-btn-div span {
+        outline: none;
+        border: none;
+
+        width: 100%;
+        text-align: center;
+}
+
+.entries-selected-div {
+        background-color: color-mix(in srgb, var(--primary) 60%, transparent);
+        border-radius: 10px 0 0 10px;
+        width: 50px;
+        height: 100%;
+}
+
+.bottom-toolbar {
+        display: none;
+        position: absolute;
+        background-color: color-mix(in srgb, var(--secondary) 80%, transparent);
+        border-radius: 10px 10px 10px 10px;
+        align-self: center;
+        justify-self: center;
+        left: 50%;
+        transform: translateX(-50%);
+        height: 50px;
+        bottom: 15px;
+        padding: 0;
+}
+
+.bottom-toolbar.shown {
+        display: flex;
+}
+
+.entries-selected-div {
+        font-size: 40px;
+        width: 50px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+}
+
+.checked-options-buttons {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 5px 8px;
+        gap: 5px;
+}
+
+.bottom-toolbar button {
+        background-color: transparent;
+        outline: none;
+        border: none;
+        padding: 0;
+        height: 100%;
+        padding-bottom: 3px;
+        border-bottom: 1px solid transparent;
+}
+
+.bottom-toolbar svg {
+        padding: 0;
+}
+
+.bottom-toolbar button:hover {
+        border-bottom: 1px solid currentColor;
+}
+
+.bi-trash3-fill {
+        display: none;
+}
+
+.bi-layers-fill {
+        display: none;
+}
+
+.automation-field-container {
+        display: none;
+        grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+        grid-auto-flow: row;
+        justify-content: center;
+        justify-items: center;
+        align-items: center;
+}
+
+.create-automations select {
+        color: var(--white);
+        text-align: center;
+        background-color: var(--bg-light);
+        border: 1px solid var(--bg-highlight);
+        border-radius: 5px;
+        flex: 0 0 auto;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+        width: 220px;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+}
+
+.create-automations option {
+        color: var(--white);
+        background-color: var(--bg-light);
+        border: 1px solid var(--bg-highlight);
+        border-radius: 5px;
+        flex: 0 0 auto;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+        width: 220px;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 10px;
+}
+
+
+.create-automations input {
+        color: var(--white);
+        text-align: center;
+        background-color: var(--bg-light);
+        border: 1px solid var(--bg-highlight);
+        border-radius: 5px;
+        flex: 0 0 auto;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+        width: 220px;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+}
+
+.modal-automation-options {
+        display: inline-flex;
+        box-sizing: border-box;
+        background-color: var(--bg-light);
+        border: 1px solid var(--bg-highlight);
+        border-radius: 5px;
+        padding: 8px 12px;
+        margin: 5px;
+        color: white;
+        user-select: none;
+        transition: background-color 0.3s, border-color 0.3s;
+}
+
+.modal-automation-options:hover {
+        background-color: color-mix(in srgb, var(--primary) 50%, transparent);
+        cursor: pointer;
+}
+
+input[type="radio"]:checked+.modal-automation-options {
+        background-color: var(--secondary);
+        border-color: color-mix(in srgb, var(--white) 70%, transparent);
+}
+
+.create-automations {
+        display: none;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        justify-items: center;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+}
+
+.create-automations.shown {
+        display: grid;
+}
+
+.automation-option {
+        display: grid;
+        position: relative;
+        width: 135px;
+        height: 150px;
+        background: transparent;
+        text-align: center;
+        justify-content: center;
+        align-content: center;
+        z-index: 1;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        padding: 0 20px;
+}
+
+.automation-option span {
+        width: 90px;
+        word-wrap: break-word;
+        line-height: 1.2;
+}
+
+.automation-option::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--primary);
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        z-index: -2;
+}
+
+.automation-option::after {
+        content: '';
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        right: 4px;
+        bottom: 4px;
+        background-color: var(--secondary);
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        z-index: -1;
+        transition: background-color 0.3s ease;
+}
+
+.automation-option:hover::after {
+        background-color: var(--primary);
+}
+
+.field-automation-selection {
+        display: none;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        justify-items: center;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+}
+
+.field-automation-selection.shown {
+        display: grid;
+}
+
+.dropdown-menu {
+        position: fixed;
+        display: none;
+        width: 220px;
+        background-color: var(--bg-light);
+        z-index: 1000;
+
+        max-height: 300px;
+        overflow-y: auto;
+        scrollbar-width: none;
+}
+
+.dropdown-menu.shown {
+        display: block;
+}
+
+.dropdown-menu.add {
+        display: block;
+        height: 150px;
+        align-content: center;
+}
+
+.add-option-btns {
+        display: flex;
+        justify-content: space-evenly;
+}
+
+#add-option-div {
+        align-self: center;
+        display: none;
+        height: 100%;
+        grid-template-rows: auto auto;
+        gap: 5%;
+}
+
+.dropdown-add-option-input {
+        height: 30px;
+        width: 90%;
+        border-radius: 8px;
+        margin: 20px 0 0 5%;
+        border: none;
+        outline: none;
+        background-color: var(--bg-dark);
+}
+
+.dropdown-menu.add #add-option-div {
+        display: grid;
+}
+
+.dropdown-menu.add>*:not(.add-option-div) {
+        display: none;
+}
+
+#confirm-add-option-div,
+#cancel-add-option-div {
+        display: flex;
+        justify-content: space-evenly;
+}
+
+.add-option-btns button {
+        outline: none;
+        border: none;
+        height: 30px;
+        border-radius: 5px;
+}
+
+#add-option {
+        cursor: pointer;
+}
+
+
+#confirm-add-option-div button {
+        background-color: green;
+}
+
+#cancel-add-option-div button {
+        background-color: red;
+}
+
+.automation-field-div {
+        display: grid;
+        position: relative;
+        width: 125px;
+        height: 125px;
+        background: transparent;
+        text-align: center;
+        justify-content: center;
+        align-content: center;
+        z-index: 1;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        padding: 0 20px;
+}
+
+.automation-field-div span {
+        width: 90px;
+        word-wrap: break-word;
+        line-height: 1.2;
+}
+
+.automation-field-div::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--primary);
+        clip-path: polygon(30% 0%, 70% 0%,
+                        100% 30%, 100% 70%,
+                        70% 100%, 30% 100%,
+                        0% 70%, 0% 30%);
+        z-index: -2;
+}
+
+.automation-field-div::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        right: 2px;
+        bottom: 2px;
+        background-color: var(--secondary);
+        clip-path: polygon(30% 0%, 70% 0%,
+                        100% 30%, 100% 70%,
+                        70% 100%, 30% 100%,
+                        0% 70%, 0% 30%);
+        z-index: -1;
+        transition: background-color 0.3s ease;
+}
+
+.automation-field-div:hover::after {
+        background-color: var(--primary);
+}
+
+#confirm-deletion .modal-dialog {
+        display: flex;
+        align-items: center;
+        min-height: 70vh;
+}
+
+#confirm-deletion .modal-body {
+        display: flex;
+        height: 150px;
+        padding: 0;
+        overflow: hidden;
+        justify-content: center;
+        align-items: center;
+}
+
+#confirm-deletion .modal-content {
+        background-color: rgba(65, 65, 65, 0.7);
+}
+
+.deletion-btns-div {
+        width: 80%;
+        display: flex;
+        gap: 3rem;
+        justify-content: center;
+}
+
+.deletion-btns-div button {
+        width: 50px;
+        height: 50px;
+}
+
+@-moz-document url-prefix() {
+        .board-container {
+                padding-bottom: 12px;
+                scrollbar-width: auto;
+        }
+}
