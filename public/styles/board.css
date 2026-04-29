@@ -34,6 +34,19 @@
         box-shadow: 0 4px 20px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
+#add-user-btn {
+        background-color: var(--secondary);
+        border: none;
+        filter: saturate(200%);
+        transition: all 0.3s;
+}
+
+#add-user-btn:hover {
+        filter: saturate(300%);
+        transform: translateY(-4px);
+        box-shadow: 0 4px 20px color-mix(in srgb, var(--secondary) 20%, transparent);
+}
+
 #automate-btn {
         background-color: var(--bg-dark);
         border: none;
@@ -117,6 +130,61 @@
 
 #automate .modal-content {
         background-color: var(--bg-dark);
+}
+
+#add-user-modal .modal-content {
+        background-color: var(--bg-dark);
+}
+
+#add-user-permission {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-color: var(--bg-light);
+        border: 1px solid var(--bg-highlight);
+        color: var(--white);
+        border-radius: 4px;
+        box-shadow: 0 0 1px 1px var(--bg-dark);
+}
+
+#manage-users-section {
+        grid-template-columns: repeat(2, 1fr);
+        align-items: center;
+        justify-content: center;
+}
+
+#add-user-modal .modal-header {
+        justify-content: center;
+}
+
+.user-modal-sections>* {
+        display: none;
+}
+
+.user-modal-sections>*.shown {
+        display: grid;
+}
+
+.modal-user-management-options {
+        display: inline-flex;
+        box-sizing: border-box;
+        background-color: var(--bg-light);
+        border: 1px solid var(--bg-highlight);
+        border-radius: 5px;
+        padding: 8px 12px;
+        margin: 5px;
+        color: white;
+        user-select: none;
+        transition: background-color 0.3s, border-color 0.3s;
+}
+
+.modal-user-management-options:hover {
+        background-color: color-mix(in srgb, var(--primary) 50%, transparent);
+        cursor: pointer;
+}
+
+input[type="radio"]:checked+.modal-user-management-options {
+        background-color: var(--primary);
 }
 
 .url-call-div {

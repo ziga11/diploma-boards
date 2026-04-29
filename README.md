@@ -17,3 +17,10 @@ The Project Board System is a dynamic environment where users can define their o
 * **Event-Driven Automation:** Configurable webhooks that trigger external actions based on data changes (e.g., sending a notification when a status column is updated).
 * **Mass Data Operations:** Built-in support for bulk selection, duplication, and deletion of records.
 * **Flexible UI:** Dynamic rendering of components based on the user-defined table structure.
+
+## Previews
+![ER Diagram](/public/assets/er.pdf)
+
+![Dashboard](/public/assets/dashboard.pdf)
+
+![Board View](/public/assets/board_view.pdf)

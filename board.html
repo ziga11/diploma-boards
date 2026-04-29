@@ -28,12 +28,16 @@
                 <button type="button" id="new-entry-btn" class="btn btn-primary">
                     New Entry
                 </button>
+                <button type="button" id="add-user-btn" class="btn btn-secondary" data-bs-toggle="modal"
+                    data-bs-target="#add-user-modal">
+                    Add User
+                </button>
             </div>
         </div>
         <div>
             <button type="button" class="btn btn-primary" id="automate-btn" data-bs-toggle="modal"
                 data-bs-target="#automate">
-                Automate
+                Automation
             </button>
             <button type="button" class="btn btn-danger" id="delete-btn" data-bs-toggle="modal"
                 data-bs-target="#confirm-deletion">
@@ -126,22 +130,22 @@
                 <div class="modal-body">
                     <div class="create-automations">
                         <div class="automation-option" data-automation-type="1">
-                            <span>When text changes</span>
+                            <span>Text Change</span>
                         </div>
                         <div class="automation-option" data-automation-type="2">
-                            <span>When status changes</span>
+                            <span>Status Change</span>
                         </div>
                         <div class="automation-option" data-automation-type="3">
-                            <span>When button is pressed</span>
+                            <span>Button Press</span>
                         </div>
                         <div class="automation-option" data-automation-type="4">
-                            <span>When item is created</span>
+                            <span>New Entry Row Creation</span>
                         </div>
                         <div class="automation-option" data-automation-type="5">
-                            <span>When item is deleted</span>
+                            <span>Removal of Row</span>
                         </div>
                         <div class="automation-option" data-automation-type="6">
-                            <span>When any column changes</span>
+                            <span>Any Change</span>
                         </div>
                     </div>
                     <div class="field-automation-selection"></div>
@@ -174,6 +178,53 @@
             </div>
         </div>
     </div>
+
+    <div id="add-user-modal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <fieldset class="user-permissions">
+                        <input type="radio" name="permission-option" id="add-users-section-btn" value="adding" hidden
+                            checked>
+                        <label for="add-users-section-btn" class="modal-user-management-options">Add</label>
+
+                        <input type="radio" name="permission-option" id="manage-users-section-btn" value="existing"
+                            hidden>
+                        <label for="manage-users-section-btn" class="modal-user-management-options">Modify</label>
+                    </fieldset>
+                </div>
+                <div class="user-modal-sections">
+                    <div id="add-user-section">
+                        <div class="modal-body">
+                            <div class="outlined-input my-3">
+                                <input id="add-user-email" type="text"
+                                    class="w-auto form-control form-control-sm mt-2" />
+                                <label for="add-user-email">Email</label>
+                            </div>
+                            <select id="add-user-permission" class="form-control form-control-sm">
+                                <option value="" disabled selected>Choose Permission...</option>
+                                <option value="1">View</option>
+                                <option value="2">Change and view</option>
+                                <option value="3">Change, view and automation</option>
+                                <option value="4">All (even adding people)</option>
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button id="finish-adding-user" class="btn btn-primary col col-lg-1">Add</button>
+                            <button class="btn btn-primary col col-lg-1" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                    <div id="manage-users-section">
+                        <div class="modal-body"></div>
+                        <div class="modal-footer">
+                            <button class="btn btn-primary col col-lg-1 w-auto" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <div class="bottom-toolbar">
         <div class="entries-selected-div">

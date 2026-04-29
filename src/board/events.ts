@@ -1,7 +1,8 @@
 import { Globals } from "../globals";
 import { AutomationId, type Automation, type Board, type Entry, type Field, type FieldHelper } from "../types";
-import { copyEntrySet, createExistingAutomation as addExistingAutomation, createOption, findFieldHelper, setStateClass, createAutomationSelectionOption, createEntryRow, createFields, createFieldColumn, showToast } from "./utils";
-import { automationElements, boardElements, bottomToolbar, columnTypes } from "./types";
+import { copyEntrySet, createExistingAutomation as addExistingAutomation, createOption, findFieldHelper, setStateClass, createAutomationSelectionOption, createEntryRow, createFields, createFieldColumn, showAddUserSection, showManageUsersSection } from "./utils";
+import { addUserModal, automationElements, boardElements, bottomToolbar, columnTypes } from "./types";
+import { showToast } from "../utils";
 
 boardElements.backButton.addEventListener("click", () => {
         window.location.href = "index.html"
@@ -13,6 +14,22 @@ boardElements.boardHeadTitle.addEventListener("keydown", (e) => {
                 boardElements.boardHeadTitle.blur();
         }
 });
+
+addUserModal.modal.addEventListener("show.bs.modal", (_) => showAddUserSection())
+addUserModal.addUsers.btn.addEventListener("click", (_) => showAddUserSection());
+addUserModal.manageUsers.btn.addEventListener("click", (_) => showManageUsersSection());
+
+addUserModal.addUsers.finishBtn.addEventListener("click", async (_) => {
+        const mail = addUserModal.addUsers.email.value;
+        const permission = Number(addUserModal.addUsers.permission.value);
+        const title = boardElements.boardHeadTitle.innerText;
+
+        const toAcc = await Globals.supabase.addUserToBoard(mail, permission);
+        await Globals.supabase.insertNotification(Globals.account!, toAcc!, `I'm inviting you to join the board ${title}`)
+
+        showToast(`The invitation to join the board has been sent to ${mail}`, boardElements.toastContainer, "error");
+        console.log(await Globals.supabase.fetchNotifications(toAcc!.id!));
+})
 
 boardElements.boardHeadTitle.addEventListener("blur", async () => {
         const newTitle = boardElements.boardHeadTitle.innerText;
@@ -254,12 +271,12 @@ boardElements.newEntryBtn.addEventListener("click", async () => {
 
 /*INFO: Gen column */
 
-export async function columnInputBlur(ev: FocusEvent, field: Field) {
-        const target = ev.target as HTMLInputElement;
+export async function columnInputBlur(input: HTMLInputElement, field: Field) {
+        const newName = input.value.trim();
 
-        if (target.value.trim().length == 0 || field.name === target.value) return;
+        if (newName.length == 0 || field.name === newName) return;
 
-        field.name = target.value;
+        field.name = input.value;
         await Globals.supabase.updateField(field);
 }
 
@@ -394,8 +411,8 @@ export function buttonEntryPress(btn: HTMLButtonElement, span: HTMLSpanElement, 
                                 id: entry.id,
                                 index: entry.index,
                         } as Entry, [AutomationId.ButtonPress])
-                                .then((triggered) => triggered ? showToast("avtomatizacija uspešno sprožena") : null)
-                                .catch((e) => showToast(`Avtomatizacija neuspešna ${e.message || e}`, "error"));
+                                .then((triggered) => triggered ? showToast("avtomatizacija uspešno sprožena", boardElements.toastContainer) : null)
+                                .catch((e) => showToast(`Avtomatizacija neuspešna ${e.message || e}`, boardElements.toastContainer, "error"));
                 }, 250);
         }, { signal: controller.signal });
 

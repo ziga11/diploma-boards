@@ -1,7 +1,7 @@
 import { buttonEntryBlur, buttonEntryPress, changeAffectedEntries, columnInputBlur, confirmOptionEdit, deleteAutomation, deleteField, dropdownOptionSelected, editOption, entryBlur } from "./events.ts";
 import { Globals } from "../globals.ts";
 import { AutomationId, type Automation, type Entry, type Field, type FieldHelper } from "../types.ts";
-import { automationElements, boardElements, bottomToolbar } from "./types.ts";
+import { addUserModal, automationElements, boardElements, bottomToolbar } from "./types.ts";
 
 export function setStateClass(addTo: Array<Element>, removeFrom: Array<Element>, state: string) {
         addTo.forEach((elem) => {
@@ -284,9 +284,7 @@ export function genColumn(field: Field): HTMLDivElement {
                 value: `${field.name}`,
                 className: "column"
         });
-        input.addEventListener("blur", async (ev) => {
-                columnInputBlur(ev, field);
-        });
+        input.addEventListener("blur", async (ev) => columnInputBlur(ev.target as HTMLInputElement, field));
 
         const removeBtn = Object.assign(document.createElement('button'), {
                 innerText: "×",
@@ -498,32 +496,14 @@ export function initScrollObserver() {
         window.addEventListener('resize', updateFade);
 }
 
-export function showToast(message: string, type: 'success' | 'error' = 'success') {
-        const toast = document.createElement('div');
+export function showAddUserSection() {
+        setStateClass([addUserModal.addUsers.div!], [addUserModal.manageUsers.div!], "shown")
+        addUserModal.addUsers.btn.checked = true;
+        addUserModal.manageUsers.btn.checked = false;
+}
 
-        const innerHTML = `
-        <span>${message}</span>
-        <span style="margin-right: 15px; cursor: pointer; opacity: 0.7;" onclick="this.parentElement.remove()">✕</span>`;
-
-        Object.assign(toast, {
-                className: `toast ${type}`,
-                innerHTML: innerHTML,
-        });
-
-        Object.assign(toast.style, {
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-        });
-
-        if (boardElements.toastContainer) {
-                boardElements.toastContainer.appendChild(toast);
-        } else {
-                console.error("Toast container missing in boardElements!");
-        }
-
-        setTimeout(() => {
-                toast.classList.add('toast-exit');
-                toast.addEventListener('animationend', () => toast.remove());
-        }, 4000);
+export function showManageUsersSection() {
+        setStateClass([addUserModal.manageUsers.div!], [addUserModal.addUsers.div!], "shown")
+        addUserModal.addUsers.btn.checked = false;
+        addUserModal.manageUsers.btn.checked = true;
 }

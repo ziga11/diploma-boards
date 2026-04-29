@@ -14,6 +14,7 @@ export const boardElements = {
 
         addOptionBtn: document.getElementById("add-option") as HTMLDivElement,
 
+
         dropdownMenu: document.getElementsByClassName("dropdown-menu")[0] as HTMLDivElement,
         addOptionDiv: document.getElementById("add-option-div") as HTMLDivElement,
         confirmAddOption: document.getElementById("confirm-add-option-div") as HTMLDivElement,
@@ -67,3 +68,21 @@ export const automationElements = {
         backUrlCall: document.getElementById("back-url-call") as HTMLButtonElement,
 };
 
+
+export const addUserModal = {
+        triggeringBtn: document.getElementById("add-user-btn") as HTMLButtonElement,
+
+        modal: document.getElementById("add-user-modal") as HTMLDivElement,
+
+        addUsers: {
+                div: document.getElementById("add-user-section") as HTMLDivElement,
+                btn: document.getElementById("add-users-section-btn") as HTMLInputElement,
+                email: document.getElementById("add-user-email") as HTMLInputElement,
+                permission: document.getElementById("add-user-permission") as HTMLSelectElement,
+                finishBtn: document.getElementById("finish-adding-user") as HTMLButtonElement,
+        },
+        manageUsers: {
+                div: document.getElementById("manage-users-section") as HTMLDivElement,
+                btn: document.getElementById("manage-users-section-btn") as HTMLInputElement,
+        }
+}

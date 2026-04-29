@@ -16,7 +16,7 @@ export function initToolbar() {
                 window.location.href = "login.html";
         });
 
-        boardElements.userBoards.innerText = `${Globals.account?.name}'s Boards`;
+        boardElements.userBoards.innerText = `${Globals.account?.name} - Board Dashboard`;
 }
 
 export async function populateBoards() {

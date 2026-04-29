@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient, type Session } from '@supabase/supabase-js'
 import { AutomationId, type Account, type Automation, type Board, type Entry, type Field, type FieldHelper } from './types';
+import { showToast } from './utils';
 
 export class Supabase {
         private client: SupabaseClient;
@@ -8,6 +9,22 @@ export class Supabase {
                 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
                 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
                 this.client = createClient(supabaseUrl, supabaseKey);
+                this.client
+                        .channel('realtime_notifications')
+                        .on(
+                                'postgres_changes',
+                                {
+                                        event: 'INSERT',
+                                        schema: 'public',
+                                        table: 'notification'
+                                },
+                                (payload) => {
+                                        console.log(payload);
+                                        const toastContainer = document.getElementById("toast-container") as HTMLDivElement;
+                                        showToast("Notification text here", toastContainer, "success");
+                                }
+                        )
+                        .subscribe()
         }
 
         async googleSignIn(): Promise<object> {
@@ -404,6 +421,12 @@ export class Supabase {
                                         rows: objArr,
                                 })
                         });
+                        console.log({
+                                type: automation.type,
+                                board_id: entry.board_id,
+                                row_count: fields.length,
+                                rows: objArr,
+                        });
                         if (!resp.ok) {
                                 const text = await resp.text();
 
@@ -462,14 +485,48 @@ export class Supabase {
                         console.warn(`Failed to delete automation ${error.message}`);
         }
 
+        async accByMail(mail: string): Promise<Account | undefined> {
+                const { data, error } = await this.client
+                        .from('account')
+                        .select('id, name, email, created_at')
+                        .eq("email", mail);
+
+                if (error) {
+                        console.warn(`Failed to find account`);
+                        return undefined;
+                }
+
+                return data as Account;
+        }
+
+        async addUserToBoard(mail: string, permission: number): Promise<Account | undefined> {
+                const acc = await this.accByMail(mail);
+
+                if (!acc) return;
+
+                let { error } = await this.client
+                        .from("acc_permission_link")
+                        .insert({
+                                account_id: acc.id,
+                                permission: permission
+                        })
+                        .select("id, board_id, account_id, name, type, date_modified")
+                        .single();
+
+                if (error)
+                        console.warn(`Failed to add user to board ${error.message}`);
+
+                return acc;
+        }
+
         async fetchFieldAutomations(boardId: number,
                 {
                         fieldId,
                         automationIds
                 }: {
                         fieldId?: number;
-                        automationIds?: AutomationId[]
-                } = {}): Promise<Automation[]> {
+                        automationIds?: Array<AutomationId>
+                } = {}): Promise<Array<Automation>> {
                 let query = this.client
                         .from('field_automations')
                         .select('automation_id, board_id, field_id, url_call')
@@ -485,7 +542,42 @@ export class Supabase {
                 const { data, error } = await query;
                 if (error) console.warn(`Failed to fetch action field link: ${error.message}`);
 
-                return data as Automation[];
+                return data as Array<Automation>;
         }
 
+        async insertNotification(from: Account, to: Account, msg: string) {
+                let { error } = await this.client
+                        .from("notification")
+                        .insert({
+                                from_acc_id: from.id,
+                                to_acc_id: to.id,
+                                message: msg,
+                        });
+
+                if (error) console.log(error);
+        }
+
+        async setReadNotification(id: number) {
+                let { error } = await this.client
+                        .from("notification")
+                        .update({
+                                read: true
+                        })
+                        .eq("id", id);
+
+                if (error) console.log(error);
+        }
+
+        async fetchNotifications(accId: number): Promise<Array<Notification>> {
+                let query = this.client
+                        .from('notification')
+                        .select()
+                        .eq('to_acc_id', accId);
+
+
+                const { data, error } = await query;
+                if (error) console.warn(`Failed to fetch notifications: ${error.message}`);
+
+                return data as Array<Notification>;
+        }
 }
