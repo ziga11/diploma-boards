@@ -19,8 +19,8 @@ The Project Board System is a dynamic environment where users can define their o
 * **Flexible UI:** Dynamic rendering of components based on the user-defined table structure.
 
 ## Previews
-![ER Diagram](/public/assets/er.pdf)
+![ER Diagram](/public/assets/er.svg)
 
-![Dashboard](/public/assets/dashboard.pdf)
+![Dashboard](/public/assets/dashboard.jpg)
 
-![Board View](/public/assets/board_view.pdf)
+![Board View](/public/assets/board_view.jpg)
