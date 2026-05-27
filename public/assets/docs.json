@@ -333,7 +333,7 @@
                     "name": "option_id",
                     "type": "integer",
                     "required": false,
-                    "desc": "Can also be passed in body"
+                    "desc": "ID of the option"
                 }
             ],
             "body": [
@@ -347,7 +347,7 @@
                     "name": "option_id",
                     "type": "integer",
                     "required": false,
-                    "desc": ""
+                    "desc": "ID of the option"
                 },
                 {
                     "name": "field_id",
