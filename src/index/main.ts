@@ -5,7 +5,10 @@ import './events';
 
 document.addEventListener("DOMContentLoaded", async () => {
         const initialized = await initializeApp();
-        if (!initialized) return;
+        if (!initialized) {
+                window.location.href = "/login.html"
+                return;
+        }
 
         setToolbar();
         fillApiKeys();
