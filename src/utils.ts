@@ -4,14 +4,21 @@ import type { Account } from "./types";
 
 export function showToast(message: string, toastContainer: HTMLDivElement, type: 'success' | 'error' = 'success') {
         const toast = document.createElement('div');
+        toast.className = `toast.${type}`;
 
-        const innerHTML = `
-        <span>${message}</span>
-        <span style="margin-right: 15px; cursor: pointer; opacity: 0.7;" onclick="this.parentElement.remove()">✕</span>`;
+        const messageSpan = document.createElement('span');
+        messageSpan.textContent = message;
 
-        Object.assign(toast, {
-                className: `toast ${type}`,
-                innerHTML: innerHTML,
+        const closeButton = document.createElement('span');
+        closeButton.textContent = '✕';
+        closeButton.addEventListener('click', () => {
+                toast.remove();
+        });
+
+        Object.assign(closeButton.style, {
+                marginRight: '15px',
+                cursor: 'pointer',
+                opacity: '0.7'
         });
 
         Object.assign(toast.style, {
@@ -19,6 +26,7 @@ export function showToast(message: string, toastContainer: HTMLDivElement, type:
                 alignItems: "center",
                 justifyContent: "space-between",
         });
+        toast.append(messageSpan, closeButton);
 
         if (toastContainer) {
                 toastContainer.appendChild(toast);

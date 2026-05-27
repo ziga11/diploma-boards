@@ -26,10 +26,10 @@ function createCollaboratorDiv(c: BoardCollaborator): HTMLDivElement {
         const isUser = c.account_id == Globals.account?.id;
 
         div.innerHTML = `
-        <img class="collab-avatar" src="${c.avatar_url}" alt="${c.name}" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <img class="collab-avatar" crossorigin="anonymous" referrerpolicy="no-referrer" />
         <div class="collab-info">
-            <span class="collab-name">${c.name} ${isUser ? '(You)' : ""}</span>
-            <span class="collab-email">${c.email}</span>
+            <span class="collab-name"></span>
+            <span class="collab-email"></span>
         </div>
         <div class="collab-meta">
             <span class="collab-permission collab-permission--${role.toLowerCase()}">${role}</span>
@@ -46,6 +46,14 @@ function createCollaboratorDiv(c: BoardCollaborator): HTMLDivElement {
             </svg>
         </button>
     `;
+        const avatar = div.querySelector(".collab-avatar") as HTMLImageElement;
+        avatar.src = c.avatar_url;
+        avatar.alt = c.name;
+
+        const name = div.querySelector(".collab-name") as HTMLSpanElement;
+        name.textContent = `${c.name} ${isUser ? '(You)' : ""}`;
+        const email = div.querySelector(".collab-email") as HTMLSpanElement;
+        email.textContent = c.email;
 
         const removeBtn = div.querySelector(".collab-remove") as HTMLButtonElement;
         if (isUser) {

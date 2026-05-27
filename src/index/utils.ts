@@ -83,13 +83,16 @@ export function createBoardElem(board: ViewBoard): HTMLDivElement {
                 day: 'numeric'
         });
 
+
         div.innerHTML = `
-                <div class="board-title">${board.name}</div>
+                <div class="board-title"></div>
                 <div class="board-meta">
                         <span class="board-id">ID: ${board.id}</span>
                         <span class="board-date">Created: ${formattedDate}</span>
                 </div>
         `;
+        const title = div.querySelector(".board-title") as HTMLDivElement;
+        title.textContent = board.name;
 
         div.style.borderLeftColor = board.color;
         div.setAttribute("boardId", `${board.id}`);
@@ -115,8 +118,8 @@ export function hexInputChange() {
 export function createApikeyElem(apikey: ApiKey): HTMLDivElement {
         const div = document.createElement("div");
         div.innerHTML = `<div class="api-key-row" data-key-id="${apikey.id}">
-            <span class="api-key-name">${apikey.name}</span>
-            <span class="api-key-value">${apikey.key_preview}</span>
+            <span class="api-key-name"></span>
+            <span class="api-key-value"></span>
             <div class="api-key-actions">
                 <button type="button" class="api-key-btn copy-key-btn" aria-label="Copy key">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
@@ -131,6 +134,10 @@ export function createApikeyElem(apikey: ApiKey): HTMLDivElement {
                 </button>
             </div>
         </div>`;
+        const name = div.querySelector(".api-key-name") as HTMLSpanElement;
+        name.textContent = apikey.name;
+        const val = div.querySelector(".api-key-value") as HTMLSpanElement;
+        val.textContent = apikey.key_preview;
 
         const copyBtn = div.querySelector(".copy-key-btn") as HTMLButtonElement;
         copyBtn.addEventListener("click", () => {
@@ -191,9 +198,12 @@ function notificationElem(n: ViewNotification): HTMLDivElement {
         const bodyDiv = Object.assign(document.createElement("div"), { className: "notification-body" });
 
         const msgBoardInd = n.message.indexOf("board");
-        const msg = `${n.message.substring(0, msgBoardInd)}<b>${n.message.substring(msgBoardInd)}</b>`
+        const msg = `${n.message.substring(0, msgBoardInd)}`
+        const pElem = Object.assign(document.createElement("p"), { textContent: msg, className: "notification-message" });
+        const boardName = Object.assign(document.createElement("b"), { textContent: n.message.substring(msgBoardInd) })
+        pElem.appendChild(boardName);
 
-        const pElem = Object.assign(document.createElement("p"), { innerHTML: msg, className: "notification-message" });
+
         const buttonsDiv = Object.assign(document.createElement("div"), { className: "notifications-buttons-div" });
         const acceptBtn = Object.assign(document.createElement("button"), {
                 type: "button",

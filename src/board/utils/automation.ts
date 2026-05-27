@@ -62,7 +62,7 @@ export function createAutomation(automation: Automation): HTMLDivElement {
         </div>
         <div class="automation-entry-info">
             <span class="automation-entry-type">${AutomationId[automation.automation_id]}</span>
-            <span class="automation-entry-url" title="${automation.url_call}">${truncateUrl(automation.url_call)}</span>
+            <span class="automation-entry-url"></span>
         </div>
         <button class="automation-entry-delete" aria-label="Delete automation">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -72,6 +72,10 @@ export function createAutomation(automation: Automation): HTMLDivElement {
             </svg>
         </button>
     `;
+
+        const url = div.querySelector(".automation-entry-url") as HTMLSpanElement;
+        url.textContent = truncateUrl(automation.url_call);
+        url.title = automation.url_call;
 
         div.querySelector('.automation-entry-delete')!
                 .addEventListener('click', () => deleteAutomation(div, automation));

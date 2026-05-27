@@ -92,9 +92,10 @@ function addStatusOption(helper: FieldHelper) {
         const fieldId = Number(editFieldModal.fieldIdSpan.textContent);
         const div = document.createElement("div");
         div.innerHTML = `<div class="status-option-item" data-helper-id="${helper.id}">
-                        <input type="text" class="field-edit-input" value="${helper.value}">
+                        <input type="text" class="field-edit-input">
                         <button class="btn btn-sm btn-outline-danger remove-status-option" data-helper-id="${helper.id}">×</button>
                 </div>`;
+
 
         const removeOption = div.querySelector(".remove-status-option") as HTMLButtonElement;
         removeOption.addEventListener("click", () => {
@@ -106,6 +107,7 @@ function addStatusOption(helper: FieldHelper) {
         });
 
         const input = div.querySelector(".field-edit-input") as HTMLInputElement;
+        input.value = helper.value;
         input.addEventListener("blur", () => {
                 Globals.supabase.updateFieldHelper(input.value, { id: helper.id })
         });
