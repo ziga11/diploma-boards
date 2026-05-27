@@ -338,6 +338,12 @@
             ],
             "body": [
                 {
+                    "name": "value",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Replacement value"
+                },
+                {
                     "name": "option_id",
                     "type": "integer",
                     "required": false,
@@ -354,12 +360,6 @@
                     "type": "string",
                     "required": false,
                     "desc": "Match by current value"
-                },
-                {
-                    "name": "value",
-                    "type": "string",
-                    "required": true,
-                    "desc": "Replacement value"
                 }
             ],
             "response": "{ \"id\": 5, \"value\": \"Backlog\" }"
@@ -431,7 +431,7 @@
                     "name": "role",
                     "type": "string",
                     "required": true,
-                    "desc": "Role: Viewer | Editor | Manager | Admin"
+                    "desc": "Role: Member | Editor | Manager | Admin"
                 }
             ],
             "response": "{ \"success\": true }"
