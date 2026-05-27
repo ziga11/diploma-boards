@@ -1,9 +1,11 @@
-import { createClient, SupabaseClient, type Session } from '@supabase/supabase-js'
-import { AutomationId, type Account, type Automation, type Board, type Entry, type Field, type FieldHelper } from './types';
+import { createClient, SupabaseClient, type User } from '@supabase/supabase-js'
+import { AutomationId, type Account, type Automation, type InsertBoard, type Entry, type Field, type FieldHelper, type InsertNotification, type NotificationFetchObject, type ViewNotification, type ViewBoard, type BoardFetchObject, PermissionId, type BoardCollaborator, type ApiKey } from './types';
 import { showToast } from './utils';
+import { Globals } from './globals';
 
 export class Supabase {
         private client: SupabaseClient;
+        private cachePrefix = "sb_cache_";
 
         constructor() {
                 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -11,20 +13,35 @@ export class Supabase {
                 this.client = createClient(supabaseUrl, supabaseKey);
                 this.client
                         .channel('realtime_notifications')
-                        .on(
-                                'postgres_changes',
-                                {
-                                        event: 'INSERT',
-                                        schema: 'public',
-                                        table: 'notification'
-                                },
-                                (payload) => {
-                                        console.log(payload);
-                                        const toastContainer = document.getElementById("toast-container") as HTMLDivElement;
-                                        showToast("Notification text here", toastContainer, "success");
-                                }
+                        .on('postgres_changes', {
+                                event: 'INSERT',
+                                schema: 'public',
+                                table: 'notification'
+                        }, () => {
+                                const toastContainer = document.getElementById("toast-container") as HTMLDivElement;
+                                showToast("Notification text here", toastContainer, "success");
+                        }
                         )
                         .subscribe()
+        }
+
+        private getCached<T>(key: string): T | null {
+                const data = sessionStorage.getItem(this.cachePrefix + key);
+                return data ? JSON.parse(data) as T : null;
+        }
+
+        private setCache(key: string, data: any): void {
+                sessionStorage.setItem(this.cachePrefix + key, JSON.stringify(data));
+        }
+
+        private clearCache(key: string): void {
+                sessionStorage.removeItem(this.cachePrefix + key);
+        }
+
+        private clearAllCache(): void {
+                Object.keys(sessionStorage)
+                        .filter(key => key.startsWith(this.cachePrefix))
+                        .forEach(key => sessionStorage.removeItem(key));
         }
 
         async googleSignIn(): Promise<object> {
@@ -41,61 +58,94 @@ export class Supabase {
                 return data
         }
 
-        async getSession(): Promise<Session | null> {
-                const { data: { session }, error } = await this.client.auth.getSession();
+        async getAuthUser(): Promise<User | null> {
+                const { data: { user }, error } = await this.client.auth.getUser();
 
                 if (error)
-                        console.warn("Error fetching session", error);
+                        console.warn("Error fetching user", error);
 
-                return session;
+                return user;
         }
 
         async signOut() {
+                this.clearAllCache();
                 const { error } = await this.client.auth.signOut();
                 return { error };
         }
 
         onAuthStateChange(callback: (event: string, session: any) => void) {
-                return this.client.auth.onAuthStateChange(callback);
+                return this.client.auth.onAuthStateChange((event, session) => {
+                        if (event === 'SIGNED_OUT') this.clearAllCache();
+                        callback(event, session);
+                });
         }
 
-        async upsertAccount(acc: Account): Promise<Account | undefined> {
-                try {
-                        const { error: error, data: data } = await this.client
-                                .from("account")
-                                .upsert({
-                                        email: acc.email,
-                                        name: acc.name,
-                                        avatar_url: acc.avatar_url,
-                                        last_sign_in_date: acc.last_sign_in_date,
-                                }, { onConflict: "email" })
-                                .select()
-                                .single();
-                        if (error)
-                                console.warn("Error upserting account", error)
+        async getAccount(): Promise<Account | undefined> {
+                const { data: { user } } = await this.client.auth.getUser();
+                if (!user) return;
 
-                        return data as Account;
-                } catch (error) {
-                        console.error("Error upserting account! ", error);
+                const cacheKey = `account_${user.id}`;
+                const cached = this.getCached<Account>(cacheKey);
+                if (cached) return cached;
+
+                try {
+                        const { error: err, data: data } = await this.client
+                                .from("account")
+                                .select()
+                                .eq("id", user.id)
+                                .maybeSingle();
+                        if (err) {
+                                console.error("Actual DB error:", err);
+                        } else if (!data) {
+                                console.log("No account found for this ID");
+                        }
+
+                        if (data) this.setCache(cacheKey, data);
+                        return data;
+
+                } catch (err) {
+                        console.error(`Error getting acc by ID ${err}`);
+                        return
                 }
         }
 
-        async insertBoard(board: Board): Promise<Board> {
+        async insertBoard(board: InsertBoard): Promise<ViewBoard> {
                 const cleanPayload = Object.fromEntries(
                         Object.entries(board).filter(([_, v]) => v !== undefined)
                 );
 
-                const { data, error } = await this.client
-                        .from("board")
-                        .upsert(cleanPayload, { onConflict: "id" })
-                        .select()
-                        .single();
-                if (error) throw error;
+                try {
+                        const { data, error } = await this.client
+                                .from("board")
+                                .insert(cleanPayload)
+                                .select()
+                                .single();
+                        if (error) throw error;
 
-                return data;
+                        this.clearCache("boards");
+
+                        const b = data as InsertBoard;
+
+                        return {
+                                id: b.id,
+                                color: b.color,
+                                created_at: b.created_at,
+                                is_owner: true,
+                                date_created: b.created_at,
+                                name: b.name,
+                                permission_id: PermissionId.Admin,
+                                account_id: b.account_id,
+                        } as ViewBoard;
+
+                }
+                catch (err) {
+                        console.error(err)
+                        throw err;
+                }
+
         }
 
-        async updateBoard(board: Board): Promise<Board> {
+        async updateBoard(board: InsertBoard): Promise<InsertBoard> {
                 const cleanPayload = Object.fromEntries(
                         Object.entries(board).filter(([_, v]) => v !== undefined)
                 );
@@ -109,21 +159,62 @@ export class Supabase {
 
                 if (error) throw error;
 
+                this.clearCache("boards");
+                this.clearCache(`board_${board.id}`);
+
                 return data;
         }
 
-        async fetchBoards(accountId: number): Promise<Board[]> {
+        async fetchBoards(): Promise<BoardFetchObject> {
+                const cached = this.getCached<BoardFetchObject>("boards");
+                if (cached) return cached;
+
                 const { data, error } = await this.client
-                        .from('board')
-                        .select('id, name, date_created, color')
-                        .eq("account_id", accountId);
+                        .from('user_boards')
+                        .select("*");
 
                 if (error) {
                         console.warn(error)
-                        return [];
-                };
+                        return { other: [], owner: [], all: [] } as BoardFetchObject;
+                }
 
-                return data || [];
+                const owner = data.filter(b => b.is_owner);
+                const other = data.filter(b => !b.is_owner);
+                const result = { owner: owner, other: other, all: data } as BoardFetchObject;
+
+                this.setCache("boards", result);
+                return result;
+        }
+
+        async fetchBoard(boardId: number): Promise<ViewBoard> {
+                const cacheKey = `board_${boardId}`;
+                const cached = this.getCached<ViewBoard>(cacheKey);
+                if (cached) return cached;
+
+                const { data, error } = await this.client
+                        .from('user_boards')
+                        .select('*')
+                        .eq("id", boardId)
+                        .single();
+
+                if (error) {
+                        console.warn(error)
+                        throw error;
+                }
+
+                const result = data as ViewBoard;
+                this.setCache(cacheKey, result);
+                return result;
+        }
+
+        async boardCollaborators(boardId: number): Promise<Array<BoardCollaborator>> {
+                let { data, error } = await this.client.rpc("board_collaborators", {
+                        p_board_id: boardId,
+                });
+
+                if (error) console.warn("Error fetching board collaborators:", error);
+
+                return data as Array<BoardCollaborator>;
         }
 
         async deleteBoard(boardId: number): Promise<void> {
@@ -131,10 +222,25 @@ export class Supabase {
                         .from('board')
                         .delete()
                         .eq('id', boardId);
+                if (error) {
+                        console.warn("Error deleting board:", error);
+                        return;
+                }
+                this.clearCache("boards");
+                this.clearCache(`board_${boardId}`);
+        }
+
+        async kickCollaborator(accountId: string, boardId: number) {
+                const { error } = await this.client
+                        .from('board_account_link')
+                        .delete()
+                        .eq('board_id', boardId)
+                        .eq('account_id', accountId);
+
                 if (error) console.warn("Error deleting board:", error);
         }
 
-        async insertField(field: Field): Promise<Field | undefined> {
+        async insertField(field: Field): Promise<Field> {
                 let { data, error } = await this.client
                         .from("field")
                         .insert({
@@ -149,31 +255,48 @@ export class Supabase {
 
                 if (error) {
                         console.warn(`Failed to insert field ${error.message}`);
-                        return;
+                        throw error;
                 }
 
+                this.clearCache(`fields_${field.board_id}`);
                 return data as Field;
         }
 
-        async updateField(field: Field): Promise<Field | undefined> {
-                const { data: data, error: error } = await this.client
+        async insertFieldWithEntries(field: Field): Promise<{ field: Field, entry_count: number }> {
+                const { data, error } = await this.client.rpc('create_field_with_entries', {
+                        p_requesting_acc_id: field.account_id,
+                        p_board_id: field.board_id,
+                        p_name: "",
+                        p_type: field.type,
+                });
+
+                if (error) throw error;
+
+                this.clearCache(`fields_${field.board_id}`);
+                this.clearCache(`entries_${field.board_id}`);
+                return data;
+        }
+
+        async updateField(fieldId: number, newName: string): Promise<void> {
+                const { error: error } = await this.client
                         .from("field")
                         .update({
-                                type: field.type,
-                                name: field.name,
+                                name: newName,
                         })
-                        .eq("id", field.id)
-                        .select("id, board_id, account_id, name, type, date_modified")
-                        .single();
+                        .eq("id", fieldId)
+                        .select('board_id')
+                        .single(); // Grab board_id to break cache
+
                 if (error) {
                         console.warn(`Failed to update field ${error.message}`);
-                        return;
+                        throw error;
                 }
-
-                return data as Field;
+                // Ideal scenario: grab board_id out of response payload to selectively wipe
+                // Alternatively, wipe all fields caches if board_id isn't dynamically known easily here
+                this.clearAllCache();
         }
 
-        async fetchEntry(id: number): Promise<Entry | undefined> {
+        async fetchEntry(id: number): Promise<Entry> {
                 const { data, error } = await this.client
                         .from('entry_with_field')
                         .select('*')
@@ -181,13 +304,20 @@ export class Supabase {
                         .single();
                 if (error) {
                         console.warn(`Failed to fetch entry ${error.message}`);
-                        return;
+                        throw error;
                 }
 
                 return data as Entry;
         }
 
         async fetchEntries(boardId: number, { fieldId, index }: { fieldId?: number; index?: number } = {}): Promise<Entry[]> {
+                // We cache the base collection query of the board
+                const isBaseQuery = fieldId === undefined && index === undefined;
+                if (isBaseQuery) {
+                        const cached = this.getCached<Entry[]>(`entries_${boardId}`);
+                        if (cached) return cached;
+                }
+
                 let query = this.client
                         .from('entry_with_field')
                         .select('*')
@@ -205,40 +335,61 @@ export class Supabase {
                         .order('index', { ascending: true })
                         .order('field_index', { ascending: true });
 
-                if (error) console.warn("Error fetching entries:", error);
+                if (error) {
+                        console.warn("Error fetching entries:", error);
+                        throw error;
+                }
 
-                return data || [];
+                const result = data || [];
+                if (isBaseQuery) {
+                        this.setCache(`entries_${boardId}`, result);
+                }
+                return result;
         }
 
         async fetchFields(boardId: number, type?: string): Promise<Field[]> {
+                const isBaseQuery = type === undefined;
+                if (isBaseQuery) {
+                        const cached = this.getCached<Field[]>(`fields_${boardId}`);
+                        if (cached) return cached;
+                }
+
                 let query = this.client
                         .from('field')
-                        .select(`id,
-				name,
-				type,
-				date_modified,
-				account_id,
-				board_id,
-				index`)
+                        .select(`id, name, type, date_modified, account_id, board_id, index`)
                         .eq('board_id', boardId);
                 if (type) query = query.eq('type', type);
 
                 const { data, error } = await query.order('index', { ascending: true });
-                if (error) console.warn("Error fetching fields:", error);
+                if (error) {
+                        console.warn("Error fetching fields:", error);
+                        return [];
+                }
+                if (!data) {
+                        console.warn("No existing fields");
+                        return [];
+                }
 
                 const fieldHelpersMap = await this.fetchFieldHelpers(data!.map(e => Number(e.id)));
                 for (const row of data!) {
                         (row as Field).fieldHelpers = fieldHelpersMap.get(row.id);
                 }
 
-                return data || [];
+                const result = data || [];
+                if (isBaseQuery) {
+                        this.setCache(`fields_${boardId}`, result);
+                }
+                return result;
         }
 
         async deleteField(fieldId: number): Promise<void> {
                 const { error: fieldErr } = await this.client.from('field').delete().eq('id', fieldId);
+
                 if (fieldErr) {
                         console.warn(`Failed to delete entry ${fieldErr}`);
+                        throw fieldErr;
                 }
+                this.clearAllCache(); // Simplest way to ensure stale layouts don't persist
         }
 
         async fetchFieldHelpers(fieldIds: Array<number>): Promise<Map<number, Array<FieldHelper>>> {
@@ -249,7 +400,7 @@ export class Supabase {
 
                 if (error) {
                         console.warn("Error fetching field helpers:", error);
-                        return {} as Map<number, Array<FieldHelper>>;
+                        throw error;
                 }
 
                 let map = new Map();
@@ -289,23 +440,26 @@ export class Supabase {
                 const { error } = await query;
                 if (error)
                         console.warn("Error updating field status options:", error);
+
+                this.clearCache(`${Globals.board!.id}`);
         }
 
-        async insertFieldHelper(fieldHelper: FieldHelper): Promise<FieldHelper | undefined> {
+        async insertFieldHelper(fieldId: number, value: string): Promise<FieldHelper> {
                 const { data: data, error: error } = await this.client
                         .from('field_helper')
                         .insert({
-                                field_id: fieldHelper.field_id,
-                                value: fieldHelper.value
+                                field_id: fieldId,
+                                value: value
                         })
                         .select("id, field_id, value")
                         .single();
 
                 if (error) {
                         console.warn(`Failed to insert fieldHelper: ${error.message}`);
-                        return
+                        throw error;
                 }
 
+                this.clearCache(`${Globals.board!.id}`);
                 return { id: data.id, field_id: data.field_id, value: data.value } as FieldHelper;
         }
 
@@ -323,14 +477,18 @@ export class Supabase {
 
                 const { error } = await query;
 
-                if (error)
+                if (error) {
                         console.warn(`Failed to delete field helper values: ${error.message}`);
+                        throw error;
+                }
+                this.clearCache(`${Globals.board!.id}`);
         }
 
         async insertEntries(entries: Entry[]): Promise<Array<Entry>> {
                 if (!entries.length || !entries[0].board_id) {
                         console.warn("error inserting entries, board_id is null");
                 }
+                const boardId = entries[0].board_id;
 
                 const { data: data, error: error } = await this.client
                         .from('entry')
@@ -344,29 +502,35 @@ export class Supabase {
                         .select("*");
                 if (error) {
                         console.warn(`Failed to insert entries: ${error.message}`);
+                        throw error;
                 }
 
+                if (boardId) this.clearCache(`entries_${boardId}`);
                 return data || [];
         }
 
-        async entryRowCount(boardId: number): Promise<number | undefined> {
-                const { data: data, error: error } = await this.client
-                        .from('entry')
-                        .select('index')
-                        .eq('board_id', boardId)
-                        .order('index', { ascending: false })
-                        .limit(1)
-                        .single();
+        async switchFieldIndex({ boardId, fieldId, oldIndex, newIndex }: {
+                boardId: number, fieldId: number,
+                oldIndex: number, newIndex: number
+        }) {
+                let { error } = await this.client.rpc("switch_field_index", {
+                        p_board_id: boardId,
+                        p_field_id: fieldId,
+                        p_old_index: oldIndex,
+                        p_new_index: newIndex
+                });
 
                 if (error) {
-                        console.warn("Failed to fetch entry row count");
-                        return;
+                        console.error(error);
+                        throw error;
                 }
-
-                return data.index;
+                this.clearCache(`fields_${boardId}`);
         }
 
         async updateEntries(entries: Entry[]): Promise<void> {
+                if (entries.length === 0) return;
+                const boardId = entries[0].board_id;
+
                 for (const entry of entries) {
                         const { error } = await this.client
                                 .from('entry')
@@ -383,7 +547,7 @@ export class Supabase {
 
                         try {
                                 this.triggerAutomation(entry, [
-                                        AutomationId.AnyColumnChange,
+                                        AutomationId.AnyFieldChange,
                                         AutomationId.StatusChange
                                 ]);
                         }
@@ -391,6 +555,8 @@ export class Supabase {
                                 throw e;
                         }
                 }
+
+                if (boardId) this.clearCache(`entries_${boardId}`);
         }
 
         async triggerAutomation(entry: Entry, automationIds: AutomationId[]): Promise<boolean> {
@@ -421,15 +587,8 @@ export class Supabase {
                                         rows: objArr,
                                 })
                         });
-                        console.log({
-                                type: automation.type,
-                                board_id: entry.board_id,
-                                row_count: fields.length,
-                                rows: objArr,
-                        });
                         if (!resp.ok) {
                                 const text = await resp.text();
-
                                 throw new Error(`HTTP Error ${resp.status}: ${text}`);
                         }
                 }
@@ -456,7 +615,12 @@ export class Supabase {
                 }
 
                 const { error } = await query;
-                if (error) console.warn("Error deleting entries:", error);
+                if (error) {
+                        console.warn("Error deleting entries:", error);
+                        throw error;
+                }
+
+                this.clearCache(`entries_${boardId}`);
         }
 
         async createFieldAutomation(automation: Automation): Promise<void> {
@@ -468,8 +632,10 @@ export class Supabase {
                         url_call: automation.url_call
                 });
 
-                if (error)
+                if (error) {
                         console.warn(error);
+                        throw error;
+                }
         }
 
         async deleteFieldAutomation(automation: Automation): Promise<void> {
@@ -481,52 +647,49 @@ export class Supabase {
                         .eq('automation_id', automation.automation_id)
                         .eq('url_call', automation.url_call);
 
-                if (error)
+                if (error) {
                         console.warn(`Failed to delete automation ${error.message}`);
+                        throw error;
+                }
         }
 
-        async accByMail(mail: string): Promise<Account | undefined> {
-                const { data, error } = await this.client
-                        .from('account')
-                        .select('id, name, email, created_at')
-                        .eq("email", mail);
+        async genApiKey(name: string): Promise<ApiKey> {
+                const { data, error } = await this.client.rpc(
+                        'gen_api_key',
+                        { p_name: name }
+                );
 
                 if (error) {
-                        console.warn(`Failed to find account`);
-                        return undefined;
+                        console.error('Failed to generate key:', error.message);
+                        throw error;
                 }
 
-                return data as Account;
+                return data as ApiKey;
         }
 
-        async addUserToBoard(mail: string, permission: number): Promise<Account | undefined> {
-                const acc = await this.accByMail(mail);
+        async removeApiKey(id: number) {
+                const { error } = await this.client
+                        .from('api_key')
+                        .delete()
+                        .eq('id', id);
 
-                if (!acc) return;
-
-                let { error } = await this.client
-                        .from("acc_permission_link")
-                        .insert({
-                                account_id: acc.id,
-                                permission: permission
-                        })
-                        .select("id, board_id, account_id, name, type, date_modified")
-                        .single();
-
-                if (error)
-                        console.warn(`Failed to add user to board ${error.message}`);
-
-                return acc;
+                if (error) console.warn("Error deleting board:", error);
         }
 
-        async fetchFieldAutomations(boardId: number,
-                {
-                        fieldId,
-                        automationIds
-                }: {
-                        fieldId?: number;
-                        automationIds?: Array<AutomationId>
-                } = {}): Promise<Array<Automation>> {
+        async fetchApiKeys(): Promise<Array<ApiKey>> {
+                let { data, error } = await this.client.rpc("get_api_keys");
+
+                if (error) {
+                        console.warn(`Failed to fetch api keys ${error}`);
+                        throw error;
+                }
+
+                return data as Array<ApiKey>;
+        }
+
+        async fetchFieldAutomations(boardId: number, { fieldId, automationIds }: {
+                fieldId?: number, automationIds?: Array<AutomationId>
+        } = {}): Promise<Array<Automation>> {
                 let query = this.client
                         .from('field_automations')
                         .select('automation_id, board_id, field_id, url_call')
@@ -545,39 +708,50 @@ export class Supabase {
                 return data as Array<Automation>;
         }
 
-        async insertNotification(from: Account, to: Account, msg: string) {
-                let { error } = await this.client
-                        .from("notification")
-                        .insert({
-                                from_acc_id: from.id,
-                                to_acc_id: to.id,
-                                message: msg,
-                        });
+        async insertNotification(n: InsertNotification) {
+                let { error } = await this.client.rpc("insert_notification", {
+                        p_from_acc_id: n.from_acc_id,
+                        p_to_acc_id: n.to_acc_id,
+                        p_to_acc_email: n.to_acc_email,
+                        p_message: n.message,
+                        p_board_id: n.board_id,
+                        p_permission_id: n.permission_id,
+                        p_state: n.state,
+                        p_type: n.type
+                });
 
-                if (error) console.log(error);
+                if (error) console.error(error);
+                this.clearCache("notifications");
         }
 
-        async setReadNotification(id: number) {
-                let { error } = await this.client
-                        .from("notification")
-                        .update({
-                                read: true
-                        })
-                        .eq("id", id);
+        async notificationResponse(notificationId: number, state: "accepted" | "declined" | "dismissed"): Promise<number | undefined> {
+                let { data, error } = await this.client.rpc("notification_response", {
+                        p_notification_id: notificationId,
+                        p_state: state
+                });
 
-                if (error) console.log(error);
+                if (error) console.error(error);
+
+                this.clearCache("notifications");
+                return data;
         }
 
-        async fetchNotifications(accId: number): Promise<Array<Notification>> {
-                let query = this.client
-                        .from('notification')
-                        .select()
-                        .eq('to_acc_id', accId);
+        async fetchNotifications(): Promise<NotificationFetchObject> {
+                const cached = this.getCached<NotificationFetchObject>("notifications");
+                if (cached) return cached;
 
+                const { data, error } = await this.client
+                        .rpc("get_all_my_notifications")
+                        .order("created_at", { ascending: false });
 
-                const { data, error } = await query;
-                if (error) console.warn(`Failed to fetch notifications: ${error.message}`);
+                if (error) throw error;
 
-                return data as Array<Notification>;
+                const all = data as ViewNotification[];
+                const received = all.filter(n => n.direction === 'received');
+                const sent = all.filter(n => n.direction === 'sent');
+
+                const result = { received, sent, all } as NotificationFetchObject;
+                this.setCache("notifications", result);
+                return result;
         }
 }

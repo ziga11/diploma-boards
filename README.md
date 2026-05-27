@@ -12,15 +12,19 @@ The Project Board System is a dynamic environment where users can define their o
 * **UI Components:** Bootstrap
 
 ## ✨ Key Features
-* **Custom Schema Definition:** Create arbitrary tables with specialized column types including text, status labels, dates, and action buttons.
+* **Custom Schema Definition:** Create arbitrary tables with specialized field types including text, status labels, dates, and action buttons.
 * **Real-time Collaboration:** All changes are synchronized across all connected clients instantly via Supabase.
-* **Event-Driven Automation:** Configurable webhooks that trigger external actions based on data changes (e.g., sending a notification when a status column is updated).
+* **Event-Driven Automation:** Configurable webhooks that trigger external actions based on data changes (e.g., sending a notification when a status field is updated).
 * **Mass Data Operations:** Built-in support for bulk selection, duplication, and deletion of records.
 * **Flexible UI:** Dynamic rendering of components based on the user-defined table structure.
 
 ## Previews
-![ER Diagram](/public/assets/er.svg)
+![ER Diagram](/public/assets/er.jpg)
 
-![Dashboard](/public/assets/dashboard.jpg)
+### Demo
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/14452bcd-fa5e-450e-a2c7-96af4bd9145e" width="100%" controls muted>
+  </video>
+</div>
 
-![Board View](/public/assets/board_view.jpg)
+

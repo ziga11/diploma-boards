@@ -1,26 +1,37 @@
 import { initializeApp } from "../init";
-await initializeApp();
-
-
+import { boardElements, topToolbar } from "./types";
 import { Globals } from "../globals";
-import "./events"
-import { boardElements } from "./types";
-import { createFields, createEntries, fillExistingAutomations, initScrollObserver } from "./utils";
+import { createFields } from "./utils/field";
+import { initScrollObserver } from "./utils/other";
+import "./events/export"
+import { createEntries } from "./utils/entry";
+import { fillExistingAutomations } from "./utils/automation";
+import { initTopToolbar } from "./utils/toolbar";
+import { fillBoardCollaborators } from "./utils/add-user";
+
+await initializeApp();
 
 const url = new URL(window.location.href);
 const params = url.searchParams;
 
-const boardId = params.get("boardId") as string;
-const title = params.get("title") as string;
+const bId = params.get("boardId") as string;
+const boardId = Number(bId);
 
-Globals.boardId = Number(boardId);
+try {
+        const board = await Globals.supabase.fetchBoard(boardId);
+        Globals.board = board;
 
-boardElements.boardHeadTitle.innerText = title;
-boardElements.tabTitleTag.innerText = `diploma boards - ${title}`;
+        topToolbar.left.boardTitle.innerText = board.name;
+        boardElements.tabTitleTag.innerText = `diploma boards - ${board.name}`;
 
-const fields = await Globals.supabase.fetchFields(Globals.boardId);
-fillExistingAutomations();
-createFields(fields).then(_ => {
-        initScrollObserver();
+        const fields = await Globals.supabase.fetchFields(board.id);
+        createFields(fields)
         createEntries();
-});
+        fillBoardCollaborators();
+        fillExistingAutomations();
+        initTopToolbar();
+        initScrollObserver();
+} catch (err) {
+        window.location.href = "404.html"
+        console.error(err);
+}

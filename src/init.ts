@@ -1,19 +1,13 @@
 import { Globals } from "./globals";
-import type { Account } from "./types";
+import { getAccount } from "./utils";
 
 export async function initializeApp(): Promise<boolean> {
-	const session = await Globals.supabase.getSession();
+        const acc = await getAccount();
+        if (!acc) {
+                return false;
+        }
 
-	if (!session) {
-		window.location.href = "/login.html";
-		return false;
-	}
+        Globals.account = acc;
 
-	Globals.account = await Globals.supabase.upsertAccount({
-		avatar_url: session.user.user_metadata.avatar_url,
-		email: session.user.user_metadata.email,
-		name: session.user.user_metadata.name,
-		last_sign_in_date: session.user.user_metadata.last_sign_in_at,
-	} as Account);
-	return true;
+        return true;
 }

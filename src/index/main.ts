@@ -1,9 +1,15 @@
 import { initializeApp } from '../init';
-import { initColorPick, initToolbar, populateBoards } from './utils';
+import { fillApiKeys, fillNotifications, populateBoards, setToolbar } from './utils';
+import { renderEndpoints } from './api-docs';
+import './events';
 
-const initialized = await initializeApp();
-if (initialized) {
-	populateBoards();
-	initToolbar();
-	initColorPick();
-}
+document.addEventListener("DOMContentLoaded", async () => {
+        const initialized = await initializeApp();
+        if (!initialized) return;
+
+        setToolbar();
+        fillApiKeys();
+        populateBoards();
+        fillNotifications();
+        renderEndpoints('boards');
+});

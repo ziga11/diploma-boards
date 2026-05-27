@@ -1,0 +1,461 @@
+{
+    "boards": [
+        {
+            "method": "GET",
+            "path": "/boards",
+            "summary": "Fetch all boards",
+            "params": [
+                {
+                    "name": "—",
+                    "type": "",
+                    "required": false,
+                    "desc": "No parameters required"
+                }
+            ],
+            "body": null,
+            "response": "[{ \"id\": 1, \"name\": \"My Board\", \"color\": \"#ff4757\" },...]"
+        },
+        {
+            "method": "GET",
+            "path": "/boards?board_id=",
+            "summary": "Fetch single board",
+            "params": [
+                {
+                    "name": "board_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "ID of the board to fetch"
+                }
+            ],
+            "body": null,
+            "response": "{ \"id\": 1, \"name\": \"My Board\", \"color\": \"#ff4757\" }"
+        },
+        {
+            "method": "POST",
+            "path": "/boards",
+            "summary": "Create a board",
+            "params": null,
+            "body": [
+                {
+                    "name": "name",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Board name"
+                },
+                {
+                    "name": "color",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Hex color e.g. #ff4757"
+                }
+            ],
+            "response": "{ \"id\": 2, \"name\": \"New Board\", \"color\": \"#3742fa\" }"
+        },
+        {
+            "method": "PATCH",
+            "path": "/boards?board_id=",
+            "summary": "Update a board",
+            "params": [
+                {
+                    "name": "board_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "ID of the board to update"
+                }
+            ],
+            "body": [
+                {
+                    "name": "name",
+                    "type": "string",
+                    "required": false,
+                    "desc": "New board name"
+                },
+                {
+                    "name": "color",
+                    "type": "string",
+                    "required": false,
+                    "desc": "New hex color"
+                }
+            ],
+            "response": "{ \"id\": 1, \"name\": \"Renamed\", \"color\": \"#2ed573\" }"
+        },
+        {
+            "method": "DELETE",
+            "path": "/boards?board_id=",
+            "summary": "Delete a board",
+            "params": [
+                {
+                    "name": "board_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "ID of the board to delete"
+                }
+            ],
+            "body": null,
+            "response": "{ \"success\": true }"
+        }
+    ],
+    "fields": [
+        {
+            "method": "GET",
+            "path": "/fields?board_id=",
+            "summary": "Fetch all fields for a board",
+            "params": [
+                {
+                    "name": "board_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "Parent board ID"
+                }
+            ],
+            "body": null,
+            "response": "[{ \"id\": 10, \"name\": \"Status\", \"type\": \"select\", \"index\": 0 },...]"
+        },
+        {
+            "method": "GET",
+            "path": "/fields?field_id=",
+            "summary": "Fetch single field",
+            "params": [
+                {
+                    "name": "field_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "ID of the field"
+                }
+            ],
+            "body": null,
+            "response": "{ \"id\": 10, \"name\": \"Status\", \"type\": \"select\", \"index\": 0 }"
+        },
+        {
+            "method": "POST",
+            "path": "/fields",
+            "summary": "Create a field",
+            "params": null,
+            "body": [
+                {
+                    "name": "board_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "Parent board ID"
+                },
+                {
+                    "name": "name",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Field label"
+                },
+                {
+                    "name": "type",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Field type: text | status | date | button"
+                }
+            ],
+            "response": "{ \"id\": 11, \"name\": \"Priority\", \"type\": \"select\", \"index\": 1 }"
+        },
+        {
+            "method": "PATCH",
+            "path": "/fields?field_id=",
+            "summary": "Update a field",
+            "params": [
+                {
+                    "name": "field_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "ID of the field to update"
+                }
+            ],
+            "body": [
+                {
+                    "name": "name",
+                    "type": "string",
+                    "required": false,
+                    "desc": "New field name"
+                },
+                {
+                    "name": "type",
+                    "type": "string",
+                    "required": false,
+                    "desc": "New field type"
+                }
+            ],
+            "response": "{ \"id\": 10, \"name\": \"Renamed Field\", \"type\": \"text\" }"
+        },
+        {
+            "method": "DELETE",
+            "path": "/fields?field_id=",
+            "summary": "Delete a field",
+            "params": [
+                {
+                    "name": "field_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "ID of the field to delete"
+                }
+            ],
+            "body": null,
+            "response": "{ \"success\": true }"
+        }
+    ],
+    "entries": [
+        {
+            "method": "GET",
+            "path": "/entries?board_id=",
+            "summary": "Fetch all entries for a board",
+            "params": [
+                {
+                    "name": "board_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "Parent board ID"
+                }
+            ],
+            "body": null,
+            "response": "[  { \"id\": 100, \"index\": 0, \"value\": \"In progress\" },  ...]"
+        },
+        {
+            "method": "GET",
+            "path": "/entries?entry_id=",
+            "summary": "Fetch single entry",
+            "params": [
+                {
+                    "name": "entry_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "ID of the entry"
+                }
+            ],
+            "body": null,
+            "response": "{ \"id\": 100, \"index\": 0, \"value\": \"In progress\" }"
+        },
+        {
+            "method": "POST",
+            "path": "/entries",
+            "summary": "Create an entry row",
+            "params": null,
+            "body": [
+                {
+                    "name": "board_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "Board to add the row to"
+                }
+            ],
+            "response": "{ \"id\": 101, \"index\": 3 }"
+        },
+        {
+            "method": "PATCH",
+            "path": "/entries?entry_id=",
+            "summary": "Update an entry",
+            "params": [
+                {
+                    "name": "entry_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "ID of the entry cell to update"
+                }
+            ],
+            "body": [
+                {
+                    "name": "value",
+                    "type": "string",
+                    "required": false,
+                    "desc": "New cell value"
+                },
+                {
+                    "name": "index",
+                    "type": "integer",
+                    "required": false,
+                    "desc": "New row index"
+                }
+            ],
+            "response": "{ \"id\": 100, \"value\": \"Done\" }"
+        },
+        {
+            "method": "DELETE",
+            "path": "/entries?entry_id=",
+            "summary": "Delete an entry",
+            "params": [
+                {
+                    "name": "entry_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "ID of the entry to delete"
+                }
+            ],
+            "body": null,
+            "response": "{ \"success\": true }"
+        }
+    ],
+    "field-options": [
+        {
+            "method": "GET",
+            "path": "/field-options?field_id=",
+            "summary": "Fetch options for a field",
+            "params": [
+                {
+                    "name": "field_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "Parent field ID"
+                }
+            ],
+            "body": null,
+            "response": "[  { \"id\": 5, \"value\": \"Todo\" },  { \"id\": 6, \"value\": \"Done\" }]"
+        },
+        {
+            "method": "POST",
+            "path": "/field-options",
+            "summary": "Add an option",
+            "params": null,
+            "body": [
+                {
+                    "name": "field_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "Parent field ID"
+                },
+                {
+                    "name": "value",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Option label"
+                }
+            ],
+            "response": "{ \"id\": 7, \"value\": \"In Review\" }"
+        },
+        {
+            "method": "PATCH",
+            "path": "/field-options?option_id=",
+            "summary": "Update an option",
+            "params": [
+                {
+                    "name": "option_id",
+                    "type": "integer",
+                    "required": false,
+                    "desc": "Can also be passed in body"
+                }
+            ],
+            "body": [
+                {
+                    "name": "option_id",
+                    "type": "integer",
+                    "required": false,
+                    "desc": ""
+                },
+                {
+                    "name": "field_id",
+                    "type": "integer",
+                    "required": false,
+                    "desc": "Scope to field"
+                },
+                {
+                    "name": "old_value",
+                    "type": "string",
+                    "required": false,
+                    "desc": "Match by current value"
+                },
+                {
+                    "name": "value",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Replacement value"
+                }
+            ],
+            "response": "{ \"id\": 5, \"value\": \"Backlog\" }"
+        },
+        {
+            "method": "DELETE",
+            "path": "/field-options?option_id=",
+            "summary": "Delete an option",
+            "params": [
+                {
+                    "name": "option_id",
+                    "type": "integer",
+                    "required": false,
+                    "desc": "Delete by ID"
+                },
+                {
+                    "name": "field_id",
+                    "type": "integer",
+                    "required": false,
+                    "desc": "Scope to field"
+                },
+                {
+                    "name": "value",
+                    "type": "string",
+                    "required": false,
+                    "desc": "Delete by value"
+                }
+            ],
+            "body": null,
+            "response": "{ \"success\": true }"
+        }
+    ],
+    "users": [
+        {
+            "method": "GET",
+            "path": "/users?board_id=",
+            "summary": "Fetch collaborators",
+            "params": [
+                {
+                    "name": "board_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "Board to list collaborators for"
+                }
+            ],
+            "body": null,
+            "response": "[{ \"id\": 1, \"email\": \"user@example.com\", \"role\": \"Editor\" },...]"
+        },
+        {
+            "method": "POST",
+            "path": "/users?board_id=",
+            "summary": "Add a collaborator",
+            "params": [
+                {
+                    "name": "board_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "Board to add to"
+                }
+            ],
+            "body": [
+                {
+                    "name": "to_email",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Email of the user to invite"
+                },
+                {
+                    "name": "role",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Role: Viewer | Editor | Manager | Admin"
+                }
+            ],
+            "response": "{ \"success\": true }"
+        },
+        {
+            "method": "DELETE",
+            "path": "/users?board_id=&permission_id=",
+            "summary": "Remove a collaborator",
+            "params": [
+                {
+                    "name": "board_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "Board ID"
+                },
+                {
+                    "name": "permission_id",
+                    "type": "integer",
+                    "required": true,
+                    "desc": "Permission record ID to remove"
+                }
+            ],
+            "body": null,
+            "response": "{ \"success\": true }"
+        }
+    ]
+}

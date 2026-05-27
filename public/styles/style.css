@@ -11,6 +11,16 @@ svg {
         cursor: pointer;
 }
 
+p {
+        margin: 0 !important;
+}
+
+button {
+        outline: none;
+        border: none;
+        background-color: transparent;
+}
+
 :root {
         --bg: #272a4d;
         --bg-dark: #1d203d;
@@ -35,12 +45,11 @@ body {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        padding-bottom: 2.5rem;
         border: none;
 }
 
 .modal-body {
-        padding: 2vh 2vh 5vh 2vh;
+        margin: 2vh 2vh 5vh 2vh;
         overflow-y: auto;
         scrollbar-width: thin;
         scrollbar-color: var(--bg-dark) transparent;
@@ -48,6 +57,29 @@ body {
 
 .modal-footer {
         border-top: none;
+}
+
+
+.btn-default {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+}
+
+.btn-default:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        filter: saturate(150%);
 }
 
 .outlined-input {
@@ -64,7 +96,7 @@ body {
 .outlined-input label {
         position: absolute;
         top: 50%;
-        left: 12px;
+        left: 6px;
         transform: translateY(-50%);
         background: var(--bg-light);
         box-shadow: 0 0 1px 1px var(--bg-highlight);
@@ -74,34 +106,13 @@ body {
         transition: 0.2s ease;
 }
 
-#user-modal-sections .modal-footer {
-        display: flex;
-}
-
-#add-user-modal .modal-footer button {
-        transition: all 0.3s;
-}
-
-#add-user-modal .modal-footer>:first-child {
-        background: var(--secondary);
-        border: 1px solid var(--secondary);
-}
-
-#add-user-modal .modal-footer>:last-child {
-        background: var(--red);
-        border: 1px solid var(--red);
-}
-
-#add-user-modal .modal-footer button:hover {
-        transform: translateY(-4px);
-        filter: saturate(200%);
-        box-shadow: 0 4px 20px color-mix(in srgb, black 40%, transparent);
-}
 
 .outlined-input input:focus+label,
 .outlined-input input:not(:placeholder-shown)+label {
-        top: -6px;
+        top: -4px;
         font-size: 12px;
+        padding: 0 12px;
+        text-align: center;
         color: var(--white);
 }
 
@@ -113,22 +124,6 @@ body {
 input[type="checkbox"] {
         accent-color: var(--primary);
         border-color: var(--secondary);
-}
-
-.modal-body input[type="text"],
-.modal-body select {
-        background-color: var(--bg-light);
-        color: var(--white);
-        border: 1px solid var(--bg-highlight);
-        width: 60%;
-}
-
-.modal-body input[type="text"]:focus,
-.modal-body select:focus {
-        background-color: var(--bg-light);
-        color: var(--white);
-        border-color: var(--bg-highlight);
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
 }
 
 #toast-container {
@@ -188,4 +183,10 @@ input[type="checkbox"] {
 
 .toast-exit {
         animation: fadeOut 0.5s ease forwards;
+}
+
+.svg-wrapper {
+        background: color-mix(in srgb, var(--bg-highlight) 30%, transparent);
+        padding: 1rem;
+        border-radius: 20px;
 }
