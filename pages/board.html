@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/styles/style.css">
+    <link rel="stylesheet" href="/styles/board.css">
+    <script type="module" src="/src/pages/board/init.ts" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</head>
+
+
+<body class="container my-5">
+    <button class="btn-cancel" id="back-button">Back</button>
+    <div id="toolbar">
+        <div class="left-top-toolbar">
+            <h2 class="board-title" contenteditable="true"></h2><br>
+            <div class="left-top-toolbar-btns">
+                <button type="button" id="new-entry-btn" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="icon icon-tabler icons-tabler-outline icon-tabler-cube-plus">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path
+                            d="M21 12.5v-4.509a1.98 1.98 0 0 0 -1 -1.717l-7 -4.008a2.016 2.016 0 0 0 -2 0l-7 4.007c-.619 .355 -1 1.01 -1 1.718v8.018c0 .709 .381 1.363 1 1.717l7 4.008a2.016 2.016 0 0 0 2 0" />
+                        <path d="M12 22v-10" />
+                        <path d="M12 12l8.73 -5.04" />
+                        <path d="M3.27 6.96l8.73 5.04" />
+                        <path d="M16 19h6" />
+                        <path d="M19 16v6" />
+                    </svg>
+                    New Entry
+                </button>
+                <button type="button" id="add-user-btn" class="btn btn-secondary" data-bs-toggle="modal"
+                    data-bs-target="#add-user-modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="icon icon-tabler icons-tabler-outline icon-tabler-user-plus">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                        <path d="M16 19h6" />
+                        <path d="M19 16v6" />
+                        <path d="M6 21v-2a4 4 0 0 1 4 -4h4" />
+                    </svg>
+                    Manage Users
+                </button>
+            </div>
+        </div>
+        <div class="right-top-toolbar">
+            <button type="button" class="btn btn-primary" id="automate-btn" data-bs-toggle="modal"
+                data-bs-target="#automate">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="icon icon-tabler icons-tabler-outline icon-tabler-settings-automation">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <path
+                        d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065" />
+                    <path d="M10 9v6l5 -3l-5 -3" />
+                </svg>
+                Automations
+            </button>
+            <button type="button" class="btn btn-danger" id="delete-btn" data-bs-toggle="modal"
+                data-bs-target="#delete-board-modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="icon icon-tabler icons-tabler-outline icon-tabler-trash">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <path d="M4 7l16 0" />
+                    <path d="M10 11l0 6" />
+                    <path d="M14 11l0 6" />
+                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                    <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                </svg>
+                Delete
+            </button>
+            <button type="button" class="btn btn-danger" id="leave-btn" data-bs-toggle="modal"
+                data-bs-target="#leave-board-modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="icon icon-tabler icons-tabler-outline icon-tabler-door-exit">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <path d="M13 12v.01" />
+                    <path d="M3 21h18" />
+                    <path d="M5 21v-16a2 2 0 0 1 2 -2h7.5m2.5 10.5v7.5" />
+                    <path d="M14 7h7m-3 -3l3 3l-3 3" />
+                </svg>
+                Leave
+            </button>
+        </div>
+    </div>
+
+    <div class="add-field-menu">
+        <div data-field-type="text">
+            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 6.2V5h11v1.2M8 5v14m-3 0h6m2-6.8V11h8v1.2M17 11v8m-1.5 0h3" />
+            </svg>
+            Text
+        </div>
+        <div data-field-type="status">
+            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M5 7h14M5 12h14M5 17h10" />
+            </svg>
+            Status
+        </div>
+        <div data-field-type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <g>
+                    <path
+                        d="M14.4174 4.54688H5.58133C4.27696 4.54688 3.24609 5.57882 3.24609 6.88454C3.24609 8.1692 4.27696 9.2222 5.58133 9.2222H9.38591L9.40445 8.06813C9.42033 7.07868 10.5774 6.55552 11.3261 7.19927L13.6787 9.2222H14.4174C15.7007 9.2222 16.7526 8.19026 16.7526 6.88454C16.7526 5.59988 15.7217 4.54688 14.4174 4.54688Z"
+                        fill="#fff" />
+                </g>
+
+                <g>
+                    <path
+                        d="M10.6129 8.41176C10.616 8.21581 10.8418 8.1122 10.9879 8.23969L15.375 12.0678C15.5204 12.1946 15.4561 12.4365 15.2677 12.4713L13.9142 12.7215C13.6692 12.7776 13.5332 13.0585 13.642 13.2831L14.3619 14.719C14.4163 14.8276 14.3788 14.9605 14.276 15.023L13.6178 15.4235C13.5006 15.4949 13.3485 15.4454 13.2934 15.3181L12.6077 13.7324C12.4988 13.5078 12.1994 13.4235 12.0089 13.592L10.8878 14.4963C10.7375 14.6176 10.5165 14.5064 10.5196 14.3111L10.6129 8.41176Z"
+                        fill="#fff" />
+                </g>
+            </svg>
+
+            Button
+        </div>
+        <div data-field-type="date">
+            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                <path fill-rule="evenodd"
+                    d="M5 5a1 1 0 0 0 1-1 1 1 0 1 1 2 0 1 1 0 0 0 1 1h1a1 1 0 0 0 1-1 1 1 0 1 1 2 0 1 1 0 0 0 1 1h1a1 1 0 0 0 1-1 1 1 0 1 1 2 0 1 1 0 0 0 1 1 2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a2 2 0 0 1 2-2ZM3 19v-7a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Zm6.01-6a1 1 0 1 0-2 0 1 1 0 0 0 2 0Zm2 0a1 1 0 1 1 2 0 1 1 0 0 1-2 0Zm6 0a1 1 0 1 0-2 0 1 1 0 0 0 2 0Zm-10 4a1 1 0 1 1 2 0 1 1 0 0 1-2 0Zm6 0a1 1 0 1 0-2 0 1 1 0 0 0 2 0Zm2 0a1 1 0 1 1 2 0 1 1 0 0 1-2 0Z"
+                    clip-rule="evenodd" />
+            </svg>
+            Date
+        </div>
+    </div>
+
+
+    <div class="board-wrapper">
+        <div class="board-container">
+            <div class="entries"></div>
+            <div class="fields">
+                <div class="field-check-div">
+                    <input type="checkbox" class="field-check">
+                </div>
+                <button type="button" class="add-field-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                        class="bi bi-plus-lg" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd"
+                            d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="automate" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Automations</h2>
+                    <fieldset class="automation-menu">
+                        <label for="create-tab" class="modal-automation-options">
+                            <input type="radio" name="automation-options" id="create-tab" value="create" hidden checked>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="icon icon-tabler icons-tabler-outline icon-tabler-pencil-plus">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+                                <path d="M13.5 6.5l4 4" />
+                                <path d="M16 19h6" />
+                                <path d="M19 16v6" />
+                            </svg>
+                            Create</label>
+
+                        <label for="modify-tab" class="modal-automation-options">
+                            <input type="radio" name="automation-options" id="modify-tab" value="modify" hidden>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
+                                <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" />
+                                <path d="M16 5l3 3" />
+                            </svg>
+                            Modify</label>
+                    </fieldset>
+                    <button type="button" style="filter: invert(1) saturate(2);" class="btn-close"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="automate-body">
+                    <div class="no-fields">
+                        <div class="svg-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-lock">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path
+                                    d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6" />
+                                <path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" />
+                                <path d="M8 11v-4a4 4 0 1 1 8 0v4" />
+                            </svg>
+                        </div>
+                        <b>No Fields Yet</b>
+                        <p>Add a field to your board to enable automations</p>
+                    </div>
+                    <div class="no-automations">
+                        <div class="svg-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="icon icon-tabler icons-tabler-outline icon-tabler-settings-automation">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path
+                                    d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065" />
+                                <path d="M10 9v6l5 -3l-5 -3" />
+                            </svg>
+                        </div>
+                        <b>No existing automations.</b>
+                        <button class="btn-default create-automation-cta" type="button">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path
+                                    d="M13 20.693c-.905 .628 -2.36 .292 -2.675 -1.01a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.492 .362 1.716 2.219 .674 3.03" />
+                                <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+                                <path d="M19 16v6" />
+                                <path d="M16 19h6" />
+                            </svg>
+                            Create an Automation</button>
+                    </div>
+                    <div class="create-automations">
+                        <div class="url-call-header">
+                            <div>
+                                <p class="url-call-title">Select Type</p>
+                                <p class="url-call-subtitle" id="field-selection-subtitle">Trigger Type · Choose an
+                                    action to trigger the automation </p>
+                            </div>
+                        </div>
+                        <div class="automation-options-container">
+                            <div class="automation-option" data-automation-type="1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+                                    <path d="M13.5 6.5l4 4" />
+                                </svg>
+                                <span>Text Change</span>
+                            </div>
+                            <div class="automation-option" data-automation-type="2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M6 18m-2 0a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                                    <path d="M18 6m-2 0a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                                    <path d="M6 12h5.5a2.5 2.5 0 0 1 0 5h-.5" />
+                                    <path d="M18 12h-5.5a2.5 2.5 0 0 1 0 -5h.5" />
+                                </svg>
+                                <span>Status Change</span>
+                            </div>
+                            <div class="automation-option" data-automation-type="3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M7 11.5v-6.5a2 2 0 0 1 4 0v3" />
+                                    <path d="M11 5.5a2 2 0 0 1 4 0v2.5" />
+                                    <path d="M15 8a2 2 0 0 1 4 0v3.5" />
+                                    <path d="M7 11.5h2l1 9h6l.5 -4.5h1.5" />
+                                </svg>
+                                <span>Button Press</span>
+                            </div>
+                            <div class="automation-option" data-automation-type="4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path
+                                        d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z" />
+                                    <path d="M3 10h18" />
+                                    <path d="M10 3v18" />
+                                    <path d="M16 19h6" />
+                                    <path d="M19 16v6" />
+                                </svg>
+                                <span>New Row</span>
+                            </div>
+                            <div class="automation-option" data-automation-type="5">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M4 7h16" />
+                                    <path d="M10 11v6" />
+                                    <path d="M14 11v6" />
+                                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                                    <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                                </svg>
+                                <span>Row Removed</span>
+                            </div>
+                            <div class="automation-option" data-automation-type="6">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path
+                                        d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065" />
+                                    <path d="M10 9v6l5 -3l-5 -3" />
+                                </svg>
+                                <span>Any Change</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field-automation-selection">
+                        <div class="url-call-header">
+                            <button type="button" class="back-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M15 6l-6 6l6 6" />
+                                </svg>
+                            </button>
+                            <div>
+                                <p class="url-call-title">Select Field</p>
+                                <p class="url-call-subtitle" id="field-selection-subtitle">Field Selection · Choose
+                                    which field to watch</p>
+                            </div>
+                        </div>
+                        <div class="automation-fields-wrap">
+                        </div>
+                    </div>
+                    <div class="existing-automations"></div>
+
+                    <div class="url-call-div">
+                        <div class="url-call-header">
+                            <button type="button" class="back-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M15 6l-6 6l6 6" />
+                                </svg>
+                            </button>
+                            <div>
+                                <p class="url-call-title">Webhook URL</p>
+                                <p class="url-call-subtitle" id="url-call-subtitle">Field · Trigger Type</p>
+                            </div>
+                        </div>
+                        <div class="url-call-body">
+                            <div class="url-call-field">
+                                <label class="field-label">ENDPOINT URL</label>
+                                <div class="url-input-wrap">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                                        fill="none" stroke="#797E93" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" aria-hidden="true">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M9 15l6 -6" />
+                                        <path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" />
+                                        <path
+                                            d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" />
+                                    </svg>
+                                    <input type="text" id="url-call" placeholder="https://your-endpoint.com/webhook" />
+                                </div>
+                                <p class="url-call-hint">A POST request will be sent to this URL when the trigger fires.
+                                </p>
+                            </div>
+                            <div class="url-call-actions">
+                                <button type="button" class="back-btn url-btn-cancel" id="back-url-call">Back</button>
+                                <button type="button" class="url-btn-create" id="finish-automation">Create
+                                    Automation</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="delete-board-modal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-sm confirm-dialog">
+            <div class="modal-content confirm-modal-content">
+                <div class="confirm-icon confirm-icon--danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="#ff4757" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M4 7h16" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                        <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                        <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                    </svg>
+                </div>
+                <h5 class="confirm-title">Delete board?</h5>
+                <p class="confirm-desc">This action is permanent and cannot be undone. All data will be lost.</p>
+                <div class="confirm-btns">
+                    <button type="button" class="confirm-btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="confirm-btn-danger" id="confirm-delete"
+                        data-bs-dismiss="modal">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="leave-board-modal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-sm confirm-dialog">
+            <div class="modal-content confirm-modal-content">
+                <div class="confirm-icon confirm-icon--danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="#ff4757" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
+                        <path d="M9 12h12l-3 -3" />
+                        <path d="M18 15l3 -3" />
+                    </svg>
+                </div>
+                <h5 class="confirm-title">Leave board?</h5>
+                <p class="confirm-desc">You'll lose access immediately. You'll need to be re-invited to rejoin.</p>
+                <div class="confirm-btns">
+                    <button type="button" class="confirm-btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="confirm-btn-danger" id="confirm-leave"
+                        data-bs-dismiss="modal">Leave</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-user-modal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <fieldset class="user-permissions">
+                        <label for="add-users-section-btn" class="modal-user-management-options">
+                            <input type="radio" name="permission-option" id="add-users-section-btn" value="adding"
+                                hidden checked>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="icon icon-tabler icons-tabler-outline icon-tabler-pencil-plus">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+                                <path d="M13.5 6.5l4 4" />
+                                <path d="M16 19h6" />
+                                <path d="M19 16v6" />
+                            </svg> Add
+                        </label>
+
+                        <label for="manage-users-section-btn" class="modal-user-management-options">
+                            <input type="radio" name="permission-option" id="manage-users-section-btn" value="existing"
+                                hidden>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
+                                <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" />
+                                <path d="M16 5l3 3" />
+                            </svg> Modify</label>
+                    </fieldset>
+                </div>
+                <div class="user-modal-sections">
+                    <div id="add-user-section" class="shown">
+                        <div class="modal-body">
+                            <div class="add-user-header">
+                                <div class="add-user-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                        fill="none" stroke="#667eea" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                                        <path d="M16 19h6" />
+                                        <path d="M19 16v6" />
+                                        <path d="M6 21v-2a4 4 0 0 1 4 -4h4" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="add-user-title">Invite collaborator</p>
+                                    <p class="add-user-subtitle">They'll receive access based on the permission you
+                                        choose</p>
+                                </div>
+                            </div>
+
+                            <div class="add-user-fields">
+                                <div class="add-user-field">
+                                    <label class="add-user-field-label">EMAIL ADDRESS</label>
+                                    <div class="email-input-wrap">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="#797E93" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <path
+                                                d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z" />
+                                            <path d="M3 7l9 6l9 -6" />
+                                        </svg>
+                                        <input id="add-user-email" type="text" placeholder="name@example.com" />
+                                    </div>
+                                </div>
+
+                                <div class="add-user-field">
+                                    <label class="add-user-field-label">PERMISSION LEVEL</label>
+                                    <div class="permission-cards">
+                                        <label class="permission-card">
+                                            <input type="radio" name="add-user-permission" value="1" />
+                                            <div>
+                                                <p class="permission-name">Member</p>
+                                                <p class="permission-desc">View only</p>
+                                            </div>
+                                        </label>
+                                        <label class="permission-card">
+                                            <input type="radio" name="add-user-permission" value="2" />
+                                            <div>
+                                                <p class="permission-name">Editor</p>
+                                                <p class="permission-desc">View and edit</p>
+                                            </div>
+                                        </label>
+                                        <label class="permission-card">
+                                            <input type="radio" name="add-user-permission" value="3" />
+                                            <div>
+                                                <p class="permission-name">Manager</p>
+                                                <p class="permission-desc">View, edit and automations</p>
+                                            </div>
+                                        </label>
+                                        <label class="permission-card">
+                                            <input type="radio" name="add-user-permission" value="4" />
+                                            <div>
+                                                <p class="permission-name">Admin</p>
+                                                <p class="permission-desc">Full access including invites</p>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                            <button id="finish-adding-user" class="btn-add">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                    stroke-linejoin="round" aria-hidden="true">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M16 19h6" />
+                                    <path d="M19 16v6" />
+                                    <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                                    <path d="M6 21v-2a4 4 0 0 1 4 -4h4" />
+                                </svg>
+                                Add collaborator
+                            </button>
+                        </div>
+                    </div>
+                    <div id="manage-users-section">
+                        <div class="modal-body"></div>
+                        <div class="modal-footer">
+                            <button class="btn-cancel" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="bottom-toolbar">
+        <div class="entries-selected-div">
+        </div>
+        <div class="checked-options-buttons">
+            <button id="delete-selected-btn" type="button" title="Delete selected">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-trash3"
+                    viewBox="0 0 16 16">
+                    <path
+                        d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5">
+                    </path>
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor"
+                    class="bi bi-trash3-fill" viewBox="0 0 16 16">
+                    <path
+                        d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5m-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5M4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06m6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528M8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5" />
+                </svg>
+            </button>
+            <button id="duplicate-selected-btn" type="button" title="Duplicate selected">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-layers"
+                    viewBox="0 0 16 16">
+                    <path
+                        d="M8.235 1.559a.5.5 0 0 0-.47 0l-7.5 4a.5.5 0 0 0 0 .882L3.188 8 .264 9.559a.5.5 0 0 0 0 .882l7.5 4a.5.5 0 0 0 .47 0l7.5-4a.5.5 0 0 0 0-.882L12.813 8l2.922-1.559a.5.5 0 0 0 0-.882zm3.515 7.008L14.438 10 8 13.433 1.562 10 4.25 8.567l3.515 1.874a.5.5 0 0 0 .47 0zM8 9.433 1.562 6 8 2.567 14.438 6z" />
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor"
+                    class="bi bi-layers-fill" viewBox="0 0 16 16">
+                    <path
+                        d="M7.765 1.559a.5.5 0 0 1 .47 0l7.5 4a.5.5 0 0 1 0 .882l-7.5 4a.5.5 0 0 1-.47 0l-7.5-4a.5.5 0 0 1 0-.882z" />
+                    <path
+                        d="m2.125 8.567-1.86.992a.5.5 0 0 0 0 .882l7.5 4a.5.5 0 0 0 .47 0l7.5-4a.5.5 0 0 0 0-.882l-1.86-.992-5.17 2.756a1.5 1.5 0 0 1-1.41 0z" />
+                </svg>
+            </button>
+            <button id="deselect-selected-btn" type="button" title="Deselect selected">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-x-lg"
+                    title="delete" viewBox="0 0 16 16">
+                    <path
+                        d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z">
+                    </path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <dialog class="dropdown-menu">
+        <div class="dropdown-options"></div>
+        <div id="empty-option" class="dropdown-option" style="opacity: 0.7;"><span>Empty</span></div>
+    </dialog>
+
+    <div id="toast-container"></div>
+
+    <div class="modal fade" id="field-edit-modal" tabindex="-1" aria-labelledby="fieldEditModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content field-edit-modal-content">
+                <div class="modal-header field-edit-modal-header">
+                    <div class="field-edit-modal-title-wrap">
+                        <h5 class="modal-title" id="field-edit-modal-label">Edit Field</h5>
+                        <span class="field-edit-id-badge">ID: <b id="field-edit-id">—</b></span>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body field-edit-modal-body">
+
+                    <div class="field-edit-section">
+                        <label class="field-edit-label">Field Name</label>
+                        <div class="input-group">
+                            <input type="text" id="field-name-input" class="form-control field-edit-input"
+                                placeholder="Enter field name" />
+                        </div>
+                    </div>
+
+                    <div class="field-edit-section d-none" id="status-options-section">
+                        <label class="field-edit-label">Status Options</label>
+                        <div id="status-options-list" class="status-options-list"></div>
+                        <div class="input-group" id="add-status-option-section">
+                            <input type="text" id="new-status-option-input" class="form-control field-edit-input"
+                                placeholder="New option name" />
+                            <button class="btn-default" id="add-status-option-btn"><svg
+                                    xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-square-plus">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M9 12h6" />
+                                    <path d="M12 9v6" />
+                                    <path
+                                        d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14" />
+                                </svg> Add</button>
+                        </div>
+                    </div>
+
+                    <div class="field-edit-section d-none" id="button-options-section">
+                        <label class="field-edit-label">Button Options</label>
+                        <div class="status-option-item">
+                            <input type="text" class="field-edit-input" id="button-text-input"
+                                placeholder="Button Text">
+                        </div>
+                    </div>
+
+                    <div class="field-edit-section field-edit-danger-zone">
+                        <label class="field-edit-label text-danger">Danger Zone</label>
+                        <button class="btn-cancel" id="delete-field-btn"><svg xmlns="http://www.w3.org/2000/svg"
+                                width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                class="icon icon-tabler icons-tabler-outline icon-tabler-trash">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M4 7l16 0" />
+                                <path d="M10 11l0 6" />
+                                <path d="M14 11l0 6" />
+                                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                                <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                            </svg> Delete this field</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,25 @@
+export function setPageContent() {
+        const appDiv = document.getElementById("app") as HTMLDivElement;
+        appDiv.innerHTML = `
+                <div class="container">
+                        <div class="big-number">404</div>
+                        <div class="card">
+                            <div class="icon-wrap">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" stroke="currentColor"
+                                    stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <path d="m21 21-4.35-4.35" />
+                                    <path d="M11 8v3M11 14h.01" />
+                                </svg>
+                            </div>
+                            <h1>Page not found</h1>
+                            <p>The page you're looking for doesn't exist or has been moved.</p>
+                            <div class="divider"></div>
+                            <div class="actions">
+                                <a href="/" class="btn-primary">Dashboard</a>
+                                <a onclick="history.go(-2)" class="btn-secondary">Go back</a>
+                            </div>
+                        </div>
+                    </div>
+                `
+}

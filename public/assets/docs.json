@@ -4,37 +4,30 @@
             "method": "GET",
             "path": "/boards",
             "summary": "Fetch all boards",
-            "params": [
-                {
-                    "name": "—",
-                    "type": "",
-                    "required": false,
-                    "desc": "No parameters required"
-                }
-            ],
+            "params": [],
             "body": null,
-            "response": "[{ \"id\": 1, \"name\": \"My Board\", \"color\": \"#ff4757\" },...]"
+            "response": "[{ \"id\": \"d3b07384-d113-4c4e-a55e-330dad351501\", \"name\": \"My Board\", \"color\": \"#ff4757\" },...]"
         },
         {
             "method": "GET",
-            "path": "/boards?board_id=",
+            "path": "/boards",
             "summary": "Fetch single board",
             "params": [
                 {
                     "name": "board_id",
-                    "type": "integer",
+                    "type": "string",
                     "required": true,
-                    "desc": "ID of the board to fetch"
+                    "desc": "UUID of the board to fetch"
                 }
             ],
             "body": null,
-            "response": "{ \"id\": 1, \"name\": \"My Board\", \"color\": \"#ff4757\" }"
+            "response": "{ \"id\": \"d3b07384-d113-4c4e-a55e-330dad351501\", \"name\": \"My Board\", \"color\": \"#ff4757\" }"
         },
         {
             "method": "POST",
             "path": "/boards",
             "summary": "Create a board",
-            "params": null,
+            "params": [],
             "body": [
                 {
                     "name": "name",
@@ -49,18 +42,18 @@
                     "desc": "Hex color e.g. #ff4757"
                 }
             ],
-            "response": "{ \"id\": 2, \"name\": \"New Board\", \"color\": \"#3742fa\" }"
+            "response": "{ \"id\": \"a1c84271-e224-4b5f-b66d-1111ad451602\", \"name\": \"New Board\", \"color\": \"#3742fa\" }"
         },
         {
             "method": "PATCH",
-            "path": "/boards?board_id=",
+            "path": "/boards",
             "summary": "Update a board",
             "params": [
                 {
                     "name": "board_id",
-                    "type": "integer",
+                    "type": "string",
                     "required": true,
-                    "desc": "ID of the board to update"
+                    "desc": "UUID of the board to update"
                 }
             ],
             "body": [
@@ -77,18 +70,18 @@
                     "desc": "New hex color"
                 }
             ],
-            "response": "{ \"id\": 1, \"name\": \"Renamed\", \"color\": \"#2ed573\" }"
+            "response": "{ \"id\": \"d3b07384-d113-4c4e-a55e-330dad351501\", \"name\": \"Renamed\", \"color\": \"#2ed573\" }"
         },
         {
             "method": "DELETE",
-            "path": "/boards?board_id=",
+            "path": "/boards",
             "summary": "Delete a board",
             "params": [
                 {
                     "name": "board_id",
-                    "type": "integer",
+                    "type": "string",
                     "required": true,
-                    "desc": "ID of the board to delete"
+                    "desc": "UUID of the board to delete"
                 }
             ],
             "body": null,
@@ -98,45 +91,45 @@
     "fields": [
         {
             "method": "GET",
-            "path": "/fields?board_id=",
+            "path": "/fields",
             "summary": "Fetch all fields for a board",
             "params": [
                 {
                     "name": "board_id",
-                    "type": "integer",
+                    "type": "string",
                     "required": true,
-                    "desc": "Parent board ID"
+                    "desc": "Board UUID"
                 }
             ],
             "body": null,
-            "response": "[{ \"id\": 10, \"name\": \"Status\", \"type\": \"select\", \"index\": 0 },...]"
+            "response": "[{ \"id\": \"b2d16395-c334-4e5f-a77d-2222bd561703\", \"name\": \"Status\", \"type\": \"status\", \"index\": 0 },...]"
         },
         {
             "method": "GET",
-            "path": "/fields?field_id=",
+            "path": "/fields",
             "summary": "Fetch single field",
             "params": [
                 {
                     "name": "field_id",
-                    "type": "integer",
+                    "type": "string",
                     "required": true,
-                    "desc": "ID of the field"
+                    "desc": "UUID of the field"
                 }
             ],
             "body": null,
-            "response": "{ \"id\": 10, \"name\": \"Status\", \"type\": \"select\", \"index\": 0 }"
+            "response": "{ \"id\": \"b2d16395-c334-4e5f-a77d-2222bd561703\", \"name\": \"Status\", \"type\": \"status\", \"index\": 0 }"
         },
         {
             "method": "POST",
             "path": "/fields",
             "summary": "Create a field",
-            "params": null,
+            "params": [],
             "body": [
                 {
                     "name": "board_id",
-                    "type": "integer",
+                    "type": "string",
                     "required": true,
-                    "desc": "Parent board ID"
+                    "desc": "Board UUID"
                 },
                 {
                     "name": "name",
@@ -151,46 +144,40 @@
                     "desc": "Field type: text | status | date | button"
                 }
             ],
-            "response": "{ \"id\": 11, \"name\": \"Priority\", \"type\": \"select\", \"index\": 1 }"
+            "response": "{ \"id\": \"c3e27406-d445-4f6f-b88e-3333cd671804\", \"name\": \"Priority\", \"type\": \"text\", \"index\": 1 }"
         },
         {
             "method": "PATCH",
-            "path": "/fields?field_id=",
+            "path": "/fields",
             "summary": "Update a field",
             "params": [
                 {
                     "name": "field_id",
-                    "type": "integer",
+                    "type": "string",
                     "required": true,
-                    "desc": "ID of the field to update"
+                    "desc": "UUID of the field to update"
                 }
             ],
             "body": [
                 {
                     "name": "name",
                     "type": "string",
-                    "required": false,
+                    "required": true,
                     "desc": "New field name"
-                },
-                {
-                    "name": "type",
-                    "type": "string",
-                    "required": false,
-                    "desc": "New field type"
                 }
             ],
-            "response": "{ \"id\": 10, \"name\": \"Renamed Field\", \"type\": \"text\" }"
+            "response": "{ \"id\": \"b2d16395-c334-4e5f-a77d-2222bd561703\", \"name\": \"Renamed Field\", \"type\": \"status\" }"
         },
         {
             "method": "DELETE",
-            "path": "/fields?field_id=",
+            "path": "/fields",
             "summary": "Delete a field",
             "params": [
                 {
                     "name": "field_id",
-                    "type": "integer",
+                    "type": "string",
                     "required": true,
-                    "desc": "ID of the field to delete"
+                    "desc": "UUID of the field to delete"
                 }
             ],
             "body": null,
@@ -200,87 +187,92 @@
     "entries": [
         {
             "method": "GET",
-            "path": "/entries?board_id=",
+            "path": "/entries",
             "summary": "Fetch all entries for a board",
             "params": [
                 {
                     "name": "board_id",
-                    "type": "integer",
+                    "type": "string",
                     "required": true,
-                    "desc": "Parent board ID"
+                    "desc": "Board UUID"
                 }
             ],
             "body": null,
-            "response": "[  { \"id\": 100, \"index\": 0, \"value\": \"In progress\" },  ...]"
+            "response": "[ { \"id\": \"e5f49628-f667-4f8f-ba0a-5555ed892006\", \"index\": 0, \"value\": \"In progress\" } ]"
         },
         {
             "method": "GET",
-            "path": "/entries?entry_id=",
+            "path": "/entries",
             "summary": "Fetch single entry",
             "params": [
                 {
                     "name": "entry_id",
-                    "type": "integer",
+                    "type": "string",
                     "required": true,
-                    "desc": "ID of the entry"
+                    "desc": "UUID of the entry"
                 }
             ],
             "body": null,
-            "response": "{ \"id\": 100, \"index\": 0, \"value\": \"In progress\" }"
+            "response": "{ \"id\": \"e5f49628-f667-4f8f-ba0a-5555ed892006\", \"index\": 0, \"value\": \"In progress\" }"
         },
         {
             "method": "POST",
             "path": "/entries",
-            "summary": "Create an entry row",
-            "params": null,
+            "summary": "Create entry rows",
+            "params": [],
             "body": [
                 {
-                    "name": "board_id",
-                    "type": "integer",
+                    "name": "entries",
+                    "type": "array",
                     "required": true,
-                    "desc": "Board to add the row to"
+                    "desc": "Array of Entry objects containing board_id, field_id, account_id, index, and value"
                 }
             ],
-            "response": "{ \"id\": 101, \"index\": 3 }"
+            "response": "[ { \"id\": \"f6a50739-0778-4faf-bb1b-6666fe903107\", \"board_id\": \"d3b07384-d113-4c4e-a55e-330dad351501\", \"index\": 3, \"value\": \"\" } ]"
         },
         {
             "method": "PATCH",
-            "path": "/entries?entry_id=",
-            "summary": "Update an entry",
-            "params": [
-                {
-                    "name": "entry_id",
-                    "type": "integer",
-                    "required": true,
-                    "desc": "ID of the entry cell to update"
-                }
-            ],
+            "path": "/entries",
+            "summary": "Update entries",
+            "params": [],
             "body": [
                 {
-                    "name": "value",
-                    "type": "string",
-                    "required": false,
-                    "desc": "New cell value"
-                },
-                {
-                    "name": "index",
-                    "type": "integer",
-                    "required": false,
-                    "desc": "New row index"
+                    "name": "entries",
+                    "type": "array",
+                    "required": true,
+                    "desc": "Array of entry items containing id and value updates"
                 }
             ],
-            "response": "{ \"id\": 100, \"value\": \"Done\" }"
+            "response": "{ \"success\": true }"
         },
         {
             "method": "DELETE",
-            "path": "/entries?entry_id=",
-            "summary": "Delete an entry",
+            "path": "/entries",
+            "summary": "Delete entries",
             "params": [
                 {
-                    "name": "entry_id",
-                    "type": "integer",
+                    "name": "board_id",
+                    "type": "string",
                     "required": true,
-                    "desc": "ID of the entry to delete"
+                    "desc": "Target board UUID"
+                },
+                {
+                    "name": "entry_ids",
+                    "type": "array",
+                    "required": false,
+                    "desc": "Optional array of entry UUIDs to delete"
+                },
+                {
+                    "name": "field_ids",
+                    "type": "array",
+                    "required": false,
+                    "desc": "Optional array of field UUIDs to filter delete"
+                },
+                {
+                    "name": "indicies",
+                    "type": "array",
+                    "required": false,
+                    "desc": "Optional array of row indices to delete"
                 }
             ],
             "body": null,
@@ -290,102 +282,95 @@
     "field-options": [
         {
             "method": "GET",
-            "path": "/field-options?field_id=",
-            "summary": "Fetch options for a field",
+            "path": "/field-options",
+            "summary": "Fetch helper options for fields",
             "params": [
                 {
-                    "name": "field_id",
-                    "type": "integer",
+                    "name": "field_ids",
+                    "type": "array",
                     "required": true,
-                    "desc": "Parent field ID"
+                    "desc": "Array of field UUID strings"
                 }
             ],
             "body": null,
-            "response": "[  { \"id\": 5, \"value\": \"Todo\" },  { \"id\": 6, \"value\": \"Done\" }]"
+            "response": "[ { \"id\": \"fa741840-1889-4fbf-cc2c-7777af014208\", \"field_id\": \"b2d16395-c334-4e5f-a77d-2222bd561703\", \"value\": \"Todo\" } ]"
         },
         {
             "method": "POST",
             "path": "/field-options",
-            "summary": "Add an option",
-            "params": null,
+            "summary": "Add a field helper option",
+            "params": [],
             "body": [
                 {
                     "name": "field_id",
-                    "type": "integer",
+                    "type": "string",
                     "required": true,
-                    "desc": "Parent field ID"
+                    "desc": "Field UUID"
                 },
                 {
                     "name": "value",
                     "type": "string",
                     "required": true,
-                    "desc": "Option label"
+                    "desc": "Option label value"
                 }
             ],
-            "response": "{ \"id\": 7, \"value\": \"In Review\" }"
+            "response": "{ \"success\": true }"
         },
         {
             "method": "PATCH",
-            "path": "/field-options?option_id=",
-            "summary": "Update an option",
-            "params": [
-                {
-                    "name": "option_id",
-                    "type": "integer",
-                    "required": false,
-                    "desc": "ID of the option"
-                }
-            ],
+            "path": "/field-options",
+            "summary": "Update a field helper option",
+            "params": [],
             "body": [
                 {
-                    "name": "value",
+                    "name": "newValue",
                     "type": "string",
                     "required": true,
                     "desc": "Replacement value"
                 },
                 {
-                    "name": "option_id",
-                    "type": "integer",
-                    "required": false,
-                    "desc": "ID of the option"
-                },
-                {
-                    "name": "field_id",
-                    "type": "integer",
-                    "required": false,
-                    "desc": "Scope to field"
-                },
-                {
-                    "name": "old_value",
+                    "name": "id",
                     "type": "string",
                     "required": false,
-                    "desc": "Match by current value"
+                    "desc": "Optional field helper record UUID"
+                },
+                {
+                    "name": "fieldId",
+                    "type": "string",
+                    "required": false,
+                    "desc": "Optional field UUID scope"
+                },
+                {
+                    "name": "oldValue",
+                    "type": "string",
+                    "required": false,
+                    "desc": "Optional existing string value match pattern"
                 }
             ],
-            "response": "{ \"id\": 5, \"value\": \"Backlog\" }"
+            "response": "{ \"success\": true }"
         },
         {
             "method": "DELETE",
-            "path": "/field-options?option_id=",
-            "summary": "Delete an option",
+            "path": "/field-options",
+            "summary": "Delete field helper values",
             "params": [
                 {
-                    "name": "option_id",
-                    "type": "integer",
-                    "required": false,
-                    "desc": "Delete by ID"
-                },
-                {
-                    "name": "field_id",
-                    "type": "integer",
-                    "required": false,
-                    "desc": "Scope to field"
-                },
-                {
-                    "name": "value",
+                    "name": "id",
                     "type": "string",
                     "required": false,
-                    "desc": "Delete by value"
+                    "desc": "Delete specific record UUID"
+                },
+                {
+                    "name": "fieldIds",
+                    "type": "array",
+                    "required": false,
+                    "desc": "Delete matching array of field UUIDs"
+                },
+                {
+                    "name": "values",
+                    "type": "array",
+                    "required": false,
+                    "desc": "Delete matching explicit array of string labels"
                 }
             ],
             "body": null,
@@ -395,63 +380,68 @@
     "users": [
         {
             "method": "GET",
-            "path": "/users?board_id=",
-            "summary": "Fetch collaborators",
+            "path": "/users",
+            "summary": "Fetch board collaborators",
             "params": [
                 {
                     "name": "board_id",
-                    "type": "integer",
+                    "type": "string",
                     "required": true,
-                    "desc": "Board to list collaborators for"
+                    "desc": "Board UUID to list collaborators for"
                 }
             ],
             "body": null,
-            "response": "[{ \"id\": 1, \"email\": \"user@example.com\", \"role\": \"Editor\" },...]"
+            "response": "[{ \"id\": \"7b932151-2990-4fcf-dd3d-8888bf125309\", \"email\": \"user@example.com\", \"role\": \"Editor\" }]"
         },
         {
             "method": "POST",
-            "path": "/users?board_id=",
-            "summary": "Add a collaborator",
-            "params": [
-                {
-                    "name": "board_id",
-                    "type": "integer",
-                    "required": true,
-                    "desc": "Board to add to"
-                }
-            ],
+            "path": "/users",
+            "summary": "Invite or add a collaborator via Notification",
+            "params": [],
             "body": [
                 {
-                    "name": "to_email",
+                    "name": "id",
                     "type": "string",
                     "required": true,
-                    "desc": "Email of the user to invite"
+                    "desc": "Notification unique UUID"
                 },
                 {
-                    "name": "role",
+                    "name": "to_acc_email",
                     "type": "string",
                     "required": true,
-                    "desc": "Role: Member | Editor | Manager | Admin"
+                    "desc": "Email of the target account user to invite"
+                },
+                {
+                    "name": "board_id",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Target board UUID"
+                },
+                {
+                    "name": "permission_id",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Target role/permission configuration tier identifier"
                 }
             ],
             "response": "{ \"success\": true }"
         },
         {
             "method": "DELETE",
-            "path": "/users?board_id=&permission_id=",
-            "summary": "Remove a collaborator",
+            "path": "/users",
+            "summary": "Kick a collaborator",
             "params": [
                 {
                     "name": "board_id",
-                    "type": "integer",
+                    "type": "string",
                     "required": true,
-                    "desc": "Board ID"
+                    "desc": "Board UUID location context"
                 },
                 {
-                    "name": "permission_id",
-                    "type": "integer",
+                    "name": "account_id",
+                    "type": "string",
                     "required": true,
-                    "desc": "Permission record ID to remove"
+                    "desc": "Account UUID payload profile to eject"
                 }
             ],
             "body": null,
