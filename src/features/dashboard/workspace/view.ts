@@ -2,11 +2,10 @@ import { getAccount, sanitizeHTML } from "@/core/utils/utils";
 import type { BoardFetchObject, Board } from "./types";
 import { HTML } from "./html";
 import { getDominantColor } from "./view-utils";
-import { setStateClass } from "@/core/utils/dom";
 import { dashboardEvents } from "./custom-events";
 
 export function createBoard(board: Board): HTMLDivElement {
-        const div = Object.assign(document.createElement('div'), { className: "board-entry" });
+        const div = Object.assign(document.createElement('div'), { className: `board-entry ${board.deleted ? "deleted" : ""}` });
         Object.assign(div.dataset, { boardId: `${board.id}`, name: board.name });
 
         div.style.borderLeftColor = board.color!;
@@ -49,16 +48,17 @@ export async function setUserData() {
 
 export async function fillBoards(boardObject: BoardFetchObject) {
         const hasOwnBoards = boardObject.owned.length > 0;
-        setStateClass([hasOwnBoards ? HTML.boardList.owned.boardDiv : HTML.boardList.owned.noBoards], [], "shown")
-
         if (hasOwnBoards) {
                 window.dispatchEvent(dashboardEvents.addMultipleBoards({ boards: boardObject.owned, type: "owned" }));
         }
 
         const hasSharedBoards = boardObject.shared.length > 0;
-        setStateClass(hasSharedBoards ? [HTML.boardList.shared.boardDiv] : [HTML.boardList.shared.noBoards], [], "shown")
-
         if (hasSharedBoards) {
                 window.dispatchEvent(dashboardEvents.addMultipleBoards({ boards: boardObject.shared, type: "shared" }));
+        }
+
+        const hasDeletedBoards = boardObject.deleted.length > 0;
+        if (hasDeletedBoards) {
+                window.dispatchEvent(dashboardEvents.addMultipleBoards({ boards: boardObject.deleted, type: "deleted" }));
         }
 }

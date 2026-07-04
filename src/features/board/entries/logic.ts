@@ -62,7 +62,7 @@ export async function updateEntry(id: string, value: string) {
         const acc = await getAccount();
         if (!acc) throw new Error("Failed to get the account");
 
-        return await supabase.updateEntries({ value, id });
+        return await supabase.updateEntry({ value, id });
 }
 
 export async function deleteRows(indicies: number[]) {
@@ -72,7 +72,7 @@ export async function deleteRows(indicies: number[]) {
         const boardId = BoardStore.boardId;
         if (!boardId) throw new Error("Failed to get the boardId");
 
-        return supabase.deleteEntries(boardId, { indicies });
+        return supabase.deleteEntryRows(boardId, indicies);
 }
 
 export async function triggerAutomation(automationIds: AutomationId[], { entry, fieldId, entryId, rowIndex }: {

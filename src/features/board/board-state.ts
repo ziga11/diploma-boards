@@ -27,6 +27,12 @@ export const BoardStore = {
         get isInitialized() {
                 return state.isInitialized;
         },
+        get ownerAccId() {
+                return state.activeBoard?.account_id;
+        },
+        get isOwner() {
+                return state.activeBoard?.is_owner;
+        },
         get boardId() {
                 return state.activeBoard?.id ?? null;
         },
@@ -44,6 +50,9 @@ export const BoardStore = {
         },
         get automations() {
                 return state.fieldIdAutomationMap;
+        },
+        get isDeleted() {
+                return state.activeBoard?.deleted;
         },
         get selectedFieldId() {
                 return state.selectedFieldId;
@@ -71,6 +80,11 @@ export const BoardStore = {
 
         setBoard(board: Board) {
                 state.activeBoard = board;
+        },
+
+        recoverBoard() {
+                if (!state.activeBoard) return;
+                state.activeBoard.deleted = false;
         },
 
         setAutomations(automations: Array<Automation>) {

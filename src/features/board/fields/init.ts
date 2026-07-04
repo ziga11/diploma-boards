@@ -6,6 +6,7 @@ import { appendFieldDivs, applyPermissionRestrictions } from "./view";
 export async function initFields(): Promise<number> {
         try {
                 const fields = await fetchFields();
+
                 setFieldHelpers(fields);
                 appendFieldDivs(fields);
 

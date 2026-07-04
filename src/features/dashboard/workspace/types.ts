@@ -6,10 +6,12 @@ export interface Board {
         date_created?: Date;
         permission_id?: number;
         is_owner?: boolean;
+        deleted?: boolean;
 }
 
 export interface BoardFetchObject {
         owned: Array<Board>,
         shared: Array<Board>,
+        deleted: Array<Board>,
         all: Array<Board>
 }

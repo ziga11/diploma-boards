@@ -32,6 +32,15 @@ export async function deleteBoard() {
         const boardId = BoardStore.boardId;
         if (!boardId) throw new Error("Board ID not set");
 
+        const acc = await getAccount();
+        if (!acc) throw new Error("Not logged in");
+
+        const collaborators = BoardStore.collaborators.values();
+        for (const collaborator of collaborators) {
+                if (collaborator.account_id == acc.id) continue;
+                supabase.kickCollaborator(collaborator.account_id, boardId);
+        }
+
         return supabase.deleteBoard(boardId)
 }
 

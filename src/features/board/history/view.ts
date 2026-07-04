@@ -20,12 +20,13 @@ export function setHistoryLogs(logs: Array<HistoryLog>) {
                 return;
         }
 
-
         HTML.list.innerHTML = filtered.map(log => {
                 const fieldName = targetFieldName(log.target_column, log.target_id);
+
                 return `
             <div class="history-item history-item--${log.action.toLowerCase()}" data-column="${log.target_column}" data-action="${log.action}">
               <div class="history-item-meta">
+                <img class="history-avatar" src="${escapeHtml(log.account_avatar)}" alt="${escapeHtml(log.account_name)}" title="${escapeHtml(log.account_name)}" referrerPolicy="no-referrer" />
                 <span class="history-badge history-badge--${log.action.toLowerCase()}">${log.action}</span>
                 <span class="history-column">${capitalize(log.target_column)} ${fieldName != "" ? '(Field "' + fieldName + '")' : ""}</span>
                 <span class="history-date">${formatDate(log.created_at)}</span>
@@ -40,8 +41,8 @@ export function setHistoryFilter(action: string, column: string) {
         const removeHidden: Array<HTMLElement> = [];
 
         for (const child of HTML.list.children as HTMLCollectionOf<HTMLElement>) {
-                const actionMatch = action === "ALL" || child.dataset.action === action.toLowerCase();
-                const columnMatch = column === "ALL" || child.dataset.column === column.toLowerCase();
+                const actionMatch = action === "ALL" || child.dataset.action?.toLowerCase() === action.toLowerCase();
+                const columnMatch = column === "ALL" || child.dataset.column?.toLowerCase() === column.toLowerCase();
 
                 if (actionMatch && columnMatch) {
                         removeHidden.push(child);
@@ -94,7 +95,7 @@ function targetFieldName(column: string, id: string): string {
 const NOISE_KEYS = new Set(['id', 'account_id', 'board_id', 'date_modified']);
 
 function renderPayload(payload: Record<string, unknown>): string {
-        const entries = Object.keys(payload).filter((key) => {
+        const entries = Object.entries(payload).filter(([key]) => {
                 if (NOISE_KEYS.has(key)) return false;
                 if (key === 'index') return false;
                 return true;
@@ -102,12 +103,17 @@ function renderPayload(payload: Record<string, unknown>): string {
 
         if (!entries.length) return '<span class="history-payload-empty">No tracked changes</span>';
 
-        return entries.map(([key, value]) => `
+        return entries.map(([key, value]) => {
+                let field = undefined;
+                if (typeof value === 'string') {
+                        field = BoardStore.getField(value);
+                }
+                return `
                 <div class="history-payload-row">
                         <span class="history-payload-key">${capitalize(resolveKeyLabel(key))}</span>
-                        <span class="history-payload-value">${formatPayloadValue(key, value)}</span>
+                        <span class="history-payload-value" title=${field ? field.id : ""}>${formatPayloadValue(key, value)}</span>
                 </div>
-        `).join('');
+        `}).join('');
 }
 
 function resolveKeyLabel(key: string): string {
@@ -118,7 +124,7 @@ function resolveKeyLabel(key: string): string {
 function formatPayloadValue(key: string, value: unknown): string {
         if (key === 'field_id' && typeof value === 'string') {
                 const field = BoardStore.getField(value);
-                return field?.name ? escapeHtml(field.name) : '<span class="history-payload-empty">Unknown field</span>';
+                return field?.name ? escapeHtml(field.name) : `<span class="history-payload-empty">Empty</span>`;
         }
         if (value === null || value === undefined || value === '') {
                 return '<span class="history-payload-empty">Empty</span>';

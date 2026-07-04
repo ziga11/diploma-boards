@@ -107,8 +107,8 @@ export function initEntryEvents() {
                 changeDeepestValue(elem, object.value);
         });
 
-        window.addEventListener(entryEvents.entryChangeAll.type, (e: Event) => {
-                const object = (e as ReturnType<typeof entryEvents.entryChangeAll>).detail;
+        window.addEventListener(entryEvents.entryChangeFieldValues.type, (e: Event) => {
+                const object = (e as ReturnType<typeof entryEvents.entryChangeFieldValues>).detail;
 
                 changeFieldEntries(object);
         });
@@ -125,15 +125,15 @@ export function initEntryEvents() {
                 swapEntriesDOM(object);
         });
 
-        window.addEventListener(entryEvents.deleteSelected.type, _ => {
+        window.addEventListener(entryEvents.removeSelected.type, _ => {
                 const entryChecks = HTML.entryDiv.querySelectorAll(".entry-check:checked") as NodeListOf<HTMLInputElement>;
 
-                const indicies: Array<number> = [];
+                const indices: Array<number> = [];
 
                 for (const entryCheck of entryChecks)
-                        indicies.push(Number(entryCheck.dataset.index));
+                        indices.push(Number(entryCheck.dataset.index));
 
-                deleteRows(indicies)
+                deleteRows(indices)
                         .then(_ => {
                                 BoardStore.setRowCount(BoardStore.rowCount - entryChecks.length)
 
@@ -142,32 +142,20 @@ export function initEntryEvents() {
                         .catch(err => showToast(`Failed to delete rows: ${err}`, "error"));
         });
 
-        window.addEventListener(entryEvents.realtimeDeleteSelected.type, (e: Event) => {
-                const indices = (e as ReturnType<typeof entryEvents.realtimeDeleteSelected>).detail;
-
-                for (let i = 0; i < indices.length; i++) {
-                        const index = indices[i];
-                        const entrySet = HTML.entryDiv.querySelector(`.entry-set[data-index="${index}"]`);
-
-                        entrySet?.remove();
-                }
-        });
-
-        window.addEventListener(entryEvents.deleteFieldEntries.type, (e: Event) => {
-                const obj = (e as ReturnType<typeof entryEvents.deleteFieldEntries>).detail;
-                const fieldId = obj.fieldId;
-                const index = obj.index;
+        window.addEventListener(entryEvents.realtimeRemoveEntries.type, (e: Event) => {
+                const { fieldId, indices } = (e as ReturnType<typeof entryEvents.realtimeRemoveEntries>).detail;
 
                 if (fieldId != undefined) {
                         const entries = HTML.entryDiv.querySelectorAll(`[data-field-id="${fieldId}"]`)
                         for (const entry of entries) entry.remove();
                 }
-                else if (index != undefined) {
+                else if (indices != undefined) {
                         const entrySets = HTML.entryDiv.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
-                        for (const entrySet of entrySets) {
-                                const elemAtInd = entrySet.children.item(index);
-                                elemAtInd?.remove();
+                        for (const index of indices) {
+                                entrySets[index].remove();
                         }
+
+                        BoardStore.setRowCount(BoardStore.rowCount - indices.length)
                 }
         });
 

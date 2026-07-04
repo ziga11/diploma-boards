@@ -81,6 +81,7 @@ export const pageContent: Record<string, HTMLDivElement> = {
                             Create Your First Board</button>
                     </div>
                 </div>
+
                 <div class="other-boards">
                     <h4><b>Shared with Me</b></h4>
                     <div class="board-div"></div>
@@ -95,7 +96,13 @@ export const pageContent: Record<string, HTMLDivElement> = {
                         <p>Boards others share with you will appear here</p>
                     </div>
                 </div>
+
+                <div class="deleted-boards">
+                    <h4><b>Deleted Boards</b></h4>
+                    <div class="board-div"></div>
+                </div>
             </div>
+
             <dialog id="add-board-modal" class="modal modal-sm">
                 <div class="modal-header">
                 <h5 class="modal-title">Add new board</h5>
@@ -244,7 +251,16 @@ export const pageContent: Record<string, HTMLDivElement> = {
                     </div>
                     <div class="top-toolbar-btns">
                         <div class="btns-container">
-                            <button type="button" id="new-entry-btn" class="btn-default shown">
+                            <button type="button" id="recover-btn" class="btn-default">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-restore">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M3.06 13a9 9 0 1 0 .49 -4.087" />
+                                        <path d="M3 4.001v5h5" />
+                                        <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                                </svg>
+                                Recover
+                            </button>
+                            <button type="button" id="new-entry-btn" class="btn-default">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cube-plus">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                     <path d="M21 12.5v-4.509a1.98 1.98 0 0 0 -1 -1.717l-7 -4.008a2.016 2.016 0 0 0 -2 0l-7 4.007c-.619 .355 -1 1.01 -1 1.718v8.018c0 .709 .381 1.363 1 1.717l7 4.008a2.016 2.016 0 0 0 2 0"></path>
@@ -258,7 +274,7 @@ export const pageContent: Record<string, HTMLDivElement> = {
                             </button>
                         </div>
                         <div class="btns-container">
-                            <button type="button" id="add-user-btn" class="btn-default shown" data-bs-toggle="modal" data-bs-target="#add-user-modal">
+                            <button type="button" id="add-user-btn" class="btn-default" data-bs-toggle="modal" data-bs-target="#add-user-modal">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-user-plus">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                     <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"></path>
@@ -268,7 +284,7 @@ export const pageContent: Record<string, HTMLDivElement> = {
                                 </svg>
                                 Manage Users
                             </button>
-                                <button type="button" class="btn btn-default shown" id="automate-btn" data-bs-toggle="modal" data-bs-target="#automate">
+                                <button type="button" class="btn btn-default" id="automate-btn" data-bs-toggle="modal" data-bs-target="#automate">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-settings-automation">
                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                         <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065"></path>
@@ -286,7 +302,7 @@ export const pageContent: Record<string, HTMLDivElement> = {
                             </button>
                         </div>
                         <div class="btns-container">
-                            <button type="button" class="btn-default shown" id="delete-btn">
+                            <button type="button" class="btn-default" id="delete-btn">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                     <path d="M4 7l16 0"></path>
@@ -358,6 +374,9 @@ export const pageContent: Record<string, HTMLDivElement> = {
 
                 <div class="board-wrapper container my-5">
                     <div class="board-container">
+                        <div class="disabled-pop-up">
+                            <span><b>This board is disabled</b></span>
+                        </div>
                         <div class="entries"></div>
                         <div class="fields">
                             <div class="field-check-div">

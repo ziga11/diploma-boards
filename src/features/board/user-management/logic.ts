@@ -35,11 +35,3 @@ export async function removeCollaborator(collaboratorAccId: string) {
         supabase.kickCollaborator(collaboratorAccId, boardId);
 }
 
-
-export async function fetchCollaborators() {
-        const boardId = BoardStore.boardId;
-
-        if (!boardId) throw new Error(`Board ID not set`);
-
-        return supabase.boardCollaborators(boardId);
-}

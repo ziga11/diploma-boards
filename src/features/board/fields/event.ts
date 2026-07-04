@@ -33,7 +33,7 @@ export function initFieldEvents() {
 
                 window.dispatchEvent(entryEvents.newFieldEntries({ field, entryIds }));
 
-                const fieldDiv = addHTMLField(field);
+                addHTMLField(field);
 
                 closeDialog(HTML.newFieldMenu);
 
@@ -45,8 +45,7 @@ export function initFieldEvents() {
                                 BoardStore.fields.set(newField.id!, newField);
                         })
                         .catch(err => {
-                                const index = Array.from(HTML.fieldsDiv.children).indexOf(fieldDiv);
-                                window.dispatchEvent(entryEvents.deleteFieldEntries({ index: index }));
+                                window.dispatchEvent(entryEvents.realtimeRemoveEntries({ fieldId: field.id }));
 
                                 showToast(`Failed to add new field: ${err.message}`, "error");
                         });
@@ -65,7 +64,7 @@ export function initFieldEvents() {
 
                         deleteField(fieldId)
                                 .then(_ => {
-                                        window.dispatchEvent(entryEvents.deleteFieldEntries({ fieldId: fieldId }));
+                                        window.dispatchEvent(entryEvents.realtimeRemoveEntries({ fieldId: fieldId }));
                                 })
                                 .catch(err => {
                                         HTML.fieldsDiv.insertBefore(field, nextSibling);
@@ -142,7 +141,7 @@ export function initFieldEvents() {
                 const id = crypto.randomUUID();
                 const fieldHelperId = input.dataset.helperId;
 
-                window.dispatchEvent(entryEvents.entryChangeAll({ fieldId, value }));
+                window.dispatchEvent(entryEvents.entryChangeFieldValues({ fieldId, value }));
 
                 const field = HTML.fieldsDiv.querySelector(`.field-div[data-field-id="${fieldId}"]`) as HTMLDivElement;
                 field.dataset.entryValue = value;
@@ -159,7 +158,7 @@ export function initFieldEvents() {
                 }
                 catch (err) {
                         const dbValue = input.dataset.dbValue!;
-                        window.dispatchEvent(entryEvents.entryChangeAll({ fieldId, value: dbValue }));
+                        window.dispatchEvent(entryEvents.entryChangeFieldValues({ fieldId, value: dbValue }));
 
                         showToast(`Failed to update the button text`, "error");
                 }
@@ -256,9 +255,17 @@ export function initFieldEvents() {
 
                 const increase = finalIndex > startIndex;
 
-                window.dispatchEvent(entryEvents.swapDOM({ finalIndex, increase }));
+                window.dispatchEvent(fieldEvents.swapField({ fieldId, startIndex, finalIndex }));
 
-                switchIndex(fieldId, startIndex, finalIndex).catch(err => showToast(`Error switching indecies ${err}`, "error"));
+                window.dispatchEvent(entryEvents.swapDOM({ finalIndex, increase }));
+        });
+
+        window.addEventListener(fieldEvents.swapField.type, (e: Event) => {
+                const { fieldId, startIndex, finalIndex } = (e as ReturnType<typeof fieldEvents.swapField>).detail;
+
+                switchIndex(fieldId, startIndex, finalIndex)
+                        .catch(err => showToast(`Error switching indecies ${err}`, "error"));
+
                 dragProps = {};
         });
 
@@ -293,6 +300,37 @@ export function initFieldEvents() {
                 BoardStore.fields.set(field.id!, field);
 
                 addHTMLField(field);
+        });
+
+        window.addEventListener(fieldEvents.realtimeAddFieldHelper.type, (e: Event) => {
+                const fieldHelper = (e as ReturnType<typeof fieldEvents.realtimeAddFieldHelper>).detail;
+
+                const field = BoardStore.getField(fieldHelper.field_id!);
+                if (!field) return;
+
+                if (!field.fieldHelpers) {
+                        field.fieldHelpers = [];
+                }
+
+                field.fieldHelpers!.push(fieldHelper);
+        });
+
+        window.addEventListener(fieldEvents.realtimeUpdateFieldHelper.type, (e: Event) => {
+                const fieldHelper = (e as ReturnType<typeof fieldEvents.realtimeUpdateFieldHelper>).detail;
+
+                const field = BoardStore.getField(fieldHelper.field_id!);
+                if (!field) return;
+
+                field.fieldHelpers = field.fieldHelpers!.map(fh => fh.id == fieldHelper.id ? fieldHelper : fh);
+        });
+
+        window.addEventListener(fieldEvents.realtimeRemoveFieldHelper.type, (e: Event) => {
+                const { fieldId, helperId } = (e as ReturnType<typeof fieldEvents.realtimeRemoveFieldHelper>).detail;
+
+                const field = BoardStore.getField(fieldId);
+                if (!field) return;
+
+                field.fieldHelpers = field.fieldHelpers?.filter(fh => fh.id != helperId);
         });
 
         window.addEventListener(fieldEvents.disposeAll.type, () => {

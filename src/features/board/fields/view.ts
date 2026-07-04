@@ -161,6 +161,15 @@ export function applyPermissionRestrictions() {
 
         HTML.fieldCheck.disabled = permission == PermissionId.Member;
 
-        if (permission >= PermissionId.Editor)
+        if (permission == PermissionId.Member) {
+                HTML.editModal.input.disabled = true;
+                HTML.editModal.deleteBtn.disabled = true;
+                HTML.editModal.button.input.disabled = true;
+                HTML.editModal.status.addBtn.disabled = true;
+                HTML.editModal.status.addInput.disabled = true;
+        }
+
+        if (permission >= PermissionId.Editor) {
                 setStateClass([HTML.newFieldBtn], [], "shown")
+        }
 }

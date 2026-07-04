@@ -37,8 +37,8 @@ export const entryEvents = {
                 { type: "entry:update-field-entries" as const }
         ),
 
-        deleteFieldEntries: Object.assign(
-                (detail: { fieldId?: string, index?: number }) => new CustomEvent("entry:delete-field", { detail }),
+        realtimeRemoveEntries: Object.assign(
+                (detail: { fieldId?: string, indices?: Array<number> }) => new CustomEvent("entry:delete-field", { detail }),
                 { type: "entry:delete-field" as const }
         ),
 
@@ -52,14 +52,9 @@ export const entryEvents = {
                 { type: "entry:show-field" as const }
         ),
 
-        deleteSelected: Object.assign(
+        removeSelected: Object.assign(
                 () => new CustomEvent("entry:delete-selected"),
                 { type: "entry:delete-selected" as const }
-        ),
-
-        realtimeDeleteSelected: Object.assign(
-                (detail: Array<number>) => new CustomEvent("entry:realtime-delete-selected", { detail }),
-                { type: "entry:realtime-delete-selected" as const }
         ),
 
         swapDOM: Object.assign(
@@ -82,8 +77,8 @@ export const entryEvents = {
                 { type: "entry:change" as const }
         ),
 
-        entryChangeAll: Object.assign(
-                (detail: { fieldId: string, value: string }) => new CustomEvent("entry:change-all", { detail }),
+        entryChangeFieldValues: Object.assign(
+                (detail: { fieldId: string, value: string, oldValue?: string }) => new CustomEvent("entry:change-all", { detail }),
                 { type: "entry:change-all" as const }
         ),
 

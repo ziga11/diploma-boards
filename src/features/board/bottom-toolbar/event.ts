@@ -37,7 +37,7 @@ export function initBottomToolbarEvents() {
                 setToolbarVisibility(false);
 
                 window.dispatchEvent(fieldEvents.checkChange(false));
-                window.dispatchEvent(entryEvents.deleteSelected());
+                window.dispatchEvent(entryEvents.removeSelected());
         });
 
         HTML.duplicateSelected.addEventListener("mouseover", () => {

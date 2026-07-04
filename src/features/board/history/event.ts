@@ -5,10 +5,10 @@ import { fetchHistory } from "./logic";
 import { setHistoryFilter, setHistoryLogs } from "./view";
 
 export function initHistoryEvents() {
-        /*         HTML.filters.addEventListener("click", () => { }); */
-
         HTML.filterAction.addEventListener("click", (e: MouseEvent) => {
                 const elem = e.target as HTMLElement;
+
+                if (elem.classList[0] != "filter-btn") return;
 
                 const activeAction = HTML.filterAction.querySelector(".active") as HTMLButtonElement;
                 if (activeAction == elem) return;
@@ -24,6 +24,7 @@ export function initHistoryEvents() {
 
         HTML.filterColumn.addEventListener("click", (e: MouseEvent) => {
                 const elem = e.target as HTMLElement;
+                if (elem.classList[0] != "filter-btn") return;
 
                 const activeColumn = HTML.filterColumn.querySelector(".active") as HTMLButtonElement;
                 if (activeColumn == elem) return;
@@ -48,6 +49,7 @@ export function initHistoryEvents() {
 
         window.addEventListener(historyEvents.showModal.type, async () => {
                 const logs = await fetchHistory();
+
                 setHistoryLogs(logs);
 
                 HTML.modal.showModal();

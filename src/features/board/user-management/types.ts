@@ -31,6 +31,7 @@ export interface NotificationFetchObject {
 }
 
 export interface BoardCollaborator {
+        id: string;
         account_id: string;
         name: string,
         avatar_url: string,

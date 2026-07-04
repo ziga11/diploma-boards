@@ -1,22 +1,13 @@
 import { supabase } from "@/core/api/supabase";
 import { BoardStore } from "../board-state";
-import { getAccount } from "@/core/utils/utils";
 
-export async function deleteBoard() {
+export async function recoverBoard() {
         const boardId = BoardStore.boardId;
         if (!boardId) throw new Error("Board ID not set");
 
-        return supabase.deleteBoard(boardId)
-}
+        BoardStore.recoverBoard();
 
-export async function leaveBoard() {
-        const boardId = BoardStore.boardId;
-        if (!boardId) throw new Error("Board ID not set");
-
-        const acc = await getAccount();
-        if (!acc) throw new Error("Account was not set");
-
-        return supabase.kickCollaborator(acc.id!, boardId);
+        return supabase.recoverBoard(boardId)
 }
 
 export async function updateBoard(newName: string) {

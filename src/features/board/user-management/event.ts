@@ -1,6 +1,6 @@
 import { showToast } from "@/core/utils/dom";
 import { HTML } from "./html";
-import { sendCollabInvitation, isValidEmail, removeCollaborator, fetchCollaborators } from "./logic";
+import { sendCollabInvitation, isValidEmail, removeCollaborator } from "./logic";
 import { createCollaboratorDiv, setDiv } from "./view";
 import { BoardStore } from "../board-state";
 import { PermissionId } from "@/core/types/auth";
@@ -65,5 +65,21 @@ export function initUserManagementEvents() {
                 const collaborators = await Promise.all(Array.from(BoardStore.collaborators.values()).map(async c => (await createCollaboratorDiv(c))));
 
                 HTML.manageUsers.userContainer.replaceChildren(...collaborators)
+        });
+
+        window.addEventListener(userManagementEvents.addCollaborator.type, async (e: Event) => {
+                const collaborator = (e as ReturnType<typeof userManagementEvents.addCollaborator>).detail;
+
+                const collaboratorElem = await createCollaboratorDiv(collaborator);
+
+                HTML.manageUsers.userContainer.appendChild(collaboratorElem);
+        });
+
+        window.addEventListener(userManagementEvents.removeCollaborator.type, async (e: Event) => {
+                const id = (e as ReturnType<typeof userManagementEvents.removeCollaborator>).detail;
+
+                const collaboratorElem = HTML.manageUsers.userContainer.querySelector(`.collaborator-div[data-id="${id}"]`);
+
+                collaboratorElem?.remove();
         });
 }

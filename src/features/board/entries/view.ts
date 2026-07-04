@@ -9,11 +9,11 @@ import { fieldEvents } from "../fields/custom-events";
 import { extractEntryValue, firstDeepestNode } from "./logic";
 import { getAccount } from "@/core/utils/utils";
 
-export async function changeFieldEntries({ fieldId, value }: { fieldId: string, value: string }) {
+export async function changeFieldEntries({ fieldId, value, oldValue }: { fieldId: string, value: string, oldValue?: string }) {
         const elems = HTML.entryDiv.querySelectorAll(`[data-field-id="${fieldId}"]`) as NodeListOf<HTMLSpanElement>;
 
         for (const elem of elems) {
-                changeDeepestValue(elem, value);
+                changeDeepestValue(elem, value, oldValue);
         }
 }
 

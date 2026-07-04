@@ -20,6 +20,8 @@ export function disableInputs() {
 
 export async function createCollaboratorDiv(c: BoardCollaborator): Promise<HTMLDivElement> {
         const div = Object.assign(document.createElement("div"), { className: "collaborator-div" });
+        div.dataset.id = c.id
+
         const role = PermissionId[c.permission_id];
 
         const acc = await getAccount();

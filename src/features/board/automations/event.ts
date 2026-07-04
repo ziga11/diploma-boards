@@ -122,4 +122,17 @@ export function initAutomationEvents() {
                 setDiv(HTML.create.type.div);
                 HTML.modal.showModal();
         });
+
+        window.addEventListener(automationEvents.addAutomation.type, (e: Event) => {
+                const automation = (e as ReturnType<typeof automationEvents.addAutomation>).detail;
+
+                addAutomations(automation);
+        });
+
+        window.addEventListener(automationEvents.removeAutomation.type, (e: Event) => {
+                const id = (e as ReturnType<typeof automationEvents.removeAutomation>).detail;
+
+                const elem = HTML.modify.existingAutomations.querySelector(`.created-board-automation[data-id="${id}"]`) as HTMLDivElement;
+                elem.remove();
+        });
 }

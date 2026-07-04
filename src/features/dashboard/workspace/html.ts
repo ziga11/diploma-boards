@@ -23,13 +23,17 @@ export const HTML = {
                 get div() { return activePage().querySelector(".board-list") as HTMLDivElement },
                 owned: {
                         get div() { return activePage().querySelector(".board-list .owned-boards") as HTMLDivElement },
-                        get noBoards() { return activePage().querySelector(".board-list .owned-boards .no-boards") as HTMLDivElement },
                         get boardDiv() { return activePage().querySelector(".board-list .owned-boards .board-div") as HTMLDivElement }
                 },
+
                 shared: {
                         get div() { return activePage().querySelector(".board-list .other-boards") as HTMLDivElement },
-                        get noBoards() { return activePage().querySelector(".board-list .other-boards .no-boards") as HTMLDivElement },
                         get boardDiv() { return activePage().querySelector(".board-list .other-boards .board-div") as HTMLDivElement },
+                },
+
+                deleted: {
+                        get div() { return activePage().querySelector(".board-list .deleted-boards") as HTMLDivElement },
+                        get boardDiv() { return activePage().querySelector(".board-list .deleted-boards .board-div") as HTMLDivElement },
                 }
         },
 }

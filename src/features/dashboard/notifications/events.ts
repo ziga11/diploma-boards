@@ -13,18 +13,14 @@ export function initNotificationEvents() {
 
                 const notificationDiv = elem.closest(".notification-div") as HTMLDivElement;
 
-                console.log(notificationDiv);
-
                 const nId = notificationDiv.dataset.id;
                 if (!nId) return;
 
                 const state = elem.dataset.state;
                 try {
                         const id = crypto.randomUUID();
-                        console.log(id, nId, state!);
 
                         const boardId = await setNotificationState(id, nId, state!);
-                        console.log(boardId);
 
                         if (elem.classList[1] != "notification-accept-btn") return;
                         const board = await fetchBoard(boardId);
@@ -50,5 +46,12 @@ export function initNotificationEvents() {
 
                 const notificationHTML = notificationElem(notification);
                 HTML.body.container.appendChild(notificationHTML);
+        });
+
+        window.addEventListener(notificationEvents.removeNotification.type, (e: Event) => {
+                const id = (e as ReturnType<typeof notificationEvents.removeNotification>).detail;
+
+                const elem = HTML.body.container.querySelector(`.notification-div[data-id="${id}"]`) as HTMLElement;
+                elem?.remove();
         })
 }

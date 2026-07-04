@@ -44,7 +44,7 @@ export function initAddBoardEvents() {
                 insertBoard(board)
                         .catch(err => {
                                 showToast(`Failed to insert new board ${err}`, "error");
-                                window.dispatchEvent(dashboardEvents.deleteBoard(board.id!))
+                                window.dispatchEvent(dashboardEvents.removeBoard(board.id!))
                         });
         });
 

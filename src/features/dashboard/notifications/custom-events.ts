@@ -6,6 +6,11 @@ export const notificationEvents = {
                 { type: "notification:add" }
         ),
 
+        removeNotification: Object.assign(
+                (detail: string) => new CustomEvent("notification:remove", { detail }),
+                { type: "notification:remove" }
+        ),
+
         showModal: Object.assign(() => new CustomEvent("notifications:show-modal"),
                 { type: "notifications:show-modal" })
 }

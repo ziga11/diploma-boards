@@ -70,15 +70,14 @@ export function setDropdownOptions(fieldId: string) {
         HTML.dropdown.optionsContainer.replaceChildren(...options);
 }
 
-export function changeDeepestValue(elem: HTMLElement, value: string) {
+export function changeDeepestValue(elem: HTMLElement, value: string, oldValue?: string) {
         const e = firstDeepestNode(elem) as HTMLElement;
 
-        if (e instanceof HTMLInputElement) {
+        if ((e instanceof HTMLInputElement) && (!oldValue || e.value == oldValue)) {
                 e.value = value;
                 elem.title = value;
-        } else {
+        } else if (!oldValue || e.innerText == oldValue) {
                 e.innerText = value;
-
                 if (e instanceof HTMLSpanElement) {
                         elem.parentElement!.title = value;
                 } else {

@@ -4,7 +4,7 @@ import { HTML } from "./html";
 import { deleteBoard, leaveBoard } from "./logic";
 import { dashboardEvents } from "@/features/dashboard/workspace/custom-events";
 import { BoardStore } from "../board-state";
-import { showToast } from "@/core/utils/dom";
+import { setStateClass, showToast } from "@/core/utils/dom";
 
 export function initWorkspaceEvents() {
         if (BoardStore.isInitialized) return;
@@ -16,13 +16,10 @@ export function initWorkspaceEvents() {
 
                 HTML.delete.modal.close();
                 navigate("/dashboard");
-                window.dispatchEvent(dashboardEvents.hideBoard(id))
+                window.dispatchEvent(dashboardEvents.moveBoard({ id, group: "deleted" }))
                 deleteBoard()
-                        .then(_ => {
-                                window.dispatchEvent(dashboardEvents.deleteBoard(id))
-                        })
                         .catch(err => {
-                                window.dispatchEvent(dashboardEvents.showBoard(id))
+                                window.dispatchEvent(dashboardEvents.moveBoard({ id, group: "owned" }))
                                 showToast(`Failed to delete board: ${err}`, "error")
                         });
         });
@@ -35,7 +32,7 @@ export function initWorkspaceEvents() {
                 navigate("/dashboard");
                 window.dispatchEvent(dashboardEvents.hideBoard(id))
                 leaveBoard()
-                        .then(_ => window.dispatchEvent(dashboardEvents.deleteBoard(id)))
+                        .then(_ => window.dispatchEvent(dashboardEvents.removeBoard(id)))
                         .catch(err => {
                                 window.dispatchEvent(dashboardEvents.showBoard(id))
                                 showToast(`Failed to delete board: ${err}`, "error")
@@ -45,4 +42,25 @@ export function initWorkspaceEvents() {
         window.addEventListener(workspaceEvents.showLeaveModal.type, () => HTML.leave.modal.showModal());
 
         window.addEventListener(workspaceEvents.showDeleteModal.type, () => HTML.delete.modal.showModal());
+
+        window.addEventListener(workspaceEvents.boardDeleted.type, () => {
+                showToast("The board was deleted");
+                navigate("/dashboard");
+        });
+
+        window.addEventListener(workspaceEvents.kickedFromBoard.type, () => {
+                showToast("You've been kicked from the board");
+                navigate("/dashboard");
+        });
+
+        window.addEventListener(workspaceEvents.boardTitleUpdate.type, (e: Event) => {
+                const newTitle = (e as ReturnType<typeof workspaceEvents.boardTitleUpdate>).detail;
+
+                HTML.tabTitleTag.innerText = `diploma boards - ${newTitle}`;
+                HTML.titleSpan.innerText = newTitle;
+        });
+
+        window.addEventListener(workspaceEvents.recoverBoard.type, () => {
+                setStateClass([], [HTML.container], "disabled");
+        });
 }

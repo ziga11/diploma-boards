@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient, type User } from '@supabase/supabase-js'
+import { createClient, SupabaseClient, type PostgrestResponse, type User } from '@supabase/supabase-js'
 import { BoardStore } from '@/features/board/board-state';
 import type { Automation, AutomationId } from '@/features/board/automations/types';
 import type { BoardCollaborator, InsertNotification, NotificationFetchObject, ViewNotification } from '@/features/board/user-management/types';
@@ -8,7 +8,7 @@ import type { Board } from '@/features/board/workspace/types';
 import type { BoardFetchObject } from '@/features/dashboard/workspace/types';
 import { getAccount } from '../utils/utils';
 import { cache } from './cache';
-import { broadcastMutation, initGlobalRealtime } from './realtime';
+import { broadcastMutation, initGlobalRealtime, switchActiveBoardRealtime } from './realtime';
 import type { HistoryLog } from '@/features/board/history/types';
 
 export const CLIENT_ID = crypto.randomUUID();
@@ -136,25 +136,25 @@ export class Supabase {
         }
 
         async fetchBoards(): Promise<BoardFetchObject> {
-                const cached = await cache.get<BoardFetchObject>("boards");
-                if (cached) return cached;
+                /*TODO: ... clear the cache or add the new board to the cache, for some reason it wasnt when accepting the notification*/
 
-                const { data, error } = await this.client
-                        .from('user_boards')
-                        .select("*");
+                /* const cached = await cache.get<BoardFetchObject>("boards");
+                if (cached) return cached; */
 
+                const { data, error } = await this.client.rpc('get_user_boards') as PostgrestResponse<Board>;
 
                 if (error) {
                         console.warn(error)
-                        return { shared: [], owned: [], all: [] } as BoardFetchObject;
+                        return { shared: [], deleted: [], owned: [], all: [] } as BoardFetchObject;
                 }
 
-
-                const owned = data.filter(b => b.is_owner);
+                const owned = data.filter(b => (b.is_owner && !b.deleted));
                 const shared = data.filter(b => !b.is_owner);
-                const result = { owned, shared, all: data } as BoardFetchObject;
+                const deleted = data.filter(b => b.deleted);
+                const result = { owned, shared, deleted, all: data } as BoardFetchObject;
 
                 cache.set("boards", result);
+                data.forEach(b => cache.set(`board_${b.id}`, b));
                 return result;
         }
 
@@ -166,19 +166,31 @@ export class Supabase {
                 const cached = await cache.get<Board>(cacheKey);
                 if (cached) return cached;
 
-                const { data, error } = await this.client
-                        .from('user_boards')
-                        .select('id, name, date_created, color, permission_id, is_owner, account_id')
-                        .eq("id", boardId)
-                        .single();
+                const { data, error } = await this.client.rpc('get_board_by_id', {
+                        p_board_id: boardId
+                });
 
                 if (error) {
                         console.warn(error)
                         throw error;
                 }
 
+
                 const result = data as Board;
-                cache.set(cacheKey, result);
+                await cache.set(cacheKey, result);
+
+                const boardObj = await cache.get("boards") as BoardFetchObject;
+                boardObj.all.push(result);
+                if (result.is_owner) {
+                        boardObj.owned.push(result);
+                }
+                else if (!result.deleted) {
+                        boardObj.shared.push(result);
+                }
+                else {
+                        boardObj.deleted.push(result);
+                }
+
                 return result;
         }
 
@@ -187,7 +199,9 @@ export class Supabase {
                         p_board_id: boardId,
                 });
 
-                if (error) console.warn("Error fetching board collaborators:", error);
+                if (error) {
+                        throw new Error(error.message);
+                }
 
                 return data as Array<BoardCollaborator>;
         }
@@ -195,7 +209,7 @@ export class Supabase {
         async deleteBoard(boardId: string): Promise<void> {
                 const { error } = await this.client
                         .from('board')
-                        .delete()
+                        .update({ deleted: true })
                         .eq('id', boardId);
 
                 if (error) {
@@ -203,8 +217,55 @@ export class Supabase {
                         return;
                 }
 
-                cache.clear("boards");
-                cache.clear(`board_${boardId}`);
+                const boardObj = await cache.get("boards") as BoardFetchObject;
+                if (!boardObj) return;
+
+                const delBoard = boardObj.all.find(b => b.id === boardId);
+
+                await cache.clear(`board_${boardId}`);
+                if (!delBoard) return;
+
+                delBoard.deleted = true;
+
+                const ownedIndex = boardObj.owned.findIndex(b => b.id === boardId);
+                if (ownedIndex !== -1) {
+                        boardObj.owned.splice(ownedIndex, 1);
+                } else {
+                        const sharedIndex = boardObj.shared.findIndex(b => b.id === boardId);
+                        if (sharedIndex !== -1) boardObj.shared.splice(sharedIndex, 1);
+                }
+
+                boardObj.deleted.push(delBoard);
+
+                await cache.set("boards", boardObj);
+        }
+
+        async recoverBoard(boardId: string): Promise<void> {
+                const { error } = await this.client
+                        .from('board')
+                        .update({ deleted: false })
+                        .eq('id', boardId);
+
+                if (error) {
+                        console.warn("Error deleting board:", error);
+                        return;
+                }
+
+                const boardObj = await cache.get("boards") as BoardFetchObject;
+                if (!boardObj) return;
+
+                const delBoard = boardObj.all.find(b => b.id === boardId);
+                if (!delBoard) return;
+
+                delBoard.deleted = false;
+
+                boardObj.owned.push(delBoard);
+
+                const delIndex = boardObj.deleted.findIndex(b => b.id === boardId);
+                boardObj.deleted.splice(delIndex, 1);
+
+                await cache.set(`board_${boardId}`, delBoard);
+                await cache.set("boards", boardObj);
         }
 
         async kickCollaborator(accountId: string, boardId: string) {
@@ -215,22 +276,6 @@ export class Supabase {
                         .eq('account_id', accountId);
 
                 if (error) console.warn("Error deleting board:", error);
-        }
-
-        async insertField(field: Field): Promise<Field> {
-                let { data, error } = await this.client
-                        .from("field")
-                        .insert(field)
-                        .select("id, board_id, account_id, name, type, date_modified")
-                        .single();
-
-                if (error) {
-                        console.warn(`Failed to insert field ${error.message}`);
-                        throw error;
-                }
-
-                cache.clear(`fields_${field.board_id}`);
-                return data as Field;
         }
 
         async insertFieldWithEntries(field: Field, entryIds: Array<string>): Promise<{ field: Field, entries: Entry[] }> {
@@ -245,8 +290,12 @@ export class Supabase {
 
                 if (error) throw error;
 
+                broadcastMutation("field", "INSERT", field);
+                broadcastMutation("entry", "INSERT-FIELD", { field, entryIds });
+
                 cache.clear(`fields_${field.board_id}`);
                 cache.clear(`entries_${field.board_id}`);
+
                 return data;
         }
 
@@ -265,6 +314,8 @@ export class Supabase {
                         console.error(error);
                         throw error;
                 }
+
+                broadcastMutation("field", "UPDATE", { id, name: newName } as Field);
 
                 if (data?.board_id) {
                         cache.clear(`fields_${data.board_id}`);
@@ -308,6 +359,8 @@ export class Supabase {
                 const { data, error } = await query
                         .order('index', { ascending: true })
                         .order('field_index', { ascending: true });
+
+                console.log("returned entries", data);
 
                 if (error) {
                         console.warn("Error fetching entries:", error);
@@ -361,6 +414,10 @@ export class Supabase {
                         console.warn(`Failed to delete entry ${fieldErr.message}`);
                         throw fieldErr;
                 }
+
+                broadcastMutation("field", "DELETE", fieldId);
+                broadcastMutation("entry", "DELETE-FIELD", fieldId);
+
                 cache.clearAll();
         }
 
@@ -419,6 +476,8 @@ export class Supabase {
                 const { error } = await query;
                 if (error) throw new Error(`Failed to update field helper ${error.message}`)
 
+                broadcastMutation("field_helper", "UPDATE", { id, value: newValue } as FieldHelper);
+
                 const boardId = BoardStore.boardId;
                 if (!boardId) throw new Error(`Board wasn't set`)
 
@@ -438,6 +497,7 @@ export class Supabase {
                 const boardId = BoardStore.boardId;
                 if (!boardId) throw new Error(`Board wasn't set`)
 
+                broadcastMutation("field_helper", "INSERT", fieldHelper);
                 cache.clear(`fields_${boardId}`);
         }
 
@@ -459,6 +519,8 @@ export class Supabase {
                 }
 
                 const { error } = await query;
+                broadcastMutation("field_helper", "DELETE", id);
+                broadcastMutation("entry", "DELETE-FIELD-HELPER", id);
 
                 if (error) {
                         console.warn(`Failed to delete field helper values: ${error.message}`);
@@ -498,7 +560,7 @@ export class Supabase {
                         throw error;
                 }
 
-                broadcastMutation("entry", "insert:row", entries)
+                broadcastMutation("entry", "INSERT-ROW", entries)
 
                 if (boardId) cache.clear(`entries_${boardId}`);
         }
@@ -522,31 +584,34 @@ export class Supabase {
                 cache.clear(`fields_${boardId}`);
                 cache.clear(`entries_${boardId}`);
 
-                broadcastMutation("field", "swap", { boardId, fieldId, oldIndex, newIndex });
+                broadcastMutation("field", "UPDATE-SWAP", { boardId, fieldId, startIndex: oldIndex, finalIndex: newIndex });
         }
 
-        async updateEntries(...entries: Entry[]): Promise<void> {
-                if (entries.length === 0) return;
+        async updateEntry(entry: Entry): Promise<void> {
                 const boardId = BoardStore.boardId;
                 if (!boardId) throw new Error("Failed to get the boardId");
 
-                for (const entry of entries) {
+                const { error } = await this.client
+                        .from('entry')
+                        .update({
+                                id: entry.id,
+                                value: entry.value,
+                        })
+                        .eq('id', entry.id);
+                /*updating id for the trigger to get it alongside the value */
 
-                        const { error } = await this.client
-                                .from('entry')
-                                .update({
-                                        id: entry.id,
-                                        value: entry.value,
-                                })
-                                .eq('id', entry.id);
-                        /*updating id for the trigger to get it alongside the value */
+                if (error) throw error;
 
-                        if (error) throw error;
-                }
+                const entries = await cache.get(`entries_${boardId}`) as Array<Entry>
+                broadcastMutation("entry", "UPDATE", entry)
 
-                cache.clear(`entries_${boardId}`);
+                if (!entries) return;
+                const newEntries = entries.map(e => {
+                        if (e.id == entry.id) { e.value = entry.value; }
+                        return e;
+                });
 
-                broadcastMutation("entry", "update:row", entries)
+                cache.set(`entries_${boardId}`, newEntries)
         }
 
         async triggerAutomation(automationIds: AutomationId[], { entry, boardId, fieldId, entryId, rowIndex }: {
@@ -593,29 +658,21 @@ export class Supabase {
                 return true;
         }
 
-        async deleteEntries(
-                boardId: string, { fieldIds, indicies, entryIds, }:
-                        { entryIds?: Array<string>; fieldIds?: Array<string>; indicies?: number[] } = {}): Promise<void> {
+        async deleteEntryRows(
+                boardId: string, indices: number[]): Promise<void> {
                 let query = this.client
                         .from('entry')
                         .delete()
-                        .eq('board_id', boardId);
-
-                if (entryIds) {
-                        query = query.in('id', entryIds);
-                }
-                if (fieldIds) {
-                        query = query.in('field_id', fieldIds);
-                }
-                if (indicies) {
-                        query = query.in('index', indicies);
-                }
+                        .eq('board_id', boardId)
+                        .in("index", indices);
 
                 const { error } = await query;
                 if (error) {
                         console.warn("Error deleting entries:", error);
                         throw error;
                 }
+
+                broadcastMutation("entry", "DELETE-ROWS", { indices })
 
                 cache.clear(`entries_${boardId}`);
         }
@@ -646,6 +703,8 @@ export class Supabase {
                         console.warn(`Failed to delete automation ${error.message}`);
                         throw error;
                 }
+
+                broadcastMutation("automation", "DELETE", { id })
 
                 return data as Automation;
         }
@@ -704,8 +763,8 @@ export class Supabase {
                 return data as Array<ApiKey>;
         }
 
-        async insertNotification(n: InsertNotification) {
-                let { error } = await this.client.rpc("insert_notification", {
+        async insertNotification(n: InsertNotification): Promise<ViewNotification> {
+                let { data, error } = await this.client.rpc("insert_notification", {
                         p_id: n.id,
                         p_from_acc_id: n.from_acc_id,
                         p_to_acc_id: n.to_acc_id,
@@ -719,6 +778,8 @@ export class Supabase {
 
                 if (error) console.error(error);
                 cache.clear("notifications");
+
+                return data;
         }
 
         async notificationResponse(id: string, notificationId: string, state: "accepted" | "declined" | "dismissed"): Promise<string> {
@@ -762,16 +823,21 @@ export class Supabase {
                 if (!boardId) throw new Error(`Board wasn't set`)
 
                 const { data, error } = await this.client
-                        .from('history_log')
+                        .from('board_history_logs')
                         .select('*')
                         .eq('board_id', boardId);
 
-                console.log(data);
-
-
                 if (error) throw error;
 
+
                 return data as Array<HistoryLog>
+        }
+
+        async initBoardRealtime() {
+                const boardId = BoardStore.boardId;
+                if (!boardId) return;
+
+                switchActiveBoardRealtime(this.client, boardId);
         }
 }
 

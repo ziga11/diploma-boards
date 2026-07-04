@@ -1,4 +1,4 @@
-import { setStateClass, showToast } from "@/core/utils/dom";
+import { showToast } from "@/core/utils/dom";
 import { HTML } from "./html";
 import { boardLink, logOut } from "./logic";
 import { createBoard } from "./view";
@@ -12,10 +12,14 @@ import { notificationEvents } from "../notifications/custom-events";
 export function initWorkspaceEvents() {
         HTML.boardList.div.addEventListener("click", (e: MouseEvent) => {
                 const elem = e.target as HTMLElement;
-                if (elem.className != "board-entry") return;
+
+                if (elem.classList[0] != "board-entry") return;
 
                 const id = elem.dataset.boardId;
                 if (!id) return;
+
+                console.log(elem);
+                console.log(elem.dataset);
 
                 navigate(boardLink(id));
         });
@@ -38,42 +42,63 @@ export function initWorkspaceEvents() {
                 const detail = (e as ReturnType<typeof dashboardEvents.addMultipleBoards>).detail;
 
                 const boards = detail.boards as Array<Board>;
-                const type = detail.type as "owned" | "shared";
+                const type = detail.type as "owned" | "shared" | "deleted";
 
-                const div = type == "owned" ? HTML.boardList.owned.boardDiv : HTML.boardList.shared.boardDiv;
-                const hiddenDiv = type == "owned" ? HTML.boardList.owned.noBoards : HTML.boardList.shared.noBoards;
+                const boardElems = boards.map(board => createBoard(board));
 
-                div.append(...boards.map(board => createBoard(board)));
-                setStateClass([div], [hiddenDiv], "shown");
+                switch (type) {
+                        case "owned":
+                                HTML.boardList.owned.boardDiv.append(...boardElems);
+                                break;
+                        case "shared":
+                                HTML.boardList.shared.boardDiv.append(...boardElems);
+                                break;
+
+                        case "deleted":
+                                HTML.boardList.deleted.boardDiv.append(...boardElems);
+                                break;
+                }
         });
 
-        window.addEventListener(dashboardEvents.deleteBoard.type, (e: Event) => {
-                const id = (e as ReturnType<typeof dashboardEvents.deleteBoard>).detail;
+        window.addEventListener(dashboardEvents.removeBoard.type, (e: Event) => {
+                const id = (e as ReturnType<typeof dashboardEvents.removeBoard>).detail;
 
                 const boardElem: HTMLDivElement | null = HTML.boardList.div.querySelector(`[data-board-id="${id}"]`);
-
-                const boardDiv = boardElem?.parentElement as HTMLDivElement;
                 boardElem?.remove();
-
-                if (boardDiv.children.length == 0) {
-                        const noBoardsDiv = boardDiv.nextElementSibling as HTMLDivElement;
-                        setStateClass([noBoardsDiv], [boardDiv], "shown")
-                }
         });
 
         window.addEventListener(dashboardEvents.hideBoard.type, (e: Event) => {
                 const boardId = (e as ReturnType<typeof dashboardEvents.hideBoard>).detail;
 
                 const boardElem = HTML.boardList.div.querySelector(`[data-board-id="${boardId}"]`);
-                const boardDiv = boardElem?.parentElement as HTMLDivElement;
-
                 boardElem?.classList.add("hidden");
+        });
 
-                if (boardDiv.children.length <= 1) {
-                        const noBoardsDiv = boardDiv.nextElementSibling as HTMLDivElement;
+        window.addEventListener(dashboardEvents.moveBoard.type, (e: Event) => {
+                const { id, group } = (e as ReturnType<typeof dashboardEvents.moveBoard>).detail;
 
-                        setStateClass([noBoardsDiv], [boardDiv], "shown")
+                const boardElem = HTML.boardList.div.querySelector(`[data-board-id="${id}"]`);
+                if (!boardElem) return;
+
+                boardElem.remove();
+
+                let div: HTMLDivElement;
+
+                switch (group) {
+                        case "owned":
+                                boardElem.classList.remove("deleted");
+                                div = HTML.boardList.owned.boardDiv;
+                                break;
+                        case "shared":
+                                boardElem.classList.remove("deleted");
+                                div = HTML.boardList.shared.boardDiv;
+                                break;
+                        case "deleted":
+                                boardElem.classList.add("deleted");
+                                div = HTML.boardList.deleted.boardDiv;
+                                break;
                 }
+                div!.appendChild(boardElem);
         });
 
         window.addEventListener(dashboardEvents.showBoard.type, (e: Event) => {
@@ -81,21 +106,22 @@ export function initWorkspaceEvents() {
 
                 const boardElem = HTML.boardList.div.querySelector(`[data-board-id="${boardId}"]`);
                 boardElem?.classList.remove("hidden");
-
-                const boardDiv = boardElem?.parentElement as HTMLDivElement;
-                if (boardDiv.children.length >= 1) {
-                        const noBoardsDiv = boardDiv.nextElementSibling as HTMLDivElement;
-                        setStateClass([boardDiv], [noBoardsDiv], "shown")
-                }
         });
-
 
         window.addEventListener(dashboardEvents.showNewNotifications.type, (e: Event) => {
                 const shown = (e as ReturnType<typeof dashboardEvents.showNewNotifications>).detail;
 
-                const showArr = shown ? [HTML.toolbar.notification.spanNewNotifications] : [];
-                const hideArr = shown ? [] : [HTML.toolbar.notification.spanNewNotifications];
+                HTML.toolbar.notification.spanNewNotifications.classList.toggle("shown", shown);
+        });
 
-                setStateClass(showArr, hideArr, "shown");
+        window.addEventListener(dashboardEvents.updateBoard.type, (e: Event) => {
+                const board = (e as ReturnType<typeof dashboardEvents.updateBoard>).detail;
+
+                const boardElem = HTML.boardList.div.querySelector(`.board-entry[board-id="${board.id}"]`) as HTMLDivElement;
+                const titleElem = boardElem.querySelector(".board-title") as HTMLDivElement;
+
+                if (board.name != undefined) {
+                        titleElem.innerText = board.name;
+                }
         });
 }

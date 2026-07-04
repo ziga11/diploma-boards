@@ -6,4 +6,5 @@ export interface Board {
         date_created?: Date;
         permission_id?: number;
         is_owner?: boolean;
+        deleted?: boolean;
 }

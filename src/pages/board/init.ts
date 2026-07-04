@@ -24,8 +24,14 @@ export async function initBoard(props: Record<string, any>) {
                 return;
         }
 
-        const fieldLen = await initFields();
-        await initEntries(fieldLen);
+
+        try {
+                const fieldLen = await initFields();
+                await initEntries(fieldLen);
+        }
+        catch (err) {
+                console.log(err);
+        }
 
         initBottomToolbarEvents();
         initUserManagementEvents();

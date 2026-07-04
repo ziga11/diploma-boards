@@ -73,16 +73,15 @@ export function showAutomation(elem: HTMLDivElement) {
 
 
 export function fillFields() {
-        if (!automationState.automationId || automationState.automationId > AutomationId.ButtonPress) {
-                /* non field dependent change */
-                return;
-        }
+        if (!automationState.automationId) return;
 
         let options = [];
         const type = fieldLinker[automationState.automationId];
 
+        const fieldDependent = automationState.automationId <= AutomationId.ButtonPress;
+
         for (const field of Array.from(BoardStore.fields.values())) {
-                if (type == field.type!) {
+                if (!fieldDependent || type == field.type!) {
                         options.push(createFieldOption(field));
                 }
         }

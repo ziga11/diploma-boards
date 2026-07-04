@@ -4,6 +4,7 @@ export const HTML = {
         get activePage() { return document.querySelector(`#page-board`) || document; },
 
         get tabTitleTag() { return document.querySelector("title") as HTMLTitleElement },
+        get titleSpan() { return document.querySelector(".title-text") as HTMLSpanElement },
 
         get container() { return activePage().querySelector(".board-container") as HTMLDivElement },
 

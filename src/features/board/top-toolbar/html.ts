@@ -24,5 +24,6 @@ export const HTML = {
                 get deleteBoardModal() { return activePage().querySelector("#delete-btn") as HTMLButtonElement },
                 get leaveBoardModal() { return activePage().querySelector("#leave-btn") as HTMLButtonElement },
                 get automations() { return activePage().querySelector("#automate-btn") as HTMLInputElement },
+                get recover() { return activePage().querySelector("#recover-btn") as HTMLButtonElement },
         }
 };
