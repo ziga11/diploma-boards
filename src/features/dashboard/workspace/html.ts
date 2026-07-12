@@ -9,7 +9,7 @@ export const HTML = {
                 notification: {
                         get btn() { return activePage().querySelector("#notifications-modal-btn") as HTMLDialogElement },
 
-                        get svgBell() { return activePage().querySelector("#notifications-modal-btn #bell") as HTMLOrSVGImageElement },
+                        get svgBell() { return activePage().querySelector("#notifications-modal-btn .ti-bell") as HTMLOrSVGImageElement },
                         get spanNewNotifications() { return activePage().querySelector("#notifications-modal-btn .icon-item-new") as HTMLSpanElement },
                 },
 

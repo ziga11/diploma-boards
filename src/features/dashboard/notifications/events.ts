@@ -8,7 +8,7 @@ import { notificationElem } from "./view";
 export function initNotificationEvents() {
         HTML.body.container.addEventListener("click", async (e: MouseEvent) => {
                 const elem = e.target as HTMLElement;
-                console.log(elem);
+
                 if (elem.classList[0] != "notification-action-btn") return;
 
                 const notificationDiv = elem.closest(".notification-div") as HTMLDivElement;
@@ -22,15 +22,15 @@ export function initNotificationEvents() {
 
                         const boardId = await setNotificationState(id, nId, state!);
 
-                        if (elem.classList[1] != "notification-accept-btn") return;
+                        if (elem.classList[1] != "notification-accept-btn") {
+                                notificationDiv.remove();
+                                return;
+                        }
                         const board = await fetchBoard(boardId);
 
                         window.dispatchEvent(dashboardEvents.addMultipleBoards({ boards: [board], type: "shared" }));
 
                         notificationDiv.remove();
-                        if (HTML.body.container.children.length == 0) {
-                                window.dispatchEvent(dashboardEvents.showNewNotifications(false));
-                        }
                 }
                 catch (error) {
                         console.warn(error);

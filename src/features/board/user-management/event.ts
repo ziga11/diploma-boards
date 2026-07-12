@@ -18,8 +18,6 @@ export function initUserManagementEvents() {
                         return;
                 }
                 if (!selPermission) {
-                        console.log("showing toast");
-
                         showToast(`Permission is not specified`, "error");
                         return;
                 }
@@ -33,7 +31,7 @@ export function initUserManagementEvents() {
 
                                 showToast(`board collaboration request sent to: ${mail}`, "success");
                         })
-                        .catch(err => showToast(`Failed to send user invitation ${err}`, "error"));
+                        .catch(err => showToast(err, "error"));
 
         });
 

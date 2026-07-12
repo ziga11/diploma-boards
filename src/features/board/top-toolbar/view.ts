@@ -4,7 +4,7 @@ import { HTML } from "./html";
 
 export function applyPermissionRestrictions() {
         const permission = BoardStore.permissionId;
-        const isOwner = BoardStore.isOwner;
+        const isOwner = permission == PermissionId.Owner;
 
         HTML.btns.recover.classList.toggle("shown", BoardStore.isDeleted && isOwner);
 
@@ -17,6 +17,6 @@ export function applyPermissionRestrictions() {
 
         HTML.btns.automations.classList.toggle("shown", permission >= PermissionId.Manager && !BoardStore.isDeleted);
 
-        HTML.btns.history.classList.toggle("shown", permission == PermissionId.Admin && !BoardStore.isDeleted);
-        HTML.btns.addUser.classList.toggle("shown", permission == PermissionId.Admin && !BoardStore.isDeleted);
+        HTML.btns.history.classList.toggle("shown", permission >= PermissionId.Admin && !BoardStore.isDeleted);
+        HTML.btns.addUser.classList.toggle("shown", permission >= PermissionId.Admin && !BoardStore.isDeleted);
 }

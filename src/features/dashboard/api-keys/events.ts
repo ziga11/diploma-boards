@@ -63,8 +63,6 @@ export function initAPIKeyEvents() {
         });
 
         window.addEventListener(apiKeyEvents.showModal.type, () => {
-                console.log("showing api modal");
-
                 HTML.modal.showModal();
         });
 }

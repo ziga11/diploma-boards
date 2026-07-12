@@ -2,13 +2,21 @@ import type { HistoryLog } from "./types";
 import { HTML } from "./html";
 import { BoardStore } from "../board-state";
 import { setStateClass } from "@/core/utils/dom";
+import DOMPurify from 'dompurify';
 
-type ActionFilter = 'ALL' | 'INSERT' | 'UPDATE' | 'DELETE';
+export enum ActionFilter {
+        All = 'ALL',
+        Insert = 'INSERT',
+        Update = 'UPDATE',
+        Delete = 'DELETE'
+}
 
-let activeAction: ActionFilter = 'ALL';
+const NOISE_KEYS = new Set(['account_id', 'board_id', 'date_modified']);
+
+let activeAction: ActionFilter = ActionFilter.All;
 let activeColumn: string = 'ALL';
 
-export function setHistoryLogs(logs: Array<HistoryLog>) {
+export function addHistoryLogs(logs: Array<HistoryLog>) {
         const filtered = logs.filter(log => {
                 const actionMatch = activeAction === 'ALL' || log.action === activeAction;
                 const columnMatch = activeColumn === 'ALL' || log.target_column === activeColumn;
@@ -20,20 +28,43 @@ export function setHistoryLogs(logs: Array<HistoryLog>) {
                 return;
         }
 
-        HTML.list.innerHTML = filtered.map(log => {
-                const fieldName = targetFieldName(log.target_column, log.target_id);
+        const rawHTML = filtered.map(renderHistoryItem).join('');
 
-                return `
-            <div class="history-item history-item--${log.action.toLowerCase()}" data-column="${log.target_column}" data-action="${log.action}">
-              <div class="history-item-meta">
-                <img class="history-avatar" src="${escapeHtml(log.account_avatar)}" alt="${escapeHtml(log.account_name)}" title="${escapeHtml(log.account_name)}" referrerPolicy="no-referrer" />
-                <span class="history-badge history-badge--${log.action.toLowerCase()}">${log.action}</span>
-                <span class="history-column">${capitalize(log.target_column)} ${fieldName != "" ? '(Field "' + fieldName + '")' : ""}</span>
+        const cleanFragment = DOMPurify.sanitize(rawHTML, {
+                RETURN_DOM_FRAGMENT: true,
+                ADD_ATTR: ['referrerpolicy']
+        }) as DocumentFragment;
+
+        HTML.list.appendChild(cleanFragment);
+}
+
+function renderHistoryItem(log: HistoryLog): string {
+        const fieldName = targetFieldName(log.target_column, log.target_id);
+        const actionLower = actionType(log.action);
+        const displayField = fieldName ? `(Field "${fieldName}")` : "";
+
+        return `
+        <div class="history-item history-item--${actionLower}" data-id="${log.id}" data-column="${log.target_column}" data-action="${log.action}">
+            <div class="history-item-meta">
+                <img class="history-avatar" src="${log.account_avatar}" alt="${log.account_name}" title="${log.account_name}" referrerpolicy="no-referrer"/>
+                <span class="history-badge history-badge--${actionLower}">${log.action}</span>
+                <span class="history-column">${capitalize(log.target_column)} ${displayField}</span>
                 <span class="history-date">${formatDate(log.created_at)}</span>
-              </div>
-              <div class="history-payload">${renderPayload(log.payload as Record<string, unknown>)}</div>
             </div>
-          `}).join('');
+            <div class="history-payload">${renderPayload(log.payload as Record<string, unknown>, log.action)}</div>
+        </div>
+    `;
+}
+
+/**
+ * Maps a raw log action ("INSERT", "DELETE-ROW", "INSERT-FIELD", ...) down to its
+ * base ActionFilter ("insert" / "update" / "delete") for CSS classing + filtering.
+ * Compound actions ("X-ROW", "X-FIELD") share the base action's styling.
+ */
+export function actionType(rawAction: string): string {
+        const base = rawAction.split('-')[0].toUpperCase();
+        const known = Object.values(ActionFilter) as string[];
+        return known.includes(base) ? base.toLowerCase() : 'other';
 }
 
 export function setHistoryFilter(action: string, column: string) {
@@ -41,105 +72,69 @@ export function setHistoryFilter(action: string, column: string) {
         const removeHidden: Array<HTMLElement> = [];
 
         for (const child of HTML.list.children as HTMLCollectionOf<HTMLElement>) {
-                const actionMatch = action === "ALL" || child.dataset.action?.toLowerCase() === action.toLowerCase();
+                const actionMatch = action === "ALL" || child.dataset.action?.toUpperCase() === action.toUpperCase();
                 const columnMatch = column === "ALL" || child.dataset.column?.toLowerCase() === column.toLowerCase();
 
-                if (actionMatch && columnMatch) {
-                        removeHidden.push(child);
-                } else {
-                        addHidden.push(child);
-                }
+                (actionMatch && columnMatch ? removeHidden : addHidden).push(child);
         }
 
         setStateClass(addHidden, removeHidden, "hidden");
 }
 
-function targetFieldName(column: string, id: string): string {
-        switch (column.toLowerCase()) {
-                case "entry":
-                        const entryElem = HTML.entries.querySelector(`[data-entry-id="${id}"]`) as HTMLElement;
-                        if (!entryElem) return "";
-
-                        const fieldId = entryElem.dataset.fieldId;
-                        if (!fieldId) return "";
-
-                        return BoardStore.getField(fieldId)?.name ?? "";
-                case "field":
-                        return BoardStore.getField(id)?.name ?? "";
-                case "field helper":
-                        const fields = BoardStore.fields.values();
-                        for (const field of fields) {
-                                const fieldHelper = field.fieldHelpers?.filter(fh => fh.id == id);
-                                if (!fieldHelper) continue;
-
-                                return field.name ?? "";
-                        }
-
-                        return "";
-                case "automation":
-                        const aEntries = BoardStore.automations.entries();
-                        for (const [key, automations] of aEntries) {
-                                const automation = automations.filter(a => a.id == id);
-                                if (!automation) continue;
-
-                                const field = BoardStore.getField(key);
-
-                                return field?.name ?? "";
-                        }
-
-                        return "";
-                default:
-                        return "";
-        }
-}
-const NOISE_KEYS = new Set(['id', 'account_id', 'board_id', 'date_modified']);
-
-function renderPayload(payload: Record<string, unknown>): string {
-        const entries = Object.entries(payload).filter(([key]) => {
-                if (NOISE_KEYS.has(key)) return false;
-                if (key === 'index') return false;
-                return true;
-        });
+export function renderPayload(payload: Record<string, unknown>, action: string): string {
+        const entries = Object.entries(payload).filter(([key]) => !NOISE_KEYS.has(key));
 
         if (!entries.length) return '<span class="history-payload-empty">No tracked changes</span>';
 
         return entries.map(([key, value]) => {
-                let field = undefined;
-                if (typeof value === 'string') {
-                        field = BoardStore.getField(value);
-                }
+                const field = typeof value === 'string' ? BoardStore.getField(value) : undefined;
                 return `
                 <div class="history-payload-row">
-                        <span class="history-payload-key">${capitalize(resolveKeyLabel(key))}</span>
-                        <span class="history-payload-value" title=${field ? field.id : ""}>${formatPayloadValue(key, value)}</span>
+                    <span class="history-payload-key">${capitalize(resolveKeyLabel(key))}</span>
+                    <span class="history-payload-value" title="${field ? field.id : ""}">${formatPayloadValue(key, value, action)}</span>
                 </div>
-        `}).join('');
+        `;
+        }).join('');
 }
 
 function resolveKeyLabel(key: string): string {
-        if (key === 'field_id') return 'Field';
+        if (key === 'field_id') return 'Field Name';
         return key.replace(/_/g, ' ');
 }
 
-function formatPayloadValue(key: string, value: unknown): string {
+function formatPayloadValue(key: string, value: unknown, action: string): string {
+        if (key === 'entries') {
+
+                return `
+                    <button type="button" class="show-payload-container-btn">
+                        <span>${value} Entries</span>
+                        <span class="show-payload-arrow">→</span>
+                    </button>`;
+        }
+
         if (key === 'field_id' && typeof value === 'string') {
                 const field = BoardStore.getField(value);
-                return field?.name ? escapeHtml(field.name) : `<span class="history-payload-empty">Empty</span>`;
+                return field?.name ? field.name : `<span class="history-payload-empty">Empty</span>`;
         }
+
         if (value === null || value === undefined || value === '') {
                 return '<span class="history-payload-empty">Empty</span>';
         }
+
         if (typeof value === 'boolean') {
                 return `<span class="history-payload-bool history-payload-bool--${value}">${value ? 'Yes' : 'No'}</span>`;
         }
+
         if (Array.isArray(value)) {
                 if (!value.length) return '<span class="history-payload-empty">Empty</span>';
-                return value.map(v => `<span class="history-payload-chip">${escapeHtml(String(v))}</span>`).join('');
+                return value.map(v => `<span class="history-payload-chip">${String(v)}</span>`).join('');
         }
+
         if (typeof value === 'object') {
-                return renderPayload(value as Record<string, unknown>);
+                return renderPayload(value as Record<string, unknown>, action);
         }
-        return `<span class="history-payload-value-text">${escapeHtml(String(value))}</span>`;
+
+        return `<span class="history-payload-value-text">${String(value)}</span>`;
 }
 
 function capitalize(str: string): string {
@@ -152,14 +147,37 @@ function formatDate(iso: string): string {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
-                hour: "numeric",
-                minute: "numeric",
+                hour: 'numeric',
+                minute: 'numeric',
         });
 }
 
-function escapeHtml(str: string): string {
-        return str
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
+function targetFieldName(column: string, id: string): string {
+        switch (column.toLowerCase()) {
+                case "entry": {
+                        const entryElem = HTML.entries.querySelector(`[data-entry-id="${id}"]`) as HTMLElement | null;
+                        const fieldId = entryElem?.dataset.fieldId;
+                        return fieldId ? (BoardStore.getField(fieldId)?.name ?? "") : "";
+                }
+                case "field":
+                        return BoardStore.getField(id)?.name ?? "";
+                case "field helper": {
+                        for (const field of BoardStore.fields.values()) {
+                                if (field.fieldHelpers?.some(fh => fh.id === id)) {
+                                        return field.name ?? "";
+                                }
+                        }
+                        return "";
+                }
+                case "automation": {
+                        for (const [fieldId, automations] of BoardStore.automations.entries()) {
+                                if (automations.some(a => a.id === id)) {
+                                        return BoardStore.getField(fieldId)?.name ?? "";
+                                }
+                        }
+                        return "";
+                }
+                default:
+                        return "";
+        }
 }

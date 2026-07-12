@@ -64,12 +64,11 @@ export function notificationElem(n: ViewNotification): HTMLDivElement {
 
         const headDiv = notificationHead(n.from_acc);
 
-        const divider = Object.assign(document.createElement("div"), { className: "notification-divider" });
 
         const bodyDiv = notificationBody(n.message);
         const footerDiv = notificationFooter();
 
-        div.append(headDiv, divider, bodyDiv, divider, footerDiv);
+        div.append(headDiv, bodyDiv, footerDiv);
 
         return div;
 }

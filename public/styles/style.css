@@ -20,7 +20,8 @@ fieldset {
         border: none;
 }
 
-svg {
+i {
+        font-size: 20px;
         cursor: pointer;
         pointer-events: none;
 }

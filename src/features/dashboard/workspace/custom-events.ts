@@ -16,23 +16,18 @@ export const dashboardEvents = {
                 { type: "board:delete" }
         ),
 
-        hideBoard: Object.assign(
-                (detail: string) => new CustomEvent("board:hide", { detail }),
+        setBoardClass: Object.assign(
+                (detail: { id: string, state: string }) => new CustomEvent("board:hide", { detail }),
                 { type: "board:hide" }
+        ),
+
+        removeBoardClass: Object.assign(
+                (detail: { id: string, state: string }) => new CustomEvent("board:show", { detail }),
+                { type: "board:show" }
         ),
 
         moveBoard: Object.assign(
                 (detail: { id: string, group: "owned" | "shared" | "deleted" }) => new CustomEvent("board:move-to-deleted", { detail }),
                 { type: "board:move-to-deleted" }
-        ),
-
-        showBoard: Object.assign(
-                (detail: string) => new CustomEvent("board:show", { detail }),
-                { type: "board:show" }
-        ),
-
-        showNewNotifications: Object.assign(
-                (detail: boolean) => new CustomEvent("board:new-notifications", { detail }),
-                { type: "board:new-notifications" }
         ),
 }

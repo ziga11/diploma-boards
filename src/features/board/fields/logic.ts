@@ -51,11 +51,6 @@ export async function insertFieldOption(id: string, fieldId: string, value: stri
 
         const fieldHelper = { id, field_id: fieldId, account_id: acc.id, value } as FieldHelper;
 
-        const field = BoardStore.getField(fieldId);
-        if (!field) throw new Error("field not set, bug");
-
-        field.fieldHelpers!.push(fieldHelper);
-
         await supabase.insertFieldHelper(fieldHelper);
 }
 

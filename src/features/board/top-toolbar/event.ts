@@ -59,8 +59,6 @@ export function initTopToolbarEvents() {
         });
 
         HTML.btns.history.addEventListener("click", () => {
-                console.log("hehe xD");
-
                 window.dispatchEvent(historyEvents.showModal());
         });
 

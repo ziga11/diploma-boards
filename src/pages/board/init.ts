@@ -10,6 +10,7 @@ import { navigate } from "@/core/utils/router";
 import { BoardStore } from "@/features/board/board-state";
 import { initAutomations } from "@/features/board/automations/init";
 import { initHistory } from "@/features/board/history/init";
+import { supabase } from "@/core/api/supabase";
 
 export async function initBoard(props: Record<string, any>) {
         const acc = await getAccount()
@@ -18,16 +19,16 @@ export async function initBoard(props: Record<string, any>) {
                 return;
         }
 
-        const success = await initWorkspace(props);
-        if (!success) {
-                navigate("/404");
-                return;
-        }
+        const boardId = props["board_id"];
 
+        const board = await supabase.fetchBoard(boardId);
+        BoardStore.setBoard(board);
 
         try {
                 const fieldLen = await initFields();
                 await initEntries(fieldLen);
+
+                await initWorkspace();
         }
         catch (err) {
                 console.log(err);

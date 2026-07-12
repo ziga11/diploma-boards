@@ -81,16 +81,16 @@
         box-shadow: 0 4px 20px color-mix(in srgb, var(--secondary) 35%, transparent);
 }
 
-#recover-btn svg {
-        stroke: var(--white);
+#recover-btn i {
+        color: var(--white);
 }
 
 #new-entry-btn:hover {
         box-shadow: 0 4px 20px color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
-#new-entry-btn svg {
-        stroke: var(--white);
+#new-entry-btn i {
+        color: var(--white);
 }
 
 #add-user-btn {
@@ -103,8 +103,8 @@
         box-shadow: 0 4px 20px color-mix(in srgb, #7B68EE 15%, transparent);
 }
 
-#add-user-btn svg {
-        stroke: #7B68EE;
+#add-user-btn i {
+        color: #7B68EE;
 }
 
 #automate-btn {
@@ -112,8 +112,8 @@
         display: none;
 }
 
-#automate-btn svg {
-        stroke: var(--primary);
+#automate-btn i {
+        color: var(--primary);
 }
 
 #automate-btn:hover {
@@ -133,9 +133,9 @@
         display: none;
 }
 
-#delete-btn svg,
-#leave-btn svg {
-        stroke: var(--red);
+#delete-btn i,
+#leave-btn i {
+        color: var(--red);
 }
 
 #delete-btn:hover,
@@ -153,7 +153,7 @@
 .board-container {
         width: 100%;
         overflow-x: scroll !important;
-        overflow-y: visible !important;
+
         white-space: nowrap;
         padding-bottom: 3px;
         scrollbar-width: thin;
@@ -202,15 +202,76 @@
         mask-image: linear-gradient(to right, black 100%, transparent 100%);
 }
 
+.search-div {
+        align-self: flex-start;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 10px;
+        background: color-mix(in srgb, var(--secondary) 15%, transparent);
+        border: 1px solid color-mix(in srgb, var(--secondary) 25%, transparent);
+        padding: 0px 12px;
+        margin-bottom: 1rem;
+        transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.search-div:focus-within {
+        border-color: var(--secondary);
+        background: color-mix(in srgb, var(--secondary) 25%, transparent);
+}
+
+.search-div i {
+        font-size: 16px;
+        color: var(--bg-highlight);
+        flex-shrink: 0;
+}
+
+#search {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--text-primary, #fff);
+        font-size: 14px;
+        width: 220px;
+}
+
+#search::placeholder {
+        color: var(--text-secondary, #9a98b5);
+}
+
 .fields {
         transform: rotateX(180deg);
         display: flex;
-        width: 100%;
-        margin-top: 4px;
+        width: fit-content;
 }
 
 .entries {
+        display: flex;
+        flex-direction: column;
         transform: rotateX(180deg);
+        width: fit-content;
+}
+
+.entry-rows {
+        height: 525px;
+        padding-right: 10px;
+        overflow-y: auto;
+}
+
+.pinned-entry-rows {
+        margin-top: 1.5rem;
+        max-height: 150px;
+        overflow-y: auto;
+}
+
+.pinned-entry-rows .entry-check-div,
+.pinned-entry-rows .pin-div,
+.pinned-entry-rows .entry {
+        background: color-mix(in srgb, var(--secondary) 35%, var(--bg-light));
+}
+
+.entries:has(.pinned-entry-rows:empty) .entry-rows {
+        height: 600px;
 }
 
 .automation-type-container {
@@ -340,6 +401,10 @@
         transition: background 0.2s ease, color 0.2s ease;
 }
 
+.back-btn i {
+        color: var(--bg-highlight);
+}
+
 .back-btn:hover {
         background: rgba(255, 255, 255, 0.05);
         color: var(--white);
@@ -382,6 +447,10 @@
         border-radius: 8px;
         padding: 0 12px;
         transition: border-color 0.2s ease;
+}
+
+.url-input-wrap i {
+        color: var(--bg-highlight);
 }
 
 .url-input-wrap:focus-within {
@@ -528,7 +597,7 @@
 
 .created-board-automation:hover:not(:has(.automation-entry-delete:hover)) {
         border-color: var(--primary);
-        background: var(--secondary);
+        background: color-mix(in srgb, var(--secondary) 20%, transparent);
 }
 
 .automation-entry-icon {
@@ -603,7 +672,8 @@
         padding: 0;
         justify-content: center;
         background-color: var(--bg-light);
-        border: 1px solid var(--bg-highlight);
+        border-right: 1px solid var(--bg-highlight);
+        border-bottom: 1px solid var(--bg-highlight);
         flex: 0 0 auto;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
         transition: background-color 0.2s ease, border-color 0.2s ease opacity 0.3s;
@@ -612,13 +682,23 @@
         box-sizing: border-box;
 }
 
+.field-div {
+        border-top: 1px solid var(--bg-highlight);
+        background: var(--dark-gray);
+}
+
+.fields .pin-div {
+        border-top: 1px solid var(--bg-highlight);
+        background: var(--dark-gray);
+}
+
+.pin-icon {
+        pointer-events: none;
+}
+
 .field-div.hidden,
 .entry.hidden {
         opacity: 0;
-}
-
-.field-div {
-        background-color: var(--dark-gray);
 }
 
 .field-div.switch {
@@ -718,11 +798,107 @@
 
 .entry-set {
         display: flex;
+        height: 34px;
+        flex-shrink: 0;
+}
+
+.entry-set .pin-icon {
+        opacity: 0;
+        height: 18px;
+        width: 16px;
+        cursor: pointer;
+        transition: opacity 0.1s;
+}
+
+.pin-div {
+        display: flex;
+        justify-self: center;
+        align-self: center;
+        justify-content: center;
+        background: var(--bg-light);
+        border-bottom: 1px solid var(--bg-highlight);
+        border-right: 1px solid var(--bg-highlight);
+        align-items: center;
+        height: 34px;
+        width: 34px;
+        flex-shrink: 0;
+}
+
+.entry-set:hover .pin-icon {
+        opacity: 1;
+}
+
+.entry-set.pinned .pin-icon {
+        opacity: 1;
+}
+
+.entry-set.pinned .pin-icon svg {
+        fill: var(--white);
+}
+
+.unloaded-indicator {
+        display: none;
+        background-color: var(--bg-light);
+        border: 1px solid var(--bg-highlight);
+        flex-shrink: 0;
+        border-top: none;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        order: 1000;
+        height: 34px;
+}
+
+.unloaded-indicator i {
+        color: var(--bg-highlight);
+}
+
+.entry-set.unloaded-indicator.shown {
+        display: flex;
 }
 
 .entry-set .btn-close {
         justify-content: center;
         align-self: center;
+}
+
+.field-dropdown {
+        position: absolute;
+        background-color: color-mix(in srgb, var(--bg-light) 55%, var(--bg-dark));
+        z-index: -1;
+        width: 220px;
+        border-radius: 15px;
+}
+
+.field-dropdown span {
+        margin: 2rem 0 auto 1rem;
+}
+
+.field-dropdown-options {
+        margin: 1rem 0;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+}
+
+.field-dropdown-option {
+        display: flex;
+        gap: 10px;
+        padding: 5px 0;
+        padding-left: 10px;
+}
+
+.field-dropdown-option.active:hover,
+.field-dropdown-option:hover {
+        background-color: var(--bg-light);
+}
+
+.field-dropdown-option.active {
+        background-color: color-mix(in srgb, var(--primary) 15%, transparent);
+}
+
+#edit-field {
+        margin-top: 10px;
 }
 
 .add-field-btn {
@@ -734,7 +910,8 @@
         color: var(--white);
         background-color: var(--dark-gray);
         border: 1px solid var(--bg-highlight);
-        padding: 8px 10px;
+        height: 34px;
+        padding: 8px;
         font-size: 14px;
         cursor: pointer;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
@@ -743,12 +920,32 @@
         text-align: center;
 }
 
-.entries .entry-set:last-child .entry-check-div {
+.entry-rows:not(:has(.unloaded-indicator.shown)) .entry-set:last-child .entry-check-div {
         border-radius: 0 0 0 10px;
 }
 
-.entries .entry-set:last-child> :last-child {
+.entry-rows:not(:has(.unloaded-indicator.shown)) .entry-set:last-child> :last-child {
         border-radius: 0 0 10px 0;
+}
+
+.pinned-entry-rows .entry-set:first-child>.entry-check-div {
+        border-top-left-radius: 10px;
+}
+
+.pinned-entry-rows .entry-set:last-child>.entry-check-div {
+        border-bottom-left-radius: 10px;
+}
+
+.pinned-entry-rows .entry-set:first-child>.entry:last-of-type {
+        border-top-right-radius: 10px;
+}
+
+.pinned-entry-rows .entry-set:last-child>.entry:last-of-type {
+        border-bottom-right-radius: 10px;
+}
+
+.pinned-entry-rows .entry-set:first-child>* {
+        border-top: 1px solid var(--bg-highlight)
 }
 
 .fields:not(:has(.field)) .add-field-btn {
@@ -763,10 +960,19 @@
         display: none;
 }
 
+.board-container:not(:has(.entry-set)) .fields>.pin-div {
+        display: none;
+}
+
+.board-container:not(:has(.entry-set)) .fields>.pin-div+.field-div {
+        border: solid 1px var(--bg-highlight);
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+}
+
 .board-container:not(:has(.entry-set)) .field-check-div+.field-div {
         border-radius: 10px 0 0 10px;
 }
-
 
 .add-field-btn.shown {
         display: inline-flex;
@@ -778,9 +984,9 @@
         outline: none;
 }
 
-.add-field-btn svg {
-        fill: white;
-        transition: fill 0.2s ease;
+.add-field-btn i {
+        color: var(--white);
+        transition: color 0.2s ease;
         padding: 0;
 }
 
@@ -788,8 +994,9 @@
 .entry-check-div {
         display: flex;
         padding: 8px 10px;
-        background-color: var(--bg-light);
-        border: 1px solid var(--bg-highlight);
+        border-left: 1px solid var(--bg-highlight);
+        border-bottom: 1px solid var(--bg-highlight);
+        background: var(--bg-light);
         align-items: center;
         justify-content: center;
 }
@@ -797,9 +1004,11 @@
 .field-check-div {
         background-color: var(--dark-gray);
         border-radius: 8px 0 0 0;
+        border-top: 1px solid var(--bg-highlight);
 }
 
-.add-field-menu {
+
+.add-field-menu-dialog {
         position: absolute;
         background-color: color-mix(in srgb, var(--secondary) 25%, var(--bg-dark));
         z-index: -1;
@@ -809,20 +1018,28 @@
         align-content: center;
 }
 
-.add-field-menu.shown {
+.add-field-menu-dialog.shown {
         z-index: 100;
+}
+
+.add-field-menu {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 10px 0;
+        gap: 5px;
 }
 
 .add-field-menu div {
         display: flex;
         border-radius: 5px;
+        align-items: center;
         flex: 1;
-        margin-bottom: 5px;
         padding: 0;
         padding-left: min(15px, 20%);
 }
 
-.add-field-menu div svg {
+.add-field-menu div i {
         padding: 0;
 }
 
@@ -831,7 +1048,7 @@
         background-color: color-mix(in srgb, var(--secondary) 65%, var(--bg-dark));
 }
 
-.add-field-menu div svg {
+.add-field-menu div i {
         margin-right: 4px;
 }
 
@@ -920,15 +1137,13 @@
         justify-content: center;
 }
 
-.bottom-toolbar svg {
-        width: 18px;
-        height: 18px;
-        padding: 0;
+#delete-selected-btn:hover {
+        background: color-mix(in srgb, var(--red) 20%, transparent);
 }
 
 .bottom-toolbar button:hover {
         opacity: 1;
-        background: rgba(102, 126, 234, 0.15);
+        background: color-mix(in srgb, var(--primary) 20%, transparent);
         border: none;
 }
 
@@ -1060,13 +1275,13 @@
         font-weight: 600;
 }
 
-.automation-option svg {
+.automation-option i {
         opacity: 0.8;
-        color: var(--primary);
+        color: var(--white);
         transition: opacity 0.2s ease;
 }
 
-.automation-option:hover svg {
+.automation-option:hover i {
         opacity: 1;
 }
 
@@ -1114,6 +1329,56 @@
         flex-wrap: wrap;
         gap: 12px;
         padding-top: 1.5rem;
+}
+
+.field-automation-selection:has(.automation-fields-wrap:empty) .automation-no-existing-fields {
+        display: flex;
+}
+
+.automation-no-existing-fields {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        gap: 10px;
+}
+
+.automation-fields-wrap:empty {
+        display: none;
+}
+
+.no-automations-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.06);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+}
+
+.no-automations-title {
+        font-size: 13px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.55);
+        margin: 0;
+}
+
+.no-automations-body {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.3);
+        margin: 0;
+        text-align: center;
+}
+
+.no-notifications-container {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        gap: 10px;
 }
 
 dialog.dropdown-menu {
@@ -1184,10 +1449,6 @@ dialog.dropdown-menu[open] {
         transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-.automation-field-div>* {
-        pointer-events: none;
-}
-
 .automation-field-div:hover {
         border-color: var(--primary);
         background: color-mix(in srgb, var(--secondary) 20%, transparent);
@@ -1224,7 +1485,6 @@ dialog.dropdown-menu[open] {
 }
 
 .automation-field-id {
-        margin-right: auto;
         font-size: 10px;
         font-family: monospace;
         color: var(--bg-highlight);
@@ -1234,8 +1494,13 @@ dialog.dropdown-menu[open] {
         padding: 2px 6px;
         opacity: 0.7;
         flex-shrink: 0;
+
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
 }
 
+#leave-board-modal,
 #delete-board-modal {
         background: var(--bg-dark);
         border: 1px solid rgba(255, 255, 255, 0.07);
@@ -1262,8 +1527,12 @@ dialog.dropdown-menu[open] {
         justify-content: center;
 }
 
+.confirm-icon i {
+        color: var(--red);
+}
+
 .confirm-icon--danger {
-        background: rgba(255, 71, 87, 0.15);
+        background: color-mix(in srgb, var(--red) 25%, transparent);
 }
 
 .confirm-title {
@@ -1340,6 +1609,10 @@ dialog.dropdown-menu[open] {
         flex-shrink: 0;
 }
 
+.add-user-icon i {
+        color: var(--secondary);
+}
+
 .add-user-title {
         display: flex;
         color: var(--white);
@@ -1383,6 +1656,10 @@ dialog.dropdown-menu[open] {
         border-radius: 8px;
         padding: 0 12px;
         transition: border-color 0.2s ease;
+}
+
+.email-input-wrap i {
+        color: var(--bg-highlight);
 }
 
 .email-input-wrap:focus-within {
@@ -1552,28 +1829,29 @@ dialog.dropdown-menu[open] {
 }
 
 .collab-permission {
-        font-size: 11px;
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
         font-weight: 600;
-        padding: 3px 10px;
-        border-radius: 20px;
+        letter-spacing: 0.02em;
         text-transform: capitalize;
+        white-space: nowrap;
 }
 
+.collab-permission--owner,
 .collab-permission--admin {
-        background: rgba(102, 126, 234, 0.2);
-        color: var(--primary);
+        background: color-mix(in srgb, var(--secondary) 25%, transparent);
+        color: var(--secondary);
 }
 
 .collab-permission--manager {
-        background: rgba(29, 158, 117, 0.15);
-        color: #3ecfa0;
+        background: color-mix(in srgb, var(--primary) 25%, transparent);
+        color: var(--primary);
 }
 
-.collab-permission--editor {
-        background: rgba(255, 255, 255, 0.05);
-        color: var(--bg-highlight);
-}
-
+.collab-permission--editor,
 .collab-permission--member {
         background: rgba(255, 255, 255, 0.05);
         color: var(--bg-highlight);
@@ -1584,26 +1862,26 @@ dialog.dropdown-menu[open] {
         font-size: 11px;
 }
 
+.collab-remove:not(:disabled) {
+        display: block;
+}
+
 .collab-remove {
+        display: none;
         background: transparent;
         border: none;
         color: var(--bg-highlight);
         cursor: pointer;
         padding: 6px;
         border-radius: 6px;
-        display: none;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
         transition: background 0.2s ease, color 0.2s ease;
 }
 
-.collab-remove.shown {
-        display: flex;
-}
-
 .collab-remove:hover {
-        background: rgba(255, 71, 87, 0.15);
+        background: color-mix(in srgb, var(--red) 25%, transparent);
         color: var(--red);
 }
 
@@ -1611,22 +1889,22 @@ dialog.dropdown-menu[open] {
         display: block;
         position: absolute;
         opacity: 0;
-        width: 26px;
-        height: 26px;
         padding: 0;
         font-size: 14px;
         line-height: 1;
         right: 5px;
-        background-color: #4a4a6a;
         border: none;
-        border-radius: 6px;
-        color: #ccc;
         cursor: pointer;
-        transition: background-color 0.3s, opacity 0.3s;
+
+        transition: opacity 0.3s;
 }
 
-.edit-field:hover {
-        background-color: #6060a0;
+.edit-field .ti {
+        color: var(--white);
+        transition: color 0.15s;
+}
+
+.edit-field:hover .ti {
         color: #fff;
 }
 
@@ -1804,25 +2082,33 @@ dialog.dropdown-menu[open] {
         border: 1px solid var(--red);
 }
 
-#delete-field-btn svg {
-        transition: stroke 0.3s ease;
+#delete-field-btn i {
+        transition: color 0.3s ease;
 }
 
-#delete-field-btn:not(:disabled):hover svg {
-        stroke: var(--red);
+#delete-field-btn:not(:disabled):hover i {
+        color: var(--red);
 }
 
-#add-status-option-btn:hover {
-        transform: none !important;
+#add-status-option-btn:hover i {
+        color: var(--white);
 }
 
 #add-status-option-btn:hover {
         background-color: color-mix(in srgb, var(--bg-highlight) 50%, transparent);
         box-shadow: 0 6px 20px color-mix(in srgb, var(--bg-highlight) 20%, transparent);
+        color: var(--white);
 }
 
 #add-status-option-btn {
         background-color: var(--dark-gray);
+        color: var(--bg-highlight);
+        transition: transform 0.15s linear, background-color 0.15s linear, color 0.15s linear;
+}
+
+#add-status-option-btn i {
+        color: var(--bg-highlight);
+        transition: color 0.15s linear;
 }
 
 .history-filters {
@@ -1895,7 +2181,6 @@ dialog.dropdown-menu[open] {
         border-radius: 4px;
 
         overflow: hidden;
-        max-height: 200px;
         opacity: 1;
         transform: scaleY(1);
         transform-origin: top;
@@ -1956,7 +2241,7 @@ dialog.dropdown-menu[open] {
 
 .history-badge--insert {
         background: color-mix(in srgb, #2ed573 80%, transparent);
-        color: var(--bg-dark);
+        color: var(--white);
 }
 
 .history-badge--update {
@@ -2005,6 +2290,9 @@ dialog.dropdown-menu[open] {
 }
 
 .history-payload-value {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
         font-family: 'Roboto Mono', 'SF Mono', monospace;
         color: var(--white);
         background: rgba(255, 255, 255, 0.06);
@@ -2012,9 +2300,12 @@ dialog.dropdown-menu[open] {
         border-radius: 4px;
         font-size: 12px;
         max-width: 60%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        max-height: 60px;
+
+        overflow-y: auto;
+        white-space: pre-wrap;
+
+        transition: background 0.15s linear;
 }
 
 .history-payload-chip {
@@ -2041,8 +2332,139 @@ dialog.dropdown-menu[open] {
         padding: 30px 0;
 }
 
+.show-payload-container-btn {
+        display: flex;
+        gap: 0.5rem;
+}
+
+.history-payload {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+}
+
+.show-payload-container-btn>* {
+        pointer-events: none;
+}
+
+.history-payload-value:has(.show-payload-container-btn:hover) {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.2);
+}
+
+.history-payload-value:has(.show-payload-container-btn:active) {
+        background: rgba(255, 255, 255, 0.16);
+}
+
+.show-payload-arrow {
+        opacity: 0.6;
+        transition: transform 0.15s ease;
+}
+
+.show-payload-container-btn:hover .show-payload-arrow {
+        transform: translateX(2px);
+        opacity: 1;
+}
+
 #history-close {
         margin-left: auto;
+}
+
+dialog.payload-container {
+        margin: auto;
+        padding: 0;
+        border: none;
+        max-width: min(480px, 90vw);
+        max-height: min(70vh, 600px);
+        width: 100%;
+
+        background: var(--bg);
+        border: 1px solid var(--bg-light);
+        border-radius: 10px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+        color: var(--white);
+
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+
+        opacity: 0;
+        transform: scale(0.94) translateY(8px);
+        transition:
+                opacity 0.18s ease,
+                transform 0.18s ease,
+                overflow 0.18s allow-discrete,
+                display 0.18s allow-discrete;
+}
+
+dialog.payload-container[open] {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+}
+
+dialog.payload-container::backdrop {
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(2px);
+        transition: opacity 0.18s ease;
+        opacity: 0;
+}
+
+dialog.payload-container[open]::backdrop {
+        opacity: 1;
+}
+
+.payload-container-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--bg-light);
+        flex-shrink: 0;
+}
+
+.payload-container-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--white);
+}
+
+.payload-container-close {
+        background: transparent;
+        border: none;
+        color: var(--bg-highlight);
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 4px;
+        transition: background 0.15s, color 0.15s;
+}
+
+.payload-container-close:hover {
+        background: color-mix(in srgb, var(--red) 20%, transparent);
+        color: var(--white);
+}
+
+.payload-container-body {
+        padding: 16px 18px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+}
+
+dialog.payload-container>.history-payload {
+        flex-shrink: 0;
+}
+
+dialog.payload-container>.history-payload+.history-payload {
+        margin-top: 2px;
+}
+
+dialog.payload-container:not(:has(.payload-container-body)) {
+        padding: 16px 18px;
+        overflow-y: auto;
+        gap: 12px;
 }
 
 @-moz-document url-prefix() {

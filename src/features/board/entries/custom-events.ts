@@ -68,7 +68,7 @@ export const entryEvents = {
         ),
 
         checkChange: Object.assign(
-                () => new CustomEvent("entry-check:on-change"),
+                (detail: HTMLInputElement) => new CustomEvent("entry-check:on-change", { detail }),
                 { type: "entry-check:on-change" as const }
         ),
 
@@ -95,5 +95,15 @@ export const entryEvents = {
         disposeAll: Object.assign(
                 () => new CustomEvent("entry:dispose-all"),
                 { type: "entry:dispose-all" as const }
+        ),
+
+        sortChange: Object.assign(
+                () => new CustomEvent("entry:sorted-by"),
+                { type: "entry:sorted-by" as const }
+        ),
+
+        togglePin: Object.assign(
+                (detail: HTMLDivElement) => new CustomEvent("entry:pin", { detail }),
+                { type: "entry:pin" as const }
         ),
 }

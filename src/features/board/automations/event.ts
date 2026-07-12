@@ -11,8 +11,11 @@ import { getAccount } from "@/core/utils/utils";
 export function initAutomationEvents() {
         if (BoardStore.isInitialized) return;
 
-        [HTML.create.btn, HTML.modify.createAutomationCta].forEach(btn =>
-                btn.addEventListener("click", () => setDiv(HTML.create.type.div)));
+        [HTML.create.btn, HTML.modify.createAutomationCta].forEach(btn => {
+                const hasFields = BoardStore.fields.size > 0;
+
+                btn.addEventListener("click", () => setDiv(hasFields ? HTML.create.type.div : HTML.create.noFields));
+        });
 
         HTML.body.addEventListener("click", (e: MouseEvent) => {
                 const elem = e.target as HTMLElement;
@@ -34,9 +37,11 @@ export function initAutomationEvents() {
 
         HTML.create.field.div.addEventListener("click", (e: MouseEvent) => {
                 const elem = e.target as HTMLElement;
-                if (elem.className !== "automation-field-div") return;
 
-                automationState.fieldId = elem.dataset.fieldId;
+                const automationFieldDiv = elem.closest(".automation-field-div") as HTMLDivElement;
+                if (!automationFieldDiv) return;
+
+                automationState.fieldId = automationFieldDiv.dataset.fieldId;
 
                 setDiv(HTML.create.url.div);
         });
@@ -119,7 +124,8 @@ export function initAutomationEvents() {
         });
 
         window.addEventListener(automationEvents.showModal.type, () => {
-                setDiv(HTML.create.type.div);
+                const hasFields = BoardStore.fields.size > 0;
+                setDiv(hasFields ? HTML.create.type.div : HTML.create.noFields);
                 HTML.modal.showModal();
         });
 

@@ -1,24 +1,24 @@
-import { BoardStore } from "../board-state";
+import { InfiniteScrollLoader } from "@/core/utils/dom";
 import { initEntryEvents } from "./event";
-import { HTML } from "./html";
-import { fetchEntries } from "./logic";
-import { createEntryRow } from "./view";
+import { fetchPagedEntries } from "./logic";
+import { setEntryRows } from "./view";
+import type { Entry } from "./types";
+import { BoardStore } from "../board-state";
+import { supabase } from "@/core/api/supabase";
 
 
 export async function initEntries(fieldCount: number) {
-        return fetchEntries()
-                .then(entries => {
-                        const rows = [] as Array<HTMLDivElement>;
+        const generator = fetchPagedEntries(fieldCount);
 
-                        for (let i = 0; i < entries.length; i += fieldCount) {
-                                const row = createEntryRow(entries.slice(i, i + fieldCount));
-                                rows.push(row);
-                        }
+        BoardStore.setEntryFetchGenerator(generator)
 
-                        HTML.entryDiv.append(...rows);
+        new InfiniteScrollLoader<Entry>({
+                fetcher: () => generator,
+                onBatch: (entries) => setEntryRows(entries)
+        });
 
-                        initEntryEvents();
-                        BoardStore.setRowCount(entries.length / fieldCount);
-                })
-                .catch(err => { throw new Error(`Failed to create entries ${err}`); })
+        const allEntryCount = await supabase.fetchEntryCount();
+        BoardStore.setRowCount({ all: allEntryCount / fieldCount });
+
+        initEntryEvents();
 }

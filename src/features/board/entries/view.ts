@@ -10,21 +10,38 @@ import { extractEntryValue, firstDeepestNode } from "./logic";
 import { getAccount } from "@/core/utils/utils";
 
 export async function changeFieldEntries({ fieldId, value, oldValue }: { fieldId: string, value: string, oldValue?: string }) {
-        const elems = HTML.entryDiv.querySelectorAll(`[data-field-id="${fieldId}"]`) as NodeListOf<HTMLSpanElement>;
+        const elems = HTML.entriesList.querySelectorAll(`[data-field-id="${fieldId}"]`) as NodeListOf<HTMLSpanElement>;
 
         for (const elem of elems) {
                 changeDeepestValue(elem, value, oldValue);
         }
 }
 
-export function entryCheckChange() {
-        const checked = document.querySelectorAll(".entry-check:checked").length;
+export function entryCheckChange(check: HTMLInputElement) {
+        const checkState = check.checked;
 
-        const visibleToolbar = checked > 0;
-        const fieldChecked = BoardStore.rowCount == checked;
+        const entrySet = check.closest(".entry-set") as HTMLDivElement;
+
+        const checkedInPinned = entrySet.parentElement?.className === "pinned-entry-rows";
+
+        const index = check.dataset.index;
+
+        if (checkedInPinned) {
+                const elem = HTML.entriesList.querySelector(`.entry-check[data-index="${index}"]`) as HTMLInputElement;
+                elem.checked = checkState;
+        }
+        else if (entrySet.classList.contains("pinned")) {
+                const elem = HTML.pinnedEntriesList.querySelector(`.entry-check[data-index="${index}"]`) as HTMLInputElement;
+                elem.checked = checkState;
+        }
+
+        const checkCount = HTML.entriesList.querySelectorAll(".entry-check:checked").length;
+
+        const visibleToolbar = checkCount > 0;
+        const fieldChecked = BoardStore.rowCount.rendered == checkCount;
 
         window.dispatchEvent(fieldEvents.checkChange(fieldChecked));
-        window.dispatchEvent(bottomToolbarEvents.visible({ visible: visibleToolbar, checkedCount: checked }));
+        window.dispatchEvent(bottomToolbarEvents.visible({ visible: visibleToolbar, checkedCount: checkCount }));
 }
 
 export function changeAllEntryChecks(checked: boolean) {
@@ -32,14 +49,14 @@ export function changeAllEntryChecks(checked: boolean) {
 
         inps.forEach(inp => inp.checked = checked);
 
-        const detailObject = { visible: checked, checkedCount: BoardStore.rowCount };
+        const detailObject = { visible: checked, checkedCount: inps.length };
 
         window.dispatchEvent(bottomToolbarEvents.visible(detailObject));
 }
 
 export function swapEntriesVisually({ startIndex, finalIndex }: { startIndex: number, finalIndex: number }) {
-        const entries1 = HTML.entryDiv.querySelectorAll(`.entry[data-order="${startIndex}"]`) as NodeListOf<HTMLDivElement>;
-        const entries2 = HTML.entryDiv.querySelectorAll(`.entry[data-order="${finalIndex}"]`) as NodeListOf<HTMLDivElement>;
+        const entries1 = HTML.entriesContainer.querySelectorAll(`.entry[data-order="${startIndex}"]`) as NodeListOf<HTMLDivElement>;
+        const entries2 = HTML.entriesContainer.querySelectorAll(`.entry[data-order="${finalIndex}"]`) as NodeListOf<HTMLDivElement>;
 
         if (!entries2 || entries2.length == 0) return;
 
@@ -56,10 +73,10 @@ export function swapEntriesVisually({ startIndex, finalIndex }: { startIndex: nu
 }
 
 export function swapEntriesDOM({ finalIndex, increase }: { finalIndex: number, increase: boolean }) {
-        const entries1 = HTML.entryDiv.querySelectorAll(`.entry[data-order="${finalIndex}"]`) as NodeListOf<HTMLDivElement>;
+        const entries1 = HTML.entriesContainer.querySelectorAll(`.entry[data-order="${finalIndex}"]`) as NodeListOf<HTMLDivElement>;
         const otherIndex = increase ? finalIndex - 1 : finalIndex + 1;
 
-        const entries2 = HTML.entryDiv.querySelectorAll(`.entry[data-order="${otherIndex}"]`) as NodeListOf<HTMLDivElement>;
+        const entries2 = HTML.entriesContainer.querySelectorAll(`.entry[data-order="${otherIndex}"]`) as NodeListOf<HTMLDivElement>;
         if (!entries2 || !entries1 || entries1.length == 0) return;
 
         for (let i = 0; i < entries2.length; i++) {
@@ -89,8 +106,20 @@ export function createEntryRow(entries: Array<Entry>): HTMLDivElement {
                 "boardId": `${BoardStore.boardId}`,
                 "index": `${entries[0].index}`,
         });
-
         checkboxDiv.appendChild(checkbox);
+
+        const pinDiv = Object.assign(document.createElement("div"), { className: "pin-div" });
+
+        const pin = Object.assign(document.createElement("span"), {
+                className: "pin-icon",
+                innerHTML: `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-star">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" />
+                </svg>
+                `});
+
+        pinDiv.appendChild(pin);
 
         const entryDivs = [];
 
@@ -100,18 +129,39 @@ export function createEntryRow(entries: Array<Entry>): HTMLDivElement {
 
                 const divEntry = genEntry(entries[i]);
                 divEntry.dataset.dbValue = entries[i].value ?? "";
-                divEntry.dataset.order = `${i + 1}`;
-                divEntry.style.order = `${i + 1}`;
+                divEntry.dataset.order = `${field?.index}`;
+                divEntry.style.order = `${field?.index}`;
 
                 entryDivs.push(divEntry);
         }
 
-        entrySet.append(checkboxDiv, ...entryDivs);
+        entrySet.append(checkboxDiv, pinDiv, ...entryDivs);
 
         return entrySet;
 }
 
-export async function createEntryCopiesFromEntrySet(entrySets: NodeListOf<HTMLDivElement>): Promise<Array<Entry>> {
+export function setEntryRows(entries: Array<Entry>, append: boolean = true) {
+        const fieldCount = BoardStore.fields.size;
+
+        const rows = [] as Array<HTMLDivElement>;
+
+        for (let i = 0; i < entries.length; i += fieldCount) {
+                const row = createEntryRow(entries.slice(i, i + fieldCount));
+                rows.push(row);
+        }
+
+        if (append) {
+                HTML.entriesList.append(...rows);
+        }
+        else {
+                HTML.entriesList.replaceChildren(...rows);
+        }
+
+        const newRows = entries.length / fieldCount
+        BoardStore.setRowCount({ rendered: append ? BoardStore.rowCount.rendered + newRows : newRows });
+}
+
+export async function createEntryCopiesFromEntrySet(entrySet: HTMLDivElement): Promise<Array<Entry>> {
         let entries: Entry[] = []
 
         const acc = await getAccount();
@@ -120,35 +170,32 @@ export async function createEntryCopiesFromEntrySet(entrySets: NodeListOf<HTMLDi
         const boardId = BoardStore.boardId;
         if (!boardId) throw new Error("Failed to get the boardId");
 
-        let rowCount = BoardStore.rowCount;
-        for (const entrySet of entrySets) {
-                const children = entrySet.children;
-                for (let i = 1; i < children.length; i++) {
-                        const child = children.item(i) as HTMLElement;
-                        const node = firstDeepestNode(child) as HTMLInputElement | HTMLDivElement;
-                        const val = extractEntryValue(node);
+        BoardStore.incrementRowCount();
+        const entryElems = entrySet.querySelectorAll(".entry") as NodeListOf<HTMLDivElement>;
 
-                        const entry: Entry = {
-                                id: crypto.randomUUID(),
-                                field_id: child.dataset.fieldId,
-                                value: val,
-                                account_id: acc.id,
-                                board_id: boardId,
-                                index: rowCount + 1,
-                                date_modified: new Date(),
-                                type: child.dataset.type,
-                        };
+        for (const entryElem of entryElems) {
+                const node = firstDeepestNode(entryElem) as HTMLInputElement | HTMLDivElement;
+                const val = extractEntryValue(node);
 
-                        entries.push(entry);
-                }
-                rowCount++;
+                const entry: Entry = {
+                        id: crypto.randomUUID(),
+                        field_id: entryElem.dataset.fieldId,
+                        value: val,
+                        account_id: acc.id,
+                        board_id: boardId,
+                        index: BoardStore.rowCount.all,
+                        date_modified: new Date(),
+                        type: entryElem.dataset.type,
+                };
+
+                entries.push(entry);
         }
 
         return entries;
 }
 
 export function createFieldEntries(field: Field, entryIds: Array<string>) {
-        const entrySets = HTML.entryDiv.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
+        const entrySets = HTML.entriesList.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
         if (entrySets.length == 0) return;
 
         const index = entrySets.item(0).children.length;
@@ -165,12 +212,10 @@ export function createFieldEntries(field: Field, entryIds: Array<string>) {
 export function updateFieldEntries(entries: Array<Entry>, index: number) {
         if (entries.length == 0) return;
 
-        const entrySets = HTML.entryDiv.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
+        const entrySets = HTML.entriesList.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
 
         for (let i = 0; i < entries.length; i++) {
                 const elem = entrySets.item(i).children.item(index) as HTMLElement;
-                console.log(elem);
-
 
                 Object.assign(elem.dataset, {
                         fieldId: `${entries[i].field_id}`,
@@ -179,7 +224,7 @@ export function updateFieldEntries(entries: Array<Entry>, index: number) {
         }
 }
 
-export function setupDropdown(entryElem: HTMLDivElement) {
+export function setupStatusDropdown(entryElem: HTMLDivElement) {
         const entryRect = entryElem.getBoundingClientRect();
 
         HTML.dropdown.menu.dataset.entryId = entryElem.dataset.entryId;
@@ -191,7 +236,11 @@ export function setupDropdown(entryElem: HTMLDivElement) {
 
         const fieldId = entryElem.dataset.fieldId;
         if (!fieldId) return;
-        setDropdownOptions(fieldId)
+
+        const field = BoardStore.getField(fieldId)!;
+        const options = (field.fieldHelpers ?? []);
+
+        setDropdownOptions(options)
 }
 
 export function hideMenu(e: MouseEvent): boolean {

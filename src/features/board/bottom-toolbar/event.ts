@@ -15,7 +15,7 @@ export function initBottomToolbarEvents() {
                         entry.checked = false;
                 }
 
-                window.dispatchEvent(new CustomEvent('field-check:change', { detail: { checked: false } }));
+                window.dispatchEvent(fieldEvents.checkChange(false));
                 setStateClass([], [HTML.outerDiv], "shown");
         })
 
@@ -55,9 +55,9 @@ export function initBottomToolbarEvents() {
         });
 
         HTML.duplicateSelected.addEventListener("click", async () => {
-                const entrySets = document.querySelectorAll(".entry-set:has(.entry-check:checked)") as NodeListOf<HTMLElement>;
+                const entrySets = document.querySelectorAll(".entry-set:has(.entry-check:checked)") as NodeListOf<HTMLDivElement>;
 
-                window.dispatchEvent(new CustomEvent('entry:copy-row', { detail: entrySets }));
+                window.dispatchEvent(entryEvents.copyRow(entrySets));
         });
 
         window.addEventListener(bottomToolbarEvents.visible.type, (e: Event) => {

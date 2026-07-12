@@ -2,7 +2,7 @@ import { closeDialog, setStateClass, showToast } from "@/core/utils/dom";
 import { BoardStore } from "../board-state";
 import { HTML } from "./html";
 import { deleteField, insertFieldAndEntries, insertFieldOption, removeFieldOption, switchIndex, updateFieldName, updateFieldOption } from "./logic";
-import { addHTMLField, addStatusOption, fieldDrag, populateFieldEditModal, toggleNewFieldMenu } from "./view";
+import { addHTMLField, createStatusOption, fieldDrag, populateFieldEditModal, toggleNewFieldMenu } from "./view";
 import type { Field, FieldHelper } from "./types";
 import { entryEvents, } from "../entries/custom-events";
 import { fieldEvents } from "./custom-events";
@@ -29,11 +29,11 @@ export function initFieldEvents() {
                 if (!fieldType) return;
 
                 const field = { id: crypto.randomUUID(), type: fieldType } as Field
-                const entryIds = Array.from({ length: BoardStore.rowCount }, () => crypto.randomUUID());
+                const entryIds = Array.from({ length: BoardStore.rowCount.all }, () => crypto.randomUUID());
 
                 window.dispatchEvent(entryEvents.newFieldEntries({ field, entryIds }));
 
-                addHTMLField(field);
+                const fieldElem = addHTMLField(field);
 
                 closeDialog(HTML.newFieldMenu);
 
@@ -45,6 +45,7 @@ export function initFieldEvents() {
                                 BoardStore.fields.set(newField.id!, newField);
                         })
                         .catch(err => {
+                                fieldElem.remove();
                                 window.dispatchEvent(entryEvents.realtimeRemoveEntries({ fieldId: field.id }));
 
                                 showToast(`Failed to add new field: ${err.message}`, "error");
@@ -69,6 +70,7 @@ export function initFieldEvents() {
                                 .catch(err => {
                                         HTML.fieldsDiv.insertBefore(field, nextSibling);
                                         window.dispatchEvent(entryEvents.showFieldEntries(fieldId));
+
                                         showToast(`Failed to remove field ${err}`, "error");
                                 });
                 }
@@ -86,11 +88,12 @@ export function initFieldEvents() {
                         const id = crypto.randomUUID();
 
                         const field = BoardStore.getField(fieldId);
+                        if (!field) return;
 
-                        const fieldHelper = { id, value } as FieldHelper;
+                        const fieldHelper = { id, field_id: field.id, value } as FieldHelper;
                         field?.fieldHelpers?.push(fieldHelper);
 
-                        const statusOptionDiv = addStatusOption(fieldHelper);
+                        const statusOptionDiv = createStatusOption(fieldHelper);
 
                         HTML.editModal.status.list.appendChild(statusOptionDiv);
                         HTML.editModal.status.addInput.value = "";
@@ -180,7 +183,6 @@ export function initFieldEvents() {
                         .then(_ => HTML.editModal.input.dataset.dbValue = newName)
                         .catch(err => {
                                 inp.innerText = HTML.editModal.input.dataset.dbValue!;
-                                console.log(err);
                                 showToast(`Failed to change the field name: ${err}`, "error");
                         });
         });
@@ -198,15 +200,63 @@ export function initFieldEvents() {
                         const fieldId = fieldDiv.dataset.fieldId;
                         if (!fieldId) return;
 
-                        const field = BoardStore.getField(fieldId) as Field;
 
-                        HTML.editModal.modal.showModal();
-                        populateFieldEditModal(field);
+                        const fieldRect = fieldDiv.getBoundingClientRect();
+
+                        HTML.fieldDropdown.style.left = `${fieldRect.left}px`;
+                        HTML.fieldDropdown.style.top = `${fieldRect.bottom + 2}px`;
+
+                        HTML.fieldDropdown.dataset.fieldId = fieldId;
+
+                        const ascending = HTML.fieldDropdown.querySelector("#sort-ascending-btn");
+                        const descending = HTML.fieldDropdown.querySelector("#sort-descending-btn");
+
+                        ascending?.classList.remove("active");
+                        descending?.classList.remove("active");
+
+                        if (BoardStore.sortedBy.fieldId == fieldId) {
+                                const option = BoardStore.sortedBy.ascending ? ascending : descending;
+
+                                option?.classList.add("active");
+                        }
+
+                        HTML.fieldDropdown.showModal();
                 }
                 else if (elem.className == HTML.fieldCheck.className) {
                         window.dispatchEvent(entryEvents.entryCheckChangeAll(HTML.fieldCheck.checked));
                 }
         });
+
+        HTML.fieldDropdown.addEventListener("click", async (e: Event) => {
+                const elem = e.target as HTMLElement;
+
+                if (elem.classList[0] != "field-dropdown-option") return;
+
+                const fieldId = HTML.fieldDropdown.dataset.fieldId;
+                if (!fieldId) return;
+
+                if (elem.id === "edit-field") {
+                        const field = BoardStore.getField(fieldId!) as Field;
+                        populateFieldEditModal(field);
+
+                        closeDialog(HTML.fieldDropdown);
+                        HTML.editModal.modal.showModal();
+                }
+                else {
+                        const ascending = elem.id === "sort-ascending-btn";
+
+                        const currSort = BoardStore.sortedBy;
+                        if (currSort?.fieldId == fieldId && currSort.ascending == ascending) {
+                                BoardStore.setSortedBy(undefined, undefined);
+                        }
+                        else {
+                                BoardStore.setSortedBy(fieldId, ascending);
+                        }
+
+                        window.dispatchEvent(entryEvents.sortChange());
+                        closeDialog(HTML.fieldDropdown);
+                }
+        })
 
         HTML.fieldsDiv.addEventListener("mouseover", (e: MouseEvent) => {
                 const elem = e.target as HTMLElement;

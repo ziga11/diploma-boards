@@ -1,4 +1,5 @@
 import { BoardStore } from "../board-state";
+import type { FieldHelper } from "../fields/types";
 import { HTML } from "./html";
 import { firstDeepestNode } from "./logic";
 import type { Entry } from "./types";
@@ -46,17 +47,15 @@ function createOption(optionText: string): HTMLDivElement {
 
         const span = Object.assign(document.createElement("span"), {
                 innerText: optionText,
-                className: "dropdown-option-span",
-        })
+                className: `dropdown-option-span`,
+        });
 
         div.append(span);
         return div;
 }
 
-export function setDropdownOptions(fieldId: string) {
-        const field = BoardStore.getField(fieldId)!;
-
-        const options = (field.fieldHelpers ?? []).map(fh => createOption(fh.value));
+export function setDropdownOptions(fhOptions: Array<FieldHelper>) {
+        const options = fhOptions.map(fh => createOption(fh.value));
 
         const emptyOption = Object.assign(document.createElement("div"), {
                 id: "empty-option",

@@ -10,10 +10,6 @@ export async function initWorkspace() {
         initWorkspaceEvents();
 
         fetchBoards()
-                .then(async boards => {
-                        console.log(boards);
-
-                        await fillBoards(boards);
-                })
+                .then(async boards => { await fillBoards(boards); })
                 .catch(err => console.warn(`Failed to fetch boards ${err.message}`));
 }

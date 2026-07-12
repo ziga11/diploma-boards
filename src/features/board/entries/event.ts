@@ -1,7 +1,7 @@
 import { closeDialog, setStateClass, showToast } from "@/core/utils/dom";
 import { HTML } from "./html";
-import { changeAllEntryChecks, changeFieldEntries, createEntryCopiesFromEntrySet as createEntryCopiesFromEntrySets, createEntryRow, createFieldEntries, entryCheckChange, setupDropdown, swapEntriesDOM, swapEntriesVisually, updateFieldEntries } from "./view";
-import { insertEntries, updateEntry, deleteRows, triggerAutomation, } from "./logic";
+import { changeAllEntryChecks, changeFieldEntries, createEntryCopiesFromEntrySet, createEntryRow, createFieldEntries, entryCheckChange, setEntryRows, setupStatusDropdown, swapEntriesDOM, swapEntriesVisually, updateFieldEntries } from "./view";
+import { insertEntryRow, updateEntry, deleteRow, triggerAutomation, insertEntryRows, } from "./logic";
 import { BoardStore } from "../board-state";
 import { entryEvents } from "./custom-events";
 import { bottomToolbarEvents } from "../bottom-toolbar/custom-events";
@@ -11,10 +11,12 @@ import type { Entry } from "./types";
 
 let prevEntryVal: string | undefined;
 
+let debounceTimer: number;
+
 export function initEntryEvents() {
         if (BoardStore.isInitialized) return;
 
-        HTML.entryDiv.addEventListener("click", async (e: MouseEvent) => {
+        HTML.entriesContainer.addEventListener("click", async (e: MouseEvent) => {
                 const elem = e.target as HTMLElement;
 
                 if (elem.classList[0] === "entry-status" && (elem instanceof HTMLDivElement)) {
@@ -24,18 +26,22 @@ export function initEntryEvents() {
                         window.dispatchEvent(entryEvents.btnTriggered(elem.parentElement as HTMLDivElement));
                 }
                 else if (elem.className === "entry-check") {
-                        window.dispatchEvent(entryEvents.checkChange());
+                        window.dispatchEvent(entryEvents.checkChange(elem as HTMLInputElement));
+                }
+                else if (elem.className === "pin-div") {
+                        const entrySet = elem.closest(".entry-set") as HTMLDivElement;
+                        window.dispatchEvent(entryEvents.togglePin(entrySet));
                 }
         });
 
-        HTML.entryDiv.addEventListener("focusin", (e: FocusEvent) => {
+        HTML.entriesContainer.addEventListener("focusin", (e: FocusEvent) => {
                 const elem = e.target as HTMLElement;
                 if (elem.classList[0] != "entry") return;
 
                 prevEntryVal = (elem as HTMLInputElement).value;
         });
 
-        HTML.entryDiv.addEventListener("focusout", (e: FocusEvent) => {
+        HTML.entriesContainer.addEventListener("focusout", (e: FocusEvent) => {
                 const elem = e.target as HTMLElement;
                 if (elem.classList[0] != "entry") return;
 
@@ -56,8 +62,7 @@ export function initEntryEvents() {
                 closeDialog(HTML.dropdown.menu);
 
                 const entryId = HTML.dropdown.menu.dataset.entryId;
-                const entryElem = HTML.entryDiv.querySelector(`[data-entry-id="${entryId}"]`) as HTMLDivElement;
-
+                const entryElem = HTML.entriesList.querySelector(`[data-entry-id="${entryId}"]`) as HTMLDivElement;
 
                 const value = elem.dataset.value ?? "";
                 if (value == entryElem.dataset.dbValue) return;
@@ -81,6 +86,22 @@ export function initEntryEvents() {
 
         });
 
+        HTML.search.addEventListener("input", () => {
+                const value = HTML.search.value;
+
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(async () => {
+                        BoardStore.setSearchQuery(value)
+
+                        const result = await BoardStore.entryFetchGenerator!.next();
+
+                        if (result.done) return;
+                        const entries = result.value ?? [];
+
+                        setEntryRows(entries, false);
+                }, value.length < 2 ? 500 : 300);
+        });
+
         window.addEventListener(entryEvents.statusClicked.type, (e: Event) => {
                 const elem = (e as ReturnType<typeof entryEvents.statusClicked>).detail;
 
@@ -89,7 +110,7 @@ export function initEntryEvents() {
                         return;
                 }
 
-                setupDropdown(elem);
+                setupStatusDropdown(elem);
         });
 
         window.addEventListener(entryEvents.entryCheckChangeAll.type, (e: Event) => {
@@ -101,7 +122,7 @@ export function initEntryEvents() {
         window.addEventListener(entryEvents.realtimeEntryChange.type, (e: Event) => {
                 const object = (e as ReturnType<typeof entryEvents.realtimeEntryChange>).detail;
 
-                const elem = HTML.entryDiv.querySelector(`.entry[data-entry-id="${object.entryId}"]`) as HTMLDivElement | HTMLInputElement;
+                const elem = HTML.entriesList.querySelector(`.entry[data-entry-id="${object.entryId}"]`) as HTMLDivElement | HTMLInputElement;
                 if (!elem) return;
 
                 changeDeepestValue(elem, object.value);
@@ -112,7 +133,10 @@ export function initEntryEvents() {
 
                 changeFieldEntries(object);
         });
-        window.addEventListener(entryEvents.checkChange.type, () => entryCheckChange());
+        window.addEventListener(entryEvents.checkChange.type, (e: Event) => {
+                const check = (e as ReturnType<typeof entryEvents.checkChange>).detail;
+                entryCheckChange(check);
+        });
 
         window.addEventListener(entryEvents.visuallySwap.type, (e: Event) => {
                 const object = (e as ReturnType<typeof entryEvents.visuallySwap>).detail;
@@ -126,57 +150,70 @@ export function initEntryEvents() {
         });
 
         window.addEventListener(entryEvents.removeSelected.type, _ => {
-                const entryChecks = HTML.entryDiv.querySelectorAll(".entry-check:checked") as NodeListOf<HTMLInputElement>;
+                const entryChecks = HTML.entriesList.querySelectorAll(".entry-check:checked") as NodeListOf<HTMLInputElement>;
 
                 const indices: Array<number> = [];
+                const entrySets: Array<HTMLDivElement> = [];
 
-                for (const entryCheck of entryChecks)
-                        indices.push(Number(entryCheck.dataset.index));
+                for (const entryCheck of entryChecks) {
+                        const entrySet = entryCheck.closest(".entry-set") as HTMLDivElement;
 
-                deleteRows(indices)
+                        const ind = Number(entryCheck.dataset.index);
+                        indices.push(ind);
+
+                        entrySet.style.display = "none";
+
+                        entrySets.push(entrySet);
+                }
+
+                deleteRow(indices)
                         .then(_ => {
-                                BoardStore.setRowCount(BoardStore.rowCount - entryChecks.length)
+                                entrySets.forEach(e => e.remove());
 
-                                entryChecks.forEach(entryCheck => (entryCheck.closest(".entry-set") as HTMLDivElement).remove());
+                                const renderedRows = BoardStore.rowCount.rendered - entryChecks.length;
+                                const allRows = BoardStore.rowCount.all - entryChecks.length;
+
+                                BoardStore.setRowCount({ rendered: renderedRows, all: allRows });
                         })
-                        .catch(err => showToast(`Failed to delete rows: ${err}`, "error"));
+                        .catch(err => {
+                                entrySets.forEach(e => e.style.display = "block");
+                                showToast(`Failed to delete rows: ${err}`, "error");
+                        });
         });
 
         window.addEventListener(entryEvents.realtimeRemoveEntries.type, (e: Event) => {
                 const { fieldId, indices } = (e as ReturnType<typeof entryEvents.realtimeRemoveEntries>).detail;
 
                 if (fieldId != undefined) {
-                        const entries = HTML.entryDiv.querySelectorAll(`[data-field-id="${fieldId}"]`)
+                        const entries = HTML.entriesList.querySelectorAll(`[data-field-id="${fieldId}"]`)
                         for (const entry of entries) entry.remove();
                 }
                 else if (indices != undefined) {
-                        const entrySets = HTML.entryDiv.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
+                        const entrySets = HTML.entriesList.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
                         for (const index of indices) {
                                 entrySets[index].remove();
                         }
 
-                        BoardStore.setRowCount(BoardStore.rowCount - indices.length)
+                        const renderedRows = BoardStore.rowCount.rendered - indices.length;
+                        const allRows = BoardStore.rowCount.all - indices.length;
+
+                        BoardStore.setRowCount({ rendered: renderedRows, all: allRows })
                 }
         });
 
         window.addEventListener(entryEvents.hideFieldEntries.type, (e: Event) => {
                 const obj = (e as ReturnType<typeof entryEvents.hideFieldEntries>).detail;
-                console.log("hide field entries", obj);
-
 
                 if (obj.fieldId != undefined) {
-                        const entries = HTML.entryDiv.querySelectorAll(`.entry[data-field-id="${obj.fieldId}"]`)
-                        console.log(entries);
+                        const entries = HTML.entriesList.querySelectorAll(`.entry[data-field-id="${obj.fieldId}"]`)
 
                         setStateClass(Array.from(entries), [], "hidden")
                 }
                 else if (obj.index != undefined) {
-                        const entrySets = HTML.entryDiv.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
-                        console.log(entrySets);
+                        const entrySets = HTML.entriesList.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
 
                         for (const entrySet of entrySets) {
                                 const elemAtInd = entrySet.children.item(obj.index);
-                                console.log(elemAtInd);
 
                                 elemAtInd?.classList.add("hidden");
                         }
@@ -185,7 +222,7 @@ export function initEntryEvents() {
 
         window.addEventListener(entryEvents.showFieldEntries.type, (e: Event) => {
                 const fieldId = (e as ReturnType<typeof entryEvents.showFieldEntries>).detail;
-                const entries = HTML.entryDiv.querySelectorAll(`[data-field-id="${fieldId}"]`)
+                const entries = HTML.entriesList.querySelectorAll(`[data-field-id="${fieldId}"]`)
 
                 setStateClass([], Array.from(entries), "hidden")
         });
@@ -216,13 +253,11 @@ export function initEntryEvents() {
 
         window.addEventListener(entryEvents.newRow.type, () => {
                 if (BoardStore.fields.size == 0) {
-                        console.log("showing toast");
-
                         showToast(`Cannot make a new row, no existing fields`, "error")
                         return;
                 }
 
-                const index = BoardStore.rowCount + 1; /* start --> 1 */
+                const index = BoardStore.rowCount.all + 1; /* start --> 1 */
 
                 const fields = Array.from(BoardStore.fields.values()).sort((a, b) => a.index! - b.index!);
                 const entries = fields.map(field => ({
@@ -236,9 +271,9 @@ export function initEntryEvents() {
 
                 const row = createEntryRow(entries);
 
-                HTML.entryDiv.appendChild(row);
+                HTML.entriesList.appendChild(row);
 
-                insertEntries(entries)
+                insertEntryRow(entries)
                         .then(_ => BoardStore.incrementRowCount())
                         .catch(err => {
                                 row.remove();
@@ -260,31 +295,72 @@ export function initEntryEvents() {
                         rows.push(row);
                 }
 
-                HTML.entryDiv.append(...rows);
+                HTML.entriesList.append(...rows);
         });
 
         window.addEventListener(entryEvents.copyRow.type, async (e: Event) => {
                 const entrySets = (e as ReturnType<typeof entryEvents.copyRow>).detail;
 
-                const entrySetLen = entrySets[0].children.length - 1;
-                const entries = await createEntryCopiesFromEntrySets(entrySets);
-
+                const entrySetsArr = [] as Array<Array<Entry>>;
                 const rows = [] as Array<HTMLDivElement>;
 
-                for (let i = 0; i < entries.length; i += entrySetLen) {
-                        const row = createEntryRow(entries.slice(i, i + entrySetLen));
+                for (const entrySet of entrySets) {
+                        const entries = await createEntryCopiesFromEntrySet(entrySet);
+                        const row = createEntryRow(entries);
+
                         rows.push(row)
+                        entrySetsArr.push(entries)
                 }
 
-                HTML.entryDiv.append(...rows);
+                HTML.entriesList.append(...rows);
 
-                insertEntries(entries)
-                        .then(() => { BoardStore.setRowCount(BoardStore.rowCount + rows.length) })
-                        .catch(() => { for (const row of rows) { HTML.entryDiv.removeChild(row); } });
+                insertEntryRows(entrySetsArr)
+                        .catch(() => {
+                                rows.forEach(row => row.remove());
+
+                                const rendered = BoardStore.rowCount.rendered;
+                                const all = BoardStore.rowCount.all;
+
+                                BoardStore.setRowCount({ rendered, all });
+                        });
+        });
+
+        window.addEventListener(entryEvents.togglePin.type, (e: Event) => {
+                const entrySet = (e as ReturnType<typeof entryEvents.togglePin>).detail;
+                const container = entrySet.parentElement as HTMLDivElement;
+
+                const rowIndex = entrySet.dataset.index;
+
+                entrySet.classList.toggle("pinned");
+
+                if (container === HTML.entriesList) {
+                        const pinnedEntrySet = HTML.pinnedEntriesList.querySelector(`[data-index="${rowIndex}"]`) as HTMLDivElement;
+                        if (pinnedEntrySet) {
+                                pinnedEntrySet.remove();
+                                return;
+                        }
+
+                        const copiedEntrySet = entrySet.cloneNode(true);
+                        HTML.pinnedEntriesList.appendChild(copiedEntrySet);
+                }
+                else {
+                        const entrySetInList = HTML.entriesList.querySelector(`[data-index="${rowIndex}"]`) as HTMLDivElement;
+                        entrySetInList.classList.toggle("pinned");
+                        entrySet.remove();
+                }
+        });
+
+        window.addEventListener(entryEvents.sortChange.type, async () => {
+                const result = await BoardStore.entryFetchGenerator!.next();
+
+                if (result.done) return;
+                const entries = result.value ?? [];
+
+                setEntryRows(entries, false);
         });
 
         window.addEventListener(entryEvents.disposeAll.type, () => {
                 if (!BoardStore.isInitialized) return;
-                HTML.entryDiv.innerHTML = "";
-        })
+                HTML.entriesList.innerHTML = "";
+        });
 }

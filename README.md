@@ -1,22 +1,34 @@
 # Dynamic Project Board System
 
-A highly flexible, general-purpose platform for data management and workflow visualization, inspired by tools like monday.com.
-
-## 📋 Overview
-The Project Board System is a dynamic environment where users can define their own data structures without writing code. While it was utilized in the diploma for HR recruitment and tracking employee absences, the core engine is designed to handle any type of tabular data through user-defined schemas.
+General purpose board data management website, inspired by tools like monday.com.
 
 ## 🛠 Tech Stack
 * **Framework:** Vite
 * **Language:** TypeScript
 * **Real-time Backend:** Supabase (Realtime Database & Google OAuth)
-* **UI Components:** Bootstrap
+* **UI Icons:** Tabler
 
-## ✨ Key Features
-* **Custom Schema Definition:** Create arbitrary tables with specialized field types including text, status labels, dates, and action buttons.
-* **Real-time Collaboration:** All changes are synchronized across all connected clients instantly via Supabase.
-* **Event-Driven Automation:** Configurable webhooks that trigger external actions based on data changes (e.g., sending a notification when a status field is updated).
-* **Mass Data Operations:** Built-in support for bulk selection, duplication, and deletion of records.
-* **Flexible UI:** Dynamic rendering of components based on the user-defined table structure.
+## 📋 Overview
+The Board System allows the user to create entries of different types, for now its just the basic ones (text, status, button and date). It also allows on action URL calls. it was used as part of the system I was developing for my Diploma. It has gotten a lot of updates since.
+
+## Features
+* **Field Definitions:** User can create arbitrary fields, which can be of typ text, status, date or button
+* **RealTime sync:** The project uses supabase, which handles realtime updates, allowing for multiperson syncronised workflow.
+* **Event Automations:** The user can create automations, which are called when manipulating data (text change, status change, button press, row inserted, row deleted and any row change).
+* **Permissions:** The creator has the ability of adding new people and defining their permissions. These can be 
+    *Member (View Only)*
+    *Editor (only edit)*
+    *Manager (edit + automations)*
+    *Admin (edit + automations + invitations)*
+    *Owner (everything)*.
+* **History Of Changes:** Users have access to seeing the history of changes as well as potential recovery of a deletion.
+* **Pinning rows:** Pinning rows for easy access
+* **API:** User can use an API key to manipulate (insert/update/delete) data from outside the website.
+
+## TODO
+* **Premade Actions:** Manipulating another board on change or sending an email, on date occoured actions etc.
+* **Outside tool integrations:** Adding Zapier, n8n and other tools instant integration without any hassle.
+* **File Field**: Adding a file type as well as file view right on the website (if possible)
 
 ## Previews
 ![ER Diagram](/public/assets/er.jpg)

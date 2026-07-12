@@ -7,5 +7,8 @@ export const HTML = {
 
         get filterAction() { return activePage().querySelector(`#history-modal .filter-group[data-filter="action"]`) as HTMLDialogElement },
         get filterColumn() { return activePage().querySelector(`#history-modal .filter-group[data-filter="column"]`) as HTMLDialogElement },
+
+        get payloadModal() { return activePage().querySelector(`#history-modal .payload-container`) as HTMLDialogElement },
+
         get entries() { return activePage().querySelector(".entries") as HTMLDivElement }
 }

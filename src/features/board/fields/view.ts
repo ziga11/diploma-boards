@@ -1,4 +1,5 @@
 import { HTML } from "./html";
+import DOMPurify from 'dompurify';
 import type { Field, FieldHelper } from "./types";
 import { dragProps } from "./event";
 import { BoardStore } from "../board-state";
@@ -16,7 +17,8 @@ export function createHTMLField(field: Field): HTMLDivElement {
         });
         Object.assign(div.dataset, {
                 type: field.type,
-                fieldId: `${field.id}`
+                fieldId: `${field.id}`,
+                order: `${field.index}`
         });
 
         const input = Object.assign(document.createElement('span'), {
@@ -26,7 +28,7 @@ export function createHTMLField(field: Field): HTMLDivElement {
 
         const editBtn = Object.assign(document.createElement('button'), {
                 className: "edit-field",
-                innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-pencil-cog"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" /><path d="M13.5 6.5l4 4" /><path d="M17.001 19a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M19.001 15.5v1.5" /><path d="M19.001 21v1.5" /><path d="M22.032 17.25l-1.299 .75" /><path d="M17.27 20l-1.3 .75" /><path d="M15.97 17.25l1.3 .75" /><path d="M20.733 20l1.3 .75" /></svg>`,
+                innerHTML: `<i class="ti ti-chevron-down"></i>`,
         });
         div.append(input, editBtn);
 
@@ -68,11 +70,12 @@ export function toggleNewFieldMenu() {
         addMenu.style.top = btnRect.top + 10 + window.scrollY + 'px';
 }
 
-export function addStatusOption(helper: FieldHelper) {
+export function createStatusOption(helper: FieldHelper) {
         const div = Object.assign(document.createElement("div"), { className: "status-option-item" });
         div.dataset.helperId = `${helper.id}`;
-        div.innerHTML = `<input type="text" class="field-edit-input" value="${helper.value}">
-                        <button class="btn btn-sm btn-outline-danger remove-status-option">×</button>`;
+        div.innerHTML = DOMPurify.sanitize(
+                `<input type="text" class="field-edit-input" value="${helper.value}">
+                <button class="btn btn-sm btn-outline-danger remove-status-option">×</button>`);
 
         return div
 }
@@ -86,7 +89,7 @@ export function populateFieldEditModal(field: Field): void {
         if (field.type === "status") {
                 HTML.editModal.status.list.innerHTML = "";
                 for (const helper of field.fieldHelpers ?? []) {
-                        HTML.editModal.status.list.appendChild(addStatusOption(helper));
+                        HTML.editModal.status.list.appendChild(createStatusOption(helper));
                 }
                 HTML.editModal.status.section.classList.remove("d-none");
         }
@@ -121,7 +124,7 @@ export async function fieldDrag(e: MouseEvent) {
         dragProps.fieldRect = dragProps.field!.getBoundingClientRect();
 
         window.dispatchEvent(entryEvents.visuallySwap({ startIndex, finalIndex, increase }));
-        /*         window.dispatchEvent(entryEvents.swapDOM({ finalIndex, increase })); */
+        window.dispatchEvent(entryEvents.swapDOM({ finalIndex, increase }));
 }
 
 function swapField({ field, finalIndex, increase }: { field: HTMLDivElement, finalIndex: number, increase: boolean }) {
@@ -147,7 +150,6 @@ export function appendFieldDivs(fields: Array<Field>) {
                 const field = fields[i];
 
                 const f = createHTMLField(field);
-                f.dataset.order = `${i + 1}`;
 
                 fragment.append(f);
         }

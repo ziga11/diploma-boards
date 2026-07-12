@@ -1,8 +1,10 @@
-import { setStateClass } from "@/core/utils/dom";
+import DOMPurify from 'dompurify';
+import { InfiniteScrollLoader, setStateClass } from "@/core/utils/dom";
 import { historyEvents } from "./custom-events";
 import { HTML } from "./html";
-import { fetchHistory } from "./logic";
-import { setHistoryFilter, setHistoryLogs } from "./view";
+import { setHistoryFilter, addHistoryLogs, renderPayload } from "./view";
+import { supabase } from "@/core/api/supabase";
+import type { EntryLog, HistoryLog } from "./types";
 
 export function initHistoryEvents() {
         HTML.filterAction.addEventListener("click", (e: MouseEvent) => {
@@ -38,19 +40,40 @@ export function initHistoryEvents() {
                 setStateClass([elem], [activeColumn], "active")
         });
 
-        HTML.filterColumn.addEventListener("click", (e: MouseEvent) => {
+        HTML.list.addEventListener("click", (e: MouseEvent) => {
                 const elem = e.target as HTMLElement;
 
-                const activeColumn = HTML.filterColumn.querySelector(".active");
-                if (activeColumn == elem) return;
+                if (elem.className != "show-payload-container-btn") return;
 
-                setStateClass([elem], [activeColumn], "active")
+                const historyItem = elem.closest(".history-item") as HTMLDivElement;
+
+                const logId = historyItem.dataset.id;
+                if (!logId) return;
+
+                HTML.payloadModal.innerHTML = "";
+
+                new InfiniteScrollLoader<EntryLog>({
+                        fetcher: () => supabase.fetchHistoryLogEntries(logId),
+                        onBatch: (entries) => {
+                                const entryElems = `${entries.map(e => `<div class="history-payload">${renderPayload(e, "")}</div>`).join("")}`;
+
+                                const cleanFragment = DOMPurify.sanitize(entryElems, { RETURN_DOM_FRAGMENT: true }) as DocumentFragment;
+
+                                HTML.payloadModal.append(cleanFragment);
+                        },
+                });
+
+                HTML.payloadModal.showModal();
         });
 
         window.addEventListener(historyEvents.showModal.type, async () => {
-                const logs = await fetchHistory();
+                HTML.list.innerHTML = "";
+                HTML.payloadModal.innerHTML = "";
 
-                setHistoryLogs(logs);
+                new InfiniteScrollLoader<HistoryLog>({
+                        fetcher: () => supabase.fetchHistory(),
+                        onBatch: (logs) => addHistoryLogs(logs),
+                });
 
                 HTML.modal.showModal();
         });

@@ -78,3 +78,59 @@ export function initToastLayerManagement() {
                 attributeFilter: ['open']
         });
 }
+
+export class InfiniteScrollLoader<T> {
+        private observer: IntersectionObserver;
+        private sentinelEl: HTMLElement | null = null;
+        private isFetching = false;
+        private gen: AsyncGenerator<T[]>;
+        private allLoaded = false;
+
+        private fetcher: () => AsyncGenerator<T[]>;
+        private onBatch: (...args: T[][]) => void;
+
+        constructor({ fetcher, onBatch }: {
+                fetcher: () => AsyncGenerator<T[]>;
+                onBatch: (...args: T[][]) => void;
+        }) {
+                this.fetcher = fetcher;
+                this.onBatch = onBatch;
+                this.gen = this.fetcher();
+                this.observer = new IntersectionObserver(
+                        (entries) => {
+                                if (entries[0].isIntersecting) {
+                                        this.loadNextBatch();
+                                }
+                        },
+                        { rootMargin: '0px', threshold: 0 }
+                );
+                this.loadNextBatch();
+        }
+
+        setSentinel(el: HTMLElement | null) {
+                if (this.sentinelEl) this.observer.unobserve(this.sentinelEl);
+                this.sentinelEl = el;
+                if (el) this.observer.observe(el);
+        }
+
+        private async loadNextBatch() {
+                if (this.isFetching || this.allLoaded) return;
+                this.isFetching = true;
+                try {
+                        const { value, done } = await this.gen.next();
+                        if (done || !value) {
+                                this.allLoaded = true;
+                        } else {
+                                this.onBatch(value);
+                        }
+                } catch (err) {
+                        console.error('InfiniteScrollLoader: fetch failed', err);
+                } finally {
+                        this.isFetching = false;
+                }
+        }
+
+        destroy() {
+                this.observer.disconnect();
+        }
+}

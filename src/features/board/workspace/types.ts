@@ -1,6 +1,5 @@
 export interface Board {
         id?: string;
-        account_id?: string;
         color?: string;
         name?: string;
         date_created?: Date;

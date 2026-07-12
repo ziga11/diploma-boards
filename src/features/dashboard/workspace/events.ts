@@ -18,9 +18,6 @@ export function initWorkspaceEvents() {
                 const id = elem.dataset.boardId;
                 if (!id) return;
 
-                console.log(elem);
-                console.log(elem.dataset);
-
                 navigate(boardLink(id));
         });
 
@@ -67,11 +64,11 @@ export function initWorkspaceEvents() {
                 boardElem?.remove();
         });
 
-        window.addEventListener(dashboardEvents.hideBoard.type, (e: Event) => {
-                const boardId = (e as ReturnType<typeof dashboardEvents.hideBoard>).detail;
+        window.addEventListener(dashboardEvents.setBoardClass.type, (e: Event) => {
+                const { id, state } = (e as ReturnType<typeof dashboardEvents.setBoardClass>).detail;
 
-                const boardElem = HTML.boardList.div.querySelector(`[data-board-id="${boardId}"]`);
-                boardElem?.classList.add("hidden");
+                const boardElem = HTML.boardList.div.querySelector(`[data-board-id="${id}"]`);
+                boardElem?.classList.add(state);
         });
 
         window.addEventListener(dashboardEvents.moveBoard.type, (e: Event) => {
@@ -101,17 +98,11 @@ export function initWorkspaceEvents() {
                 div!.appendChild(boardElem);
         });
 
-        window.addEventListener(dashboardEvents.showBoard.type, (e: Event) => {
-                const boardId = (e as ReturnType<typeof dashboardEvents.showBoard>).detail;
+        window.addEventListener(dashboardEvents.removeBoardClass.type, (e: Event) => {
+                const { id, state } = (e as ReturnType<typeof dashboardEvents.removeBoardClass>).detail;
 
-                const boardElem = HTML.boardList.div.querySelector(`[data-board-id="${boardId}"]`);
-                boardElem?.classList.remove("hidden");
-        });
-
-        window.addEventListener(dashboardEvents.showNewNotifications.type, (e: Event) => {
-                const shown = (e as ReturnType<typeof dashboardEvents.showNewNotifications>).detail;
-
-                HTML.toolbar.notification.spanNewNotifications.classList.toggle("shown", shown);
+                const boardElem = HTML.boardList.div.querySelector(`[data-board-id="${id}"]`);
+                boardElem?.classList.remove(state);
         });
 
         window.addEventListener(dashboardEvents.updateBoard.type, (e: Event) => {

@@ -6,7 +6,6 @@ import { dashboardEvents } from "../workspace/custom-events";
 import { addBoardEvents } from "./custom-events";
 import type { Board } from "../workspace/types";
 import { PermissionId } from "@/core/types/auth";
-import { getAccount } from "@/core/utils/utils";
 
 export function initAddBoardEvents() {
         HTML.colorPicker.addEventListener('input', () => updateColor(HTML.colorPicker.value));
@@ -23,24 +22,22 @@ export function initAddBoardEvents() {
 
                 closeDialog(HTML.modal);
 
-                const acc = await getAccount();
-                if (!acc) return;
-
                 const board = {
                         id: crypto.randomUUID(),
                         date_created: new Date(),
                         is_owner: true,
                         permission_id: PermissionId.Admin,
-                        account_id: acc.id,
+                        deleted: false,
                         name,
                         color,
                 } as Board;
 
                 window.dispatchEvent(dashboardEvents.addMultipleBoards({
                         boards: [board],
-                        type: "owned"
+                        type: "owned",
                 }));
 
+                /* Add inserting class to the board*/
                 insertBoard(board)
                         .catch(err => {
                                 showToast(`Failed to insert new board ${err}`, "error");

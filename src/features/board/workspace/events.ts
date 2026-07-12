@@ -30,11 +30,12 @@ export function initWorkspaceEvents() {
 
                 HTML.leave.modal.close();
                 navigate("/dashboard");
-                window.dispatchEvent(dashboardEvents.hideBoard(id))
+                window.dispatchEvent(dashboardEvents.setBoardClass({ id, state: "hidden" }))
+
                 leaveBoard()
                         .then(_ => window.dispatchEvent(dashboardEvents.removeBoard(id)))
                         .catch(err => {
-                                window.dispatchEvent(dashboardEvents.showBoard(id))
+                                window.dispatchEvent(dashboardEvents.removeBoardClass({ id, state: "hidden" }))
                                 showToast(`Failed to delete board: ${err}`, "error")
                         });
         });

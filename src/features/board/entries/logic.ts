@@ -3,12 +3,14 @@ import type { Entry } from "./types";
 import { BoardStore } from "../board-state";
 import { getAccount } from "@/core/utils/utils";
 import { AutomationId } from "../automations/types";
+import { HTML } from "./html";
+import { changeDeepestValue } from "./view-utils";
 
-export async function fetchEntries() {
+export function fetchPagedEntries(fieldCount: number) {
         const boardId = BoardStore.boardId;
         if (!boardId) throw new Error(`Failed to fetch entries, board id not set`);
 
-        return supabase.fetchEntries(boardId);
+        return supabase.fetchPagedEntries(boardId, fieldCount);
 }
 
 export function firstDeepestNode(element: Element): Element {
@@ -21,58 +23,35 @@ export function extractEntryValue(entryHTML: HTMLInputElement | HTMLDivElement):
         return (entryHTML instanceof HTMLDivElement) ? entryHTML.innerText : entryHTML.value;
 }
 
-export async function insertEntrySetCopies(entrySets: NodeListOf<HTMLDivElement>): Promise<void> {
-        let entries: Entry[] = []
-
-        const acc = await getAccount();
-        if (!acc) throw new Error("Failed to get the account");
-
-        const boardId = BoardStore.boardId;
-        if (!boardId) throw new Error("Failed to get the boardId");
-
-        let rowCount = BoardStore.rowCount;
-        for (const entrySet of entrySets) {
-                const children = entrySet.children;
-                for (let i = 1; i < children.length; i++) {
-                        const child = children.item(i) as HTMLElement;
-                        const node = firstDeepestNode(child) as HTMLInputElement | HTMLDivElement;
-                        const val = extractEntryValue(node);
-
-                        const entry: Entry = {
-                                field_id: child.dataset.fieldId,
-                                value: val,
-                                account_id: acc.id,
-                                board_id: boardId,
-                                index: rowCount + 1,
-                        };
-
-                        entries.push(entry);
-                }
-                rowCount++;
-        }
-
-        return await supabase.insertEntryRows(entries);
+export async function insertEntryRow(entries: Array<Entry>): Promise<void> {
+        return await supabase.insertEntryRow(entries);
 }
 
-export async function insertEntries(entries: Array<Entry>): Promise<void> {
-        return await supabase.insertEntryRows(entries);
+export async function insertEntryRows(entrySets: Array<Array<Entry>>): Promise<void> {
+        return await supabase.insertEntryRows(entrySets);
 }
 
 export async function updateEntry(id: string, value: string) {
         const acc = await getAccount();
         if (!acc) throw new Error("Failed to get the account");
 
+        const elems = HTML.entriesContainer.querySelectorAll(`.entry[data-entry-id="${id}"]`) as NodeListOf<HTMLElement>;
+
+        if (elems.length > 1) {
+                for (const elem of elems) changeDeepestValue(elem, value);
+        }
+
         return await supabase.updateEntry({ value, id });
 }
 
-export async function deleteRows(indicies: number[]) {
+export async function deleteRow(indices: Array<number>) {
         const acc = await getAccount();
         if (!acc) throw new Error("Failed to get the account");
 
         const boardId = BoardStore.boardId;
         if (!boardId) throw new Error("Failed to get the boardId");
 
-        return supabase.deleteEntryRows(boardId, indicies);
+        return supabase.deleteEntryRows(boardId, indices);
 }
 
 export async function triggerAutomation(automationIds: AutomationId[], { entry, fieldId, entryId, rowIndex }: {

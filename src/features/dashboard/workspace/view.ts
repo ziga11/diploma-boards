@@ -1,4 +1,5 @@
-import { getAccount, sanitizeHTML } from "@/core/utils/utils";
+import DOMPurify from 'dompurify';
+import { getAccount } from "@/core/utils/utils";
 import type { BoardFetchObject, Board } from "./types";
 import { HTML } from "./html";
 import { getDominantColor } from "./view-utils";
@@ -16,13 +17,13 @@ export function createBoard(board: Board): HTMLDivElement {
                 day: 'numeric'
         });
 
-        div.innerHTML = sanitizeHTML`
+        div.innerHTML = DOMPurify.sanitize(`
                 <div class="board-title">${board.name}</div>
                 <div class="board-meta">
                         <div class="id-div"><span class="id-text" title="${board.id}">ID: ${board.id?.slice(0, 6)}...</span></div>
                         <span class="board-date">Created: ${formattedDate}</span>
                 </div>
-        `;
+        `);
 
         return div;
 }

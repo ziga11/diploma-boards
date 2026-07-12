@@ -1,6 +1,9 @@
 const activePage = () => document.querySelector(`#page-board`) ?? document;
 
 export const HTML = {
+        /* field-dropdown */
+        get fieldDropdown() { return activePage().querySelector(".field-dropdown") as HTMLDialogElement },
+
         editModal: {
                 get modal() { return activePage().querySelector("#field-edit-modal") as HTMLDialogElement },
 
@@ -26,6 +29,6 @@ export const HTML = {
 
         get fieldCheck() { return activePage().querySelector(".field-check") as HTMLInputElement },
         get fieldsDiv() { return activePage().querySelector(".fields") as HTMLDivElement },
-        get newFieldMenu() { return activePage().querySelector(".add-field-menu") as HTMLDialogElement },
+        get newFieldMenu() { return activePage().querySelector(".add-field-menu-dialog") as HTMLDialogElement },
         get newFieldBtn() { return activePage().querySelector(".add-field-btn") as HTMLButtonElement },
 }

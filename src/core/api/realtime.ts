@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { RealtimeChannel, RealtimePostgresDeletePayload, RealtimePostgresInsertPayload, SupabaseClient } from "@supabase/supabase-js";
 import { getAccount } from "../utils/utils";
 import { BoardStore } from "@/features/board/board-state";
 import { entryEvents } from "@/features/board/entries/custom-events";
@@ -20,8 +20,8 @@ import { supabase } from "./supabase";
 export const CLIENT_ID = crypto.randomUUID();
 
 let isInitialized = false;
-let globalChannel: any = null;
-let activeBoardChannel: any = null;
+let globalChannel: RealtimeChannel | null = null;
+let activeBoardChannel: RealtimeChannel | null = null;
 let activeBoardId: string | null = null;
 
 export async function initGlobalRealtime(client: SupabaseClient) {
@@ -69,15 +69,15 @@ export async function initGlobalRealtime(client: SupabaseClient) {
                         event: 'INSERT',
                         schema: 'public',
                         table: 'notification'
-                }, async (payload: { eventType: "INSERT", new: ViewNotification, old: ViewNotification }) => {
+                }, async (payload: RealtimePostgresInsertPayload<ViewNotification>) => {
                         handleNotificationInserted(payload.new);
                 })
                 .on('postgres_changes', {
                         event: 'DELETE',
                         schema: 'public',
                         table: 'notification'
-                }, async (payload: { eventType: "DELETE", new: ViewNotification, old: ViewNotification }) => {
-                        handleNotificationDeleted(payload.old.id);
+                }, async (payload: RealtimePostgresDeletePayload<ViewNotification>) => {
+                        handleNotificationDeleted(payload.old.id!);
                 })
                 .subscribe();
 
@@ -132,16 +132,8 @@ export async function switchActiveBoardRealtime(client: SupabaseClient, newBoard
 export async function broadcastMutation(scope: string, eventType: string, data: any) {
         if (!activeBoardChannel) return;
 
-        await activeBoardChannel.send({
-                type: 'broadcast',
-                event: "ui_mutate",
-                payload: {
-                        originClient: CLIENT_ID,
-                        scope,
-                        eventType,
-                        data
-                }
-        });
+        const payload = { originClient: CLIENT_ID, scope, eventType, data };
+        /*         await activeBoardChannel.httpSend("ui_mutate", payload); */
 }
 
 async function handleBoardRealtime(eventType: string, data: Board) {
@@ -222,8 +214,6 @@ async function handleEntryRealtime(eventType: string, data: any) {
                         window.dispatchEvent(entryEvents.newFieldEntries({ field: data.field, entryIds: data.entryIds }));
                         break;
                 case 'UPDATE':
-                        console.log("updating entry");
-
                         window.dispatchEvent(entryEvents.realtimeEntryChange({ entryId: data.id, value: data.value }));
                         break;
                 case 'DELETE-ROWS':
