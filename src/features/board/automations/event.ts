@@ -5,7 +5,7 @@ import { addAutomations, fillFields, previousDiv, hideAutomation, setDiv, remove
 import { showToast } from "@/core/utils/dom";
 import { BoardStore } from "../board-state";
 import { automationEvents } from "./custom-events";
-import type { Automation } from "./types";
+import { AutomationId, type Automation } from "./types";
 import { getAccount } from "@/core/utils/utils";
 
 export function initAutomationEvents() {
@@ -32,7 +32,7 @@ export function initAutomationEvents() {
                 automationState.automationId = Number(elem.dataset.automationType);
 
                 fillFields()
-                setDiv(HTML.create.field.div);
+                setDiv(automationState.automationId > AutomationId.ButtonPress ? HTML.create.url.div : HTML.create.field.div);
         });
 
         HTML.create.field.div.addEventListener("click", (e: MouseEvent) => {

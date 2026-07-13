@@ -111,36 +111,35 @@ export function populateFieldEditModal(field: Field): void {
 
 export async function fieldDrag(e: MouseEvent) {
         if (!dragProps.field || !dragProps.fieldRect) return;
-        if (e.x >= dragProps.fieldRect.x && e.x <= dragProps.fieldRect.right) return;
+        if (e.x >= dragProps.fieldRect.left && e.x <= dragProps.fieldRect.right) return;
 
         const increase = e.x > dragProps.fieldRect.right;
-        const startIndex = Number(dragProps.field.dataset.order);
-        const finalIndex = increase ? startIndex + 1 : startIndex - 1;
 
-        const fieldSwapObj = { field: dragProps.field, startIndex, finalIndex, increase };
+        const field1 = dragProps.field;
+        const field2 = (increase ? field1.nextElementSibling : field1.previousElementSibling) as HTMLDivElement;
+
+        const fieldSwapObj = { field1, field2 };
 
         swapField(fieldSwapObj);
 
         dragProps.fieldRect = dragProps.field!.getBoundingClientRect();
 
-        window.dispatchEvent(entryEvents.visuallySwap({ startIndex, finalIndex, increase }));
-        window.dispatchEvent(entryEvents.swapDOM({ finalIndex, increase }));
+        window.dispatchEvent(entryEvents.visuallySwap({ field1_id: field1.dataset.fieldId!, field2_id: field2.dataset.fieldId! }));
 }
 
-function swapField({ field, finalIndex, increase }: { field: HTMLDivElement, finalIndex: number, increase: boolean }) {
-        const otherField = HTML.fieldsDiv.querySelector(`.field-div[data-order="${finalIndex}"]`) as HTMLDivElement;
-        if (!otherField) return;
+function swapField({ field1: field1, field2 }: { field1: HTMLDivElement, field2: HTMLDivElement }) {
+        const [o1, o2] = [Number(field1.dataset.order), Number(field2.dataset.order)];
 
-        if (increase) {
-                field.before(otherField)
+        if (o1 < o2) {
+                field1.before(field2)
         }
         else {
-                field.after(otherField)
+                field1.after(field2)
         }
 
-        const [o1, o2] = [field.dataset.order, otherField.dataset.order];
-        field.dataset.order = o2;
-        otherField.dataset.order = o1;
+        field1.dataset.order = `${o2}`;
+        field2.dataset.order = `${o1}`;
+
 }
 
 export function appendFieldDivs(fields: Array<Field>) {

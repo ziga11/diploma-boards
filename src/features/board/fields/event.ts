@@ -31,7 +31,6 @@ export function initFieldEvents() {
                 const field = { id: crypto.randomUUID(), type: fieldType } as Field
                 const entryIds = Array.from({ length: BoardStore.rowCount.all }, () => crypto.randomUUID());
 
-                window.dispatchEvent(entryEvents.newFieldEntries({ field, entryIds }));
 
                 const fieldElem = addHTMLField(field);
 
@@ -43,10 +42,12 @@ export function initFieldEvents() {
                                 newField.fieldHelpers = [];
 
                                 BoardStore.fields.set(newField.id!, newField);
+
+                                fieldElem.dataset.order = `${data.field.index}`;
+                                window.dispatchEvent(entryEvents.newFieldEntries({ field, entryIds, index: data.field.index! }));
                         })
                         .catch(err => {
                                 fieldElem.remove();
-                                window.dispatchEvent(entryEvents.realtimeRemoveEntries({ fieldId: field.id }));
 
                                 showToast(`Failed to add new field: ${err.message}`, "error");
                         });
@@ -312,6 +313,9 @@ export function initFieldEvents() {
 
         window.addEventListener(fieldEvents.swapField.type, (e: Event) => {
                 const { fieldId, startIndex, finalIndex } = (e as ReturnType<typeof fieldEvents.swapField>).detail;
+
+                console.log(fieldId, startIndex, finalIndex);
+
 
                 switchIndex(fieldId, startIndex, finalIndex)
                         .catch(err => showToast(`Error switching indecies ${err}`, "error"));

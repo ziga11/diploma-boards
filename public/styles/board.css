@@ -1,3 +1,7 @@
+input[type="date"] {
+        padding-right: 4px;
+}
+
 #toolbar-board {
         display: flex;
         background: var(--bg-dark);
@@ -249,6 +253,11 @@
         display: flex;
         flex-direction: column;
         transform: rotateX(180deg);
+        width: fit-content;
+}
+
+.entries-div {
+        display: flex;
         width: fit-content;
 }
 
@@ -924,7 +933,7 @@
         border-radius: 0 0 0 10px;
 }
 
-.entry-rows:not(:has(.unloaded-indicator.shown)) .entry-set:last-child> :last-child {
+.entry-rows:not(:has(.unloaded-indicator.shown)) .entry-set:last-child>.entries-div:last-child>.entry:last-child {
         border-radius: 0 0 10px 0;
 }
 
@@ -936,15 +945,17 @@
         border-bottom-left-radius: 10px;
 }
 
-.pinned-entry-rows .entry-set:first-child>.entry:last-of-type {
+.pinned-entry-rows .entry-set:first-child>.entries-div:last-child>.entry:last-child {
         border-top-right-radius: 10px;
 }
 
-.pinned-entry-rows .entry-set:last-child>.entry:last-of-type {
+.pinned-entry-rows .entry-set:last-child>.entries-div:last-child>.entry:last-child {
         border-bottom-right-radius: 10px;
 }
 
-.pinned-entry-rows .entry-set:first-child>* {
+.pinned-entry-rows .entry-set .pin-div,
+.pinned-entry-rows .entry-set .entry-check-div,
+.pinned-entry-rows .entry-set .entry {
         border-top: 1px solid var(--bg-highlight)
 }
 

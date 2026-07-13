@@ -54,9 +54,9 @@ export function changeAllEntryChecks(checked: boolean) {
         window.dispatchEvent(bottomToolbarEvents.visible(detailObject));
 }
 
-export function swapEntriesVisually({ startIndex, finalIndex }: { startIndex: number, finalIndex: number }) {
-        const entries1 = HTML.entriesContainer.querySelectorAll(`.entry[data-order="${startIndex}"]`) as NodeListOf<HTMLDivElement>;
-        const entries2 = HTML.entriesContainer.querySelectorAll(`.entry[data-order="${finalIndex}"]`) as NodeListOf<HTMLDivElement>;
+export function swapEntriesVisually({ field1_id, field2_id }: { field1_id: string, field2_id: string }) {
+        const entries1 = HTML.entriesContainer.querySelectorAll(`.entry[data-field-id="${field1_id}"]`) as NodeListOf<HTMLElement>;
+        const entries2 = HTML.entriesContainer.querySelectorAll(`.entry[data-field-id="${field2_id}"]`) as NodeListOf<HTMLElement>;
 
         if (!entries2 || entries2.length == 0) return;
 
@@ -135,7 +135,13 @@ export function createEntryRow(entries: Array<Entry>): HTMLDivElement {
                 entryDivs.push(divEntry);
         }
 
-        entrySet.append(checkboxDiv, pinDiv, ...entryDivs);
+        const entriesDiv = Object.assign(document.createElement("div"), {
+                className: "entries-div"
+        });
+
+        entriesDiv.append(...entryDivs);
+
+        entrySet.append(checkboxDiv, pinDiv, entriesDiv);
 
         return entrySet;
 }
@@ -194,18 +200,16 @@ export async function createEntryCopiesFromEntrySet(entrySet: HTMLDivElement): P
         return entries;
 }
 
-export function createFieldEntries(field: Field, entryIds: Array<string>) {
-        const entrySets = HTML.entriesList.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
-        if (entrySets.length == 0) return;
-
-        const index = entrySets.item(0).children.length;
+export function createFieldEntries(field: Field, entryIds: Array<string>, index: number) {
+        const entriesDivs = HTML.entriesList.querySelectorAll(".entries-div") as NodeListOf<HTMLDivElement>;
+        if (entriesDivs.length == 0) return;
 
         for (let i = 0; i < entryIds.length; i++) {
                 const entry = genEntry({ id: entryIds[i], field_id: field.id, type: field.type } as Entry);
                 entry.dataset.order = `${index}`;
                 entry.style.order = `${index}`;
 
-                entrySets[i].appendChild(entry);
+                entriesDivs[i].appendChild(entry);
         }
 }
 

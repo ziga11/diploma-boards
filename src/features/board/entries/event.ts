@@ -242,7 +242,7 @@ export function initEntryEvents() {
         window.addEventListener(entryEvents.newFieldEntries.type, (e: Event) => {
                 const data = (e as ReturnType<typeof entryEvents.newFieldEntries>).detail;
 
-                createFieldEntries(data.field, data.entryIds);
+                createFieldEntries(data.field, data.entryIds, data.index);
         });
 
         window.addEventListener(entryEvents.updateFieldEntries.type, (e: Event) => {

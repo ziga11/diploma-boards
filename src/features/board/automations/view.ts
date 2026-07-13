@@ -82,6 +82,8 @@ export function fillFields() {
 
         const fieldDependent = automationState.automationId <= AutomationId.ButtonPress;
 
+        if (!fieldDependent) return;
+
         for (const field of Array.from(BoardStore.fields.values())) {
                 if (!fieldDependent || type == field.type!) {
                         options.push(createFieldOption(field));

@@ -27,7 +27,7 @@ function getFieldIcon(type: string): string {
                 text: `<i class="ti ti-text-scan-2"></i>`,
                 button: `<i class="ti ti-click"></i>`,
         };
-        return icons[type]!;
+        return icons[type] ?? icons.text;
 }
 
 function automationIcon(automationId: AutomationId): string {

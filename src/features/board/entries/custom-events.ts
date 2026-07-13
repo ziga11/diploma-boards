@@ -28,7 +28,7 @@ export const entryEvents = {
         ),
 
         newFieldEntries: Object.assign(
-                (detail: { field: Field, entryIds: Array<string> }) => new CustomEvent("entry:new-field", { detail }),
+                (detail: { field: Field, entryIds: Array<string>, index: number }) => new CustomEvent("entry:new-field", { detail }),
                 { type: "entry:new-field" as const }
         ),
 
@@ -63,7 +63,7 @@ export const entryEvents = {
         ),
 
         visuallySwap: Object.assign(
-                (detail: { startIndex: number, finalIndex: number, increase: boolean }) => new CustomEvent("entry:swap-visually", { detail }),
+                (detail: { field1_id: string, field2_id: string }) => new CustomEvent("entry:swap-visually", { detail }),
                 { type: "entry:swap-visually" as const }
         ),
 
