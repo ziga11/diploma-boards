@@ -1,4 +1,4 @@
-export interface Entry {
+export type Entry = {
         id?: string;
         board_id?: string;
         value?: string;
@@ -7,4 +7,5 @@ export interface Entry {
         type?: string;
         field_id?: string;
         account_id?: string;
+        option_id?: string;
 }

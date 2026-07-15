@@ -781,6 +781,10 @@
         color: var(--bg-highlight);
 }
 
+#api-keys-modal:has(#api-keys-list:empty) .api-keys-divider {
+        display: none;
+}
+
 .api-keys-divider {
         border-color: rgba(255, 255, 255, 0.08);
         margin: 12px 0;

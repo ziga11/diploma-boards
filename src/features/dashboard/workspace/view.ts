@@ -6,7 +6,7 @@ import { getDominantColor } from "./view-utils";
 import { dashboardEvents } from "./custom-events";
 
 export function createBoard(board: Board): HTMLDivElement {
-        const div = Object.assign(document.createElement('div'), { className: `board-entry ${board.deleted ? "deleted" : ""}` });
+        const div = Object.assign(document.createElement('div'), { className: `board-entry${board.deleted ? " deleted" : ""}` });
         Object.assign(div.dataset, { boardId: `${board.id}`, name: board.name });
 
         div.style.borderLeftColor = board.color!;

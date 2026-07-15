@@ -1,10 +1,9 @@
 import { closeDialog, setStateClass, showToast } from "@/core/utils/dom";
 import { HTML } from "./html";
 import { changeAllEntryChecks, changeFieldEntries, createEntryCopiesFromEntrySet, createEntryRow, createFieldEntries, entryCheckChange, setEntryRows, setupStatusDropdown, swapEntriesDOM, swapEntriesVisually, updateFieldEntries } from "./view";
-import { insertEntryRow, updateEntry, deleteRow, triggerAutomation, insertEntryRows, } from "./logic";
+import { insertEntryRow, updateEntry, deleteRows, triggerAutomation, insertEntryRows, } from "./logic";
 import { BoardStore } from "../board-state";
 import { entryEvents } from "./custom-events";
-import { bottomToolbarEvents } from "../bottom-toolbar/custom-events";
 import { AutomationId } from "../automations/types";
 import { changeDeepestValue } from "./view-utils";
 import type { Entry } from "./types";
@@ -62,6 +61,7 @@ export function initEntryEvents() {
                 closeDialog(HTML.dropdown.menu);
 
                 const entryId = HTML.dropdown.menu.dataset.entryId;
+                const optionId = elem.dataset.id;
                 const entryElem = HTML.entriesList.querySelector(`[data-entry-id="${entryId}"]`) as HTMLDivElement;
 
                 const value = elem.dataset.value ?? "";
@@ -73,7 +73,7 @@ export function initEntryEvents() {
                         entryElem.innerText = value;
                 }
 
-                updateEntry(entryId!, value)
+                updateEntry(entryId!, value, optionId)
                         .then(_ => entryElem.dataset.dbValue = value)
                         .catch(err => {
                                 if (entryElem instanceof HTMLInputElement) {
@@ -97,6 +97,9 @@ export function initEntryEvents() {
 
                         if (result.done) return;
                         const entries = result.value ?? [];
+
+                        console.log(entries);
+
 
                         setEntryRows(entries, false);
                 }, value.length < 2 ? 500 : 300);
@@ -150,7 +153,7 @@ export function initEntryEvents() {
         });
 
         window.addEventListener(entryEvents.removeSelected.type, _ => {
-                const entryChecks = HTML.entriesList.querySelectorAll(".entry-check:checked") as NodeListOf<HTMLInputElement>;
+                const entryChecks = HTML.entriesContainer.querySelectorAll(".entry-check:checked") as NodeListOf<HTMLInputElement>;
 
                 const indices: Array<number> = [];
                 const entrySets: Array<HTMLDivElement> = [];
@@ -158,20 +161,23 @@ export function initEntryEvents() {
                 for (const entryCheck of entryChecks) {
                         const entrySet = entryCheck.closest(".entry-set") as HTMLDivElement;
 
-                        const ind = Number(entryCheck.dataset.index);
-                        indices.push(ind);
+                        if (entrySet.classList.length == 1) {
+                                const ind = Number(entrySet.dataset.index);
+                                indices.push(ind);
+                        }
 
                         entrySet.style.display = "none";
 
                         entrySets.push(entrySet);
                 }
 
-                deleteRow(indices)
+
+                deleteRows(indices)
                         .then(_ => {
                                 entrySets.forEach(e => e.remove());
 
-                                const renderedRows = BoardStore.rowCount.rendered - entryChecks.length;
-                                const allRows = BoardStore.rowCount.all - entryChecks.length;
+                                const renderedRows = BoardStore.rowCount.rendered - indices.length;
+                                const allRows = BoardStore.rowCount.all - indices.length;
 
                                 BoardStore.setRowCount({ rendered: renderedRows, all: allRows });
                         })
@@ -185,8 +191,16 @@ export function initEntryEvents() {
                 const { fieldId, indices } = (e as ReturnType<typeof entryEvents.realtimeRemoveEntries>).detail;
 
                 if (fieldId != undefined) {
-                        const entries = HTML.entriesList.querySelectorAll(`[data-field-id="${fieldId}"]`)
-                        for (const entry of entries) entry.remove();
+                        const fieldSize = BoardStore.fields.size;
+
+                        if (fieldSize == 1) {
+                                const entrySets = HTML.entriesContainer.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
+                                entrySets.forEach(es => es.remove());
+                        }
+                        else {
+                                const entries = HTML.entriesContainer.querySelectorAll(`[data-field-id="${fieldId}"]`) as NodeListOf<HTMLDivElement>
+                                entries.forEach(e => e.remove());
+                        }
                 }
                 else if (indices != undefined) {
                         const entrySets = HTML.entriesList.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
@@ -201,19 +215,25 @@ export function initEntryEvents() {
                 }
         });
 
-        window.addEventListener(entryEvents.hideFieldEntries.type, (e: Event) => {
-                const obj = (e as ReturnType<typeof entryEvents.hideFieldEntries>).detail;
+        window.addEventListener(entryEvents.setEntryVisibility.type, (e: Event) => {
+                const { fieldId, index, visible } = (e as ReturnType<typeof entryEvents.setEntryVisibility>).detail;
 
-                if (obj.fieldId != undefined) {
-                        const entries = HTML.entriesList.querySelectorAll(`.entry[data-field-id="${obj.fieldId}"]`)
+                if (fieldId) {
+                        const entries = HTML.entriesList.querySelectorAll(`.entry[data-field-id="${fieldId}"]`)
 
-                        setStateClass(Array.from(entries), [], "hidden")
+                        const entriesArr = Array.from(entries);
+                        if (visible) {
+                                setStateClass([], entriesArr, "hidden")
+                        }
+                        else {
+                                setStateClass(entriesArr, [], "hidden")
+                        }
                 }
-                else if (obj.index != undefined) {
+                else if (index) {
                         const entrySets = HTML.entriesList.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
 
                         for (const entrySet of entrySets) {
-                                const elemAtInd = entrySet.children.item(obj.index);
+                                const elemAtInd = entrySet.children.item(index);
 
                                 elemAtInd?.classList.add("hidden");
                         }
@@ -242,7 +262,17 @@ export function initEntryEvents() {
         window.addEventListener(entryEvents.newFieldEntries.type, (e: Event) => {
                 const data = (e as ReturnType<typeof entryEvents.newFieldEntries>).detail;
 
-                createFieldEntries(data.field, data.entryIds, data.index);
+                createFieldEntries(data.field, data.entryIds);
+        });
+
+        window.addEventListener(entryEvents.setFieldEntriesIndices.type, (e: Event) => {
+                const { fieldId, index } = (e as ReturnType<typeof entryEvents.setFieldEntriesIndices>).detail;
+
+                const entries = HTML.entriesContainer.querySelectorAll(`.entry[data-field-id="${fieldId}"]`) as NodeListOf<HTMLElement>;
+                entries.forEach(e => {
+                        e.dataset.order = `${index}`;
+                        e.style.order = `${index}`;
+                });
         });
 
         window.addEventListener(entryEvents.updateFieldEntries.type, (e: Event) => {
@@ -257,15 +287,14 @@ export function initEntryEvents() {
                         return;
                 }
 
-                const index = BoardStore.rowCount.all + 1; /* start --> 1 */
+                BoardStore.incrementRowCount()
 
                 const fields = Array.from(BoardStore.fields.values()).sort((a, b) => a.index! - b.index!);
                 const entries = fields.map(field => ({
                         id: crypto.randomUUID(),
                         field_id: field.id,
-                        value: field.gen_value ?? "",
+                        value: field.type == "button" ? field!.options![0].value ?? "" : "",
                         type: field.type,
-                        index: index,
                         date_modified: new Date(),
                 } as Entry));
 
@@ -274,22 +303,23 @@ export function initEntryEvents() {
                 HTML.entriesList.appendChild(row);
 
                 insertEntryRow(entries)
-                        .then(_ => BoardStore.incrementRowCount())
+                        .then(index => row.dataset.index = `${index}`)
                         .catch(err => {
                                 row.remove();
+                                BoardStore.decrementRowCount();
                                 showToast(`Failed to create entry row ${err}`, "error");
                         });
-
-                window.dispatchEvent(bottomToolbarEvents.visible({ visible: false, checkedCount: 0 }));
         });
 
         window.addEventListener(entryEvents.realtimeNewRows.type, (e: Event) => {
                 const entries = (e as ReturnType<typeof entryEvents.realtimeNewRows>).detail;
 
                 const rows = [] as Array<HTMLDivElement>;
-                const rowLen = BoardStore.fields.values.length;
+                const rowLen = BoardStore.fields.size;
+
                 for (let i = 0; i < entries.length; i += rowLen) {
                         const rowEntries = entries.slice(i, i + rowLen);
+
                         const row = createEntryRow(rowEntries);
 
                         rows.push(row);
@@ -301,7 +331,7 @@ export function initEntryEvents() {
         window.addEventListener(entryEvents.copyRow.type, async (e: Event) => {
                 const entrySets = (e as ReturnType<typeof entryEvents.copyRow>).detail;
 
-                const entrySetsArr = [] as Array<Array<Entry>>;
+                const entriesArr = [] as Array<Array<Entry>>;
                 const rows = [] as Array<HTMLDivElement>;
 
                 for (const entrySet of entrySets) {
@@ -309,12 +339,18 @@ export function initEntryEvents() {
                         const row = createEntryRow(entries);
 
                         rows.push(row)
-                        entrySetsArr.push(entries)
+                        entriesArr.push(entries)
                 }
 
                 HTML.entriesList.append(...rows);
 
-                insertEntryRows(entrySetsArr)
+                insertEntryRows(entriesArr)
+                        .then((indArr) => {
+                                for (let i = 0; i < rows.length; i++) {
+                                        const row = rows[i];
+                                        row.dataset.index = `${indArr[i]}`;
+                                }
+                        })
                         .catch(() => {
                                 rows.forEach(row => row.remove());
 

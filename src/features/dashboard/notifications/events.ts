@@ -44,6 +44,8 @@ export function initNotificationEvents() {
         window.addEventListener(notificationEvents.addNotification.type, (e: Event) => {
                 const notification = (e as ReturnType<typeof notificationEvents.addNotification>).detail;
 
+                showToast(`New Notification received: ${notification.message}`)
+
                 const notificationHTML = notificationElem(notification);
                 HTML.body.container.appendChild(notificationHTML);
         });

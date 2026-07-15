@@ -1,5 +1,5 @@
 import { supabase } from "@/core/api/supabase";
-import type { FieldHelper } from "./types";
+import type { FieldOption } from "./types";
 import { BoardStore } from "../board-state";
 import type { Field } from "./types";
 import { getAccount } from "@/core/utils/utils";
@@ -27,13 +27,13 @@ export async function fetchFields() {
         return supabase.fetchFields(boardId);
 }
 
-export async function setFieldHelpers(fields: Array<Field>) {
-        const fieldHelpersMap = await supabase.fetchFieldHelpers(fields!.map(e => e.id!));
+export async function setFieldOptions(fields: Array<Field>) {
+        const fieldOptionsMap = await supabase.fetchFieldOptions(fields!.map(e => e.id!));
 
         for (const field of fields) {
-                const fieldHelpers = fieldHelpersMap.get(field.id!) as Array<FieldHelper>;
+                const fieldOptions = fieldOptionsMap.get(field.id!) as Array<FieldOption>;
 
-                field.fieldHelpers = fieldHelpers ?? [];
+                field.options = fieldOptions ?? [];
         }
 }
 
@@ -49,37 +49,26 @@ export async function insertFieldOption(id: string, fieldId: string, value: stri
         const acc = await getAccount();
         if (!acc) throw new Error("Not logged in");
 
-        const fieldHelper = { id, field_id: fieldId, account_id: acc.id, value } as FieldHelper;
+        const option = { id, field_id: fieldId, account_id: acc.id, value } as FieldOption;
 
-        await supabase.insertFieldHelper(fieldHelper);
+        await supabase.insertFieldOption(option);
 }
 
-export async function switchIndex(fieldId: string, startIndex: number, finalIndex: number) {
+export async function switchIndex(fieldId1: string, fieldId2: string) {
         const boardId = BoardStore.boardId;
 
         if (!boardId) throw new Error("BoardId not set");
 
         await supabase.switchFieldIndex({
-                boardId: boardId, fieldId: fieldId, oldIndex: startIndex, newIndex: finalIndex
+                boardId: boardId, field1_id: fieldId1, field2_id: fieldId2
         });
 }
 
 export async function removeFieldOption(id: string | undefined) {
-        if (!id || id.length == 0) throw new Error("No field helper id was present, bug");
-        await supabase.deleteFieldHelpers({ id });
+        if (!id || id.length == 0) throw new Error("No field option id was present, bug");
+        await supabase.deleteFieldOptions({ id });
 }
 
-export async function updateFieldOption({ fieldId, fieldHelperId, value }: { fieldId?: string, fieldHelperId: string, value: string }) {
-        const field = BoardStore.getField(fieldId!);
-        if (!field) {
-                throw new Error(`Failed to update field option, field not found`);
-        }
-        if (!field.fieldHelpers || !field.fieldHelpers.length) {
-                throw new Error(`No existing field helpers`);
-        }
-
-        const fieldHelper = field.fieldHelpers.find(fh => fh.id == fieldHelperId);
-        if (!fieldHelper) throw new Error("Failed to find field helper, bug");
-
-        supabase.updateFieldHelper(value, { fieldId, id: fieldHelper.id }).then(_ => fieldHelper.value = value);
+export async function updateFieldOption(id: string, value: string) {
+        supabase.updateFieldOption(id, value);
 }

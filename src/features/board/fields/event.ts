@@ -2,15 +2,15 @@ import { closeDialog, setStateClass, showToast } from "@/core/utils/dom";
 import { BoardStore } from "../board-state";
 import { HTML } from "./html";
 import { deleteField, insertFieldAndEntries, insertFieldOption, removeFieldOption, switchIndex, updateFieldName, updateFieldOption } from "./logic";
-import { addHTMLField, createStatusOption, fieldDrag, populateFieldEditModal, toggleNewFieldMenu } from "./view";
-import type { Field, FieldHelper } from "./types";
+import { addHTMLField, createStatusOption, fieldDrag, populateFieldEditModal, swapField, toggleNewFieldMenu } from "./view";
+import type { Field, FieldOption } from "./types";
 import { entryEvents, } from "../entries/custom-events";
 import { fieldEvents } from "./custom-events";
 
 interface DragInterface {
-        field?: HTMLDivElement,
-        fieldRect?: DOMRect,
-        startIndex?: number,
+        field1?: HTMLDivElement,
+        field2?: HTMLDivElement,
+        field1Rect?: DOMRect,
 }
 
 export let dragProps = {} as DragInterface
@@ -28,9 +28,11 @@ export function initFieldEvents() {
                 const fieldType = elem.dataset.fieldType;
                 if (!fieldType) return;
 
-                const field = { id: crypto.randomUUID(), type: fieldType } as Field
+                const field = { id: crypto.randomUUID(), type: fieldType, index: 10000 } as Field
+
                 const entryIds = Array.from({ length: BoardStore.rowCount.all }, () => crypto.randomUUID());
 
+                window.dispatchEvent(entryEvents.newFieldEntries({ field, entryIds }));
 
                 const fieldElem = addHTMLField(field);
 
@@ -39,12 +41,14 @@ export function initFieldEvents() {
                 insertFieldAndEntries(fieldType!, field.id!, entryIds)
                         .then(data => {
                                 const newField = data.field;
-                                newField.fieldHelpers = [];
+                                newField.options = newField.options ?? [];
 
                                 BoardStore.fields.set(newField.id!, newField);
 
                                 fieldElem.dataset.order = `${data.field.index}`;
-                                window.dispatchEvent(entryEvents.newFieldEntries({ field, entryIds, index: data.field.index! }));
+
+                                field.index = data.field.index;
+                                window.dispatchEvent(entryEvents.setFieldEntriesIndices({ fieldId: field.id!, index: field.index! }));
                         })
                         .catch(err => {
                                 fieldElem.remove();
@@ -58,18 +62,16 @@ export function initFieldEvents() {
                 const fieldId = HTML.editModal.idSpan.innerText;
 
                 if (elem == HTML.editModal.deleteBtn) {
-                        window.dispatchEvent(entryEvents.hideFieldEntries({ fieldId: fieldId }));
-                        const field = HTML.fieldsDiv.querySelector(`[data-field-id="${fieldId}"]`) as HTMLDivElement;
-
-                        const nextSibling = field?.nextSibling;
-                        field?.remove();
+                        window.dispatchEvent(entryEvents.setEntryVisibility({ fieldId, visible: false }));
+                        window.dispatchEvent(fieldEvents.setFieldVisibility({ fieldId, visible: false }));
 
                         deleteField(fieldId)
                                 .then(_ => {
                                         window.dispatchEvent(entryEvents.realtimeRemoveEntries({ fieldId: fieldId }));
+                                        window.dispatchEvent(fieldEvents.removeField(fieldId));
                                 })
                                 .catch(err => {
-                                        HTML.fieldsDiv.insertBefore(field, nextSibling);
+                                        window.dispatchEvent(fieldEvents.setFieldVisibility({ fieldId, visible: true }));
                                         window.dispatchEvent(entryEvents.showFieldEntries(fieldId));
 
                                         showToast(`Failed to remove field ${err}`, "error");
@@ -87,38 +89,27 @@ export function initFieldEvents() {
                         }
 
                         const id = crypto.randomUUID();
-
-                        const field = BoardStore.getField(fieldId);
-                        if (!field) return;
-
-                        const fieldHelper = { id, field_id: field.id, value } as FieldHelper;
-                        field?.fieldHelpers?.push(fieldHelper);
-
-                        const statusOptionDiv = createStatusOption(fieldHelper);
-
-                        HTML.editModal.status.list.appendChild(statusOptionDiv);
-                        HTML.editModal.status.addInput.value = "";
-
-                        statusOptionDiv.dataset.helperId = id;
+                        window.dispatchEvent(fieldEvents.addFieldOption({ id, fieldId, value }));
 
                         insertFieldOption(id, fieldId, value)
                                 .catch(err => {
-                                        HTML.editModal.status.addInput.value = value;
-                                        statusOptionDiv.remove();
+                                        window.dispatchEvent(fieldEvents.removeFieldOption({ id, fieldId, inputValue: value }));
                                         showToast(`Failed to add the field option: ${err}`, "error");
                                 });
                 }
                 else if (elem.className == "remove-status-option") {
                         const div = elem.closest(".status-option-item") as HTMLDivElement;
-                        const id = div.dataset.helperId;
+                        const id = div.dataset.optionId;
+                        if (!id) return;
 
-                        const nextSibling = div.nextSibling;
-                        div.remove();
+                        window.dispatchEvent(fieldEvents.setFieldOptionVisibility({ id, fieldId, visible: false }));
 
                         removeFieldOption(id)
+                                .then(_ => {
+                                        window.dispatchEvent(fieldEvents.removeFieldOption({ id, fieldId }));
+                                })
                                 .catch(err => {
-                                        if (nextSibling) { HTML.editModal.status.list.insertBefore(div, nextSibling); }
-                                        else { HTML.editModal.status.list.appendChild(div); }
+                                        window.dispatchEvent(fieldEvents.setFieldOptionVisibility({ id, fieldId, visible: true }));
 
                                         showToast(`Failed to remove the status option: ${err}`, "error");
                                 });
@@ -137,55 +128,68 @@ export function initFieldEvents() {
                 if (e.key == "Enter") input.blur();
         });
 
-        HTML.editModal.button.input.addEventListener("blur", async (_) => {
-                const input = HTML.editModal.button.input;
+        HTML.editModal.modal.addEventListener("focusout", async (e: FocusEvent) => {
+                const elem = e.target as HTMLInputElement;
                 const fieldId = HTML.editModal.idSpan.innerText;
-                const value = input.value;
 
-                const id = crypto.randomUUID();
-                const fieldHelperId = input.dataset.helperId;
-
-                window.dispatchEvent(entryEvents.entryChangeFieldValues({ fieldId, value }));
-
-                const field = HTML.fieldsDiv.querySelector(`.field-div[data-field-id="${fieldId}"]`) as HTMLDivElement;
-                field.dataset.entryValue = value;
-
-                try {
-                        if (fieldHelperId) {
-                                await updateFieldOption({ fieldId, fieldHelperId, value });
-                        }
-                        else {
-                                await insertFieldOption(id, fieldId, value);
-                        }
-
-                        input.dataset.dbValue = value;
-                }
-                catch (err) {
+                if (elem === HTML.editModal.button.input) {
+                        const input = HTML.editModal.button.input;
                         const dbValue = input.dataset.dbValue!;
-                        window.dispatchEvent(entryEvents.entryChangeFieldValues({ fieldId, value: dbValue }));
+                        const value = input.value;
 
-                        showToast(`Failed to update the button text`, "error");
+                        if (dbValue == value) return;
+
+                        const id = input.dataset.optionId;
+                        if (!id) return;
+
+                        window.dispatchEvent(fieldEvents.updateFieldOption({ id, fieldId, value }));
+
+                        try {
+                                await updateFieldOption(id, value);
+                        }
+                        catch (err) {
+                                window.dispatchEvent(fieldEvents.updateFieldOption({ id: id, fieldId, value: dbValue }));
+
+                                console.error(err);
+
+                                showToast("Failed to update field option text", "error");
+                        }
                 }
-        });
+                else if (elem === HTML.editModal.input) {
+                        const newName = HTML.editModal.input.value;
+                        if (HTML.editModal.input.dataset.dbValue == newName || !fieldId) return;
 
-        HTML.editModal.input.addEventListener("blur", () => {
-                const newName = HTML.editModal.input.value;
-                const fieldId = HTML.editModal.idSpan.innerText;
+                        window.dispatchEvent(fieldEvents.fieldNameUpdate({ id: fieldId, newName }));
 
-                if (HTML.editModal.input.dataset.dbValue == newName || !fieldId) return;
+                        updateFieldName(fieldId, newName)
+                                .then(_ => HTML.editModal.input.dataset.dbValue = newName)
+                                .catch(err => {
+                                        const oldName = HTML.editModal.input.dataset.dbValue!;
+                                        window.dispatchEvent(fieldEvents.fieldNameUpdate({ id: fieldId, newName: oldName }));
 
+                                        showToast(`Failed to change the field name: ${err}`, "error");
+                                });
+                }
+                else if (elem.className == "field-edit-input") {
+                        const newValue = elem.value;
+                        const statusDiv = elem.closest(".status-option-item") as HTMLDivElement;
+                        const oldValue = statusDiv.dataset.dbValue;
+                        const id = statusDiv.dataset.optionId;
 
-                const fieldDiv = HTML.fieldsDiv.querySelector(`.field-div[data-field-id="${fieldId}"]`) as HTMLDivElement;
+                        if (newValue == oldValue || !id) return;
 
-                const inp = fieldDiv.firstChild as HTMLSpanElement;
-                inp.innerText = newName;
+                        window.dispatchEvent(fieldEvents.updateFieldOption({ id, oldValue: oldValue, value: newValue, fieldId }));
 
-                updateFieldName(fieldId, newName)
-                        .then(_ => HTML.editModal.input.dataset.dbValue = newName)
-                        .catch(err => {
-                                inp.innerText = HTML.editModal.input.dataset.dbValue!;
-                                showToast(`Failed to change the field name: ${err}`, "error");
-                        });
+                        try {
+                                updateFieldOption(id, newValue);
+                        }
+                        catch (err) {
+                                console.error(err);
+
+                                showToast("Failed to update field option text", "error");
+                                window.dispatchEvent(fieldEvents.updateFieldOption({ id, oldValue: newValue, value: oldValue!, fieldId }));
+                        }
+                }
         });
 
         HTML.editModal.modal.addEventListener("close", () => {
@@ -257,7 +261,7 @@ export function initFieldEvents() {
                         window.dispatchEvent(entryEvents.sortChange());
                         closeDialog(HTML.fieldDropdown);
                 }
-        })
+        });
 
         HTML.fieldsDiv.addEventListener("mouseover", (e: MouseEvent) => {
                 const elem = e.target as HTMLElement;
@@ -282,45 +286,29 @@ export function initFieldEvents() {
                 setStateClass([], currEditElem ? [currEditElem] : [], "shown");
         });
 
-        document.addEventListener("mousedown", (e: MouseEvent) => {
-                const elem = e.target as HTMLDivElement;
-                if (elem.classList[0] != "field-div") return;
+        window.addEventListener(fieldEvents.setFieldVisibility.type, (e: Event) => {
+                const { fieldId, visible } = (e as ReturnType<typeof fieldEvents.setFieldVisibility>).detail;
 
-                dragProps = {
-                        field: elem,
-                        startIndex: Number(elem.dataset.order),
-                        fieldRect: elem.getBoundingClientRect(),
-                };
-
-                document.addEventListener("mousemove", fieldDrag);
+                const field1 = HTML.fieldsDiv.querySelector(`.field-div[data-field-id="${fieldId}"]`) as HTMLDivElement;
+                field1.style.display = visible ? "block" : "none";
         });
 
-        document.addEventListener("mouseup", () => {
-                document.removeEventListener("mousemove", fieldDrag);
+        window.addEventListener(fieldEvents.removeField.type, (e: Event) => {
+                const fieldId = (e as ReturnType<typeof fieldEvents.removeField>).detail;
 
-                const fieldId = dragProps.field?.dataset.fieldId;
-                const finalIndex = Number(dragProps.field?.dataset.order);
-                const startIndex = dragProps.startIndex!;
+                const field1 = HTML.fieldsDiv.querySelector(`.field-div[data-field-id="${fieldId}"]`) as HTMLDivElement;
+                field1.remove();
 
-                if (!startIndex || startIndex == finalIndex || !fieldId) return;
-
-                const increase = finalIndex > startIndex;
-
-                window.dispatchEvent(fieldEvents.swapField({ fieldId, startIndex, finalIndex }));
-
-                window.dispatchEvent(entryEvents.swapDOM({ finalIndex, increase }));
+                BoardStore.fields.delete(fieldId);
         });
 
-        window.addEventListener(fieldEvents.swapField.type, (e: Event) => {
-                const { fieldId, startIndex, finalIndex } = (e as ReturnType<typeof fieldEvents.swapField>).detail;
+        window.addEventListener(fieldEvents.realtimeSwapField.type, (e: Event) => {
+                const { field1_id, field2_id } = (e as ReturnType<typeof fieldEvents.realtimeSwapField>).detail;
 
-                console.log(fieldId, startIndex, finalIndex);
+                const field1 = HTML.fieldsDiv.querySelector(`.field-div[data-field-id="${field1_id}"]`) as HTMLDivElement;
+                const field2 = HTML.fieldsDiv.querySelector(`.field-div[data-field-id="${field2_id}"]`) as HTMLDivElement;
 
-
-                switchIndex(fieldId, startIndex, finalIndex)
-                        .catch(err => showToast(`Error switching indecies ${err}`, "error"));
-
-                dragProps = {};
+                swapField({ field1, field2 });
         });
 
         window.addEventListener(fieldEvents.checkChange.type, (e: Event) => {
@@ -329,66 +317,133 @@ export function initFieldEvents() {
                 HTML.fieldCheck.checked = checked;
         });
 
-        window.addEventListener(fieldEvents.realtimeFieldNameUpdate.type, (e: Event) => {
-                const field = (e as ReturnType<typeof fieldEvents.realtimeFieldNameUpdate>).detail;
+        window.addEventListener(fieldEvents.fieldNameUpdate.type, (e: Event) => {
+                const { id, newName } = (e as ReturnType<typeof fieldEvents.fieldNameUpdate>).detail;
 
-                const newName = field.name;
-                const fieldId = field.id;
-
-                if ([newName, fieldId].includes(undefined)) return;
-
-                const f = BoardStore.getField(fieldId!) as Field;
+                const f = BoardStore.getField(id!) as Field;
                 f.name = newName!;
 
-                const fieldDiv = HTML.fieldsDiv.querySelector(`.field-div[data-field-id="${fieldId}"]`) as HTMLDivElement;
+                const fieldDiv = HTML.fieldsDiv.querySelector(`.field-div[data-field-id="${id}"]`) as HTMLDivElement;
 
                 const inp = fieldDiv.firstChild as HTMLSpanElement;
                 inp.innerText = newName!;
         });
 
-        window.addEventListener(fieldEvents.realtimeAddField.type, (e: Event) => {
-                const field = (e as ReturnType<typeof fieldEvents.realtimeAddField>).detail;
+        window.addEventListener(fieldEvents.addField.type, (e: Event) => {
+                const field = (e as ReturnType<typeof fieldEvents.addField>).detail;
 
-                field.fieldHelpers = [];
+                field.options = [];
 
                 BoardStore.fields.set(field.id!, field);
 
                 addHTMLField(field);
         });
 
-        window.addEventListener(fieldEvents.realtimeAddFieldHelper.type, (e: Event) => {
-                const fieldHelper = (e as ReturnType<typeof fieldEvents.realtimeAddFieldHelper>).detail;
-
-                const field = BoardStore.getField(fieldHelper.field_id!);
-                if (!field) return;
-
-                if (!field.fieldHelpers) {
-                        field.fieldHelpers = [];
-                }
-
-                field.fieldHelpers!.push(fieldHelper);
-        });
-
-        window.addEventListener(fieldEvents.realtimeUpdateFieldHelper.type, (e: Event) => {
-                const fieldHelper = (e as ReturnType<typeof fieldEvents.realtimeUpdateFieldHelper>).detail;
-
-                const field = BoardStore.getField(fieldHelper.field_id!);
-                if (!field) return;
-
-                field.fieldHelpers = field.fieldHelpers!.map(fh => fh.id == fieldHelper.id ? fieldHelper : fh);
-        });
-
-        window.addEventListener(fieldEvents.realtimeRemoveFieldHelper.type, (e: Event) => {
-                const { fieldId, helperId } = (e as ReturnType<typeof fieldEvents.realtimeRemoveFieldHelper>).detail;
+        window.addEventListener(fieldEvents.addFieldOption.type, (e: Event) => {
+                const { id, fieldId, value, accountId } = (e as ReturnType<typeof fieldEvents.addFieldOption>).detail;
 
                 const field = BoardStore.getField(fieldId);
                 if (!field) return;
 
-                field.fieldHelpers = field.fieldHelpers?.filter(fh => fh.id != helperId);
+                const option = { id, field_id: fieldId, value, account_id: accountId };
+
+                if (!field.options) {
+                        field.options = [];
+                }
+
+                field.options!.push(option);
+
+                if (!HTML.editModal.modal.open || HTML.editModal.idSpan.innerText != fieldId)
+                        return;
+
+                const statusOptionDiv = createStatusOption(option);
+                statusOptionDiv.dataset.optionId = id;
+
+                HTML.editModal.status.list.appendChild(statusOptionDiv);
+                HTML.editModal.status.addInput.value = "";
+        });
+
+        window.addEventListener(fieldEvents.updateFieldOption.type, (e: Event) => {
+                const { id, fieldId, oldValue, value, accountId } = (e as ReturnType<typeof fieldEvents.updateFieldOption>).detail;
+
+                const field = BoardStore.getField(fieldId);
+                if (!field) return;
+
+                const option = { id, field_id: fieldId, value, account_id: accountId } as FieldOption;
+
+                const index = field.options!.findIndex(fh => fh.id == id)!;
+                field.options![index] = option;
+
+                window.dispatchEvent(entryEvents.entryChangeFieldValues({ fieldId, value, oldValue }));
+
+                if (!HTML.editModal.modal.open || HTML.editModal.idSpan.innerText != fieldId) return;
+                const targetElem = HTML.editModal.modal.querySelector(`[data-option-id="${id}"]`);
+
+                const inputElem = targetElem instanceof HTMLDivElement
+                        ? targetElem.querySelector("input")
+                        : targetElem as HTMLInputElement;
+
+                if (inputElem) {
+                        inputElem.value = value;
+                }
+        });
+
+        window.addEventListener(fieldEvents.removeFieldOption.type, (e: Event) => {
+                const { fieldId, id, inputValue } = (e as ReturnType<typeof fieldEvents.removeFieldOption>).detail;
+
+                const field = BoardStore.getField(fieldId);
+                if (!field) return;
+
+                field.options = field.options?.filter(fh => fh.id != id);
+
+                if (!HTML.editModal.modal.open || HTML.editModal.idSpan.innerText != fieldId) {
+                        return;
+                }
+
+                HTML.editModal.status.addInput.value = inputValue ?? "";
+        });
+
+        window.addEventListener(fieldEvents.setFieldOptionVisibility.type, (e: Event) => {
+                const { id, fieldId, visible } = (e as ReturnType<typeof fieldEvents.setFieldOptionVisibility>).detail;
+
+                if (!HTML.editModal.modal.open || HTML.editModal.idSpan.innerText != fieldId) {
+                        return;
+                }
+
+                const modalOption = HTML.editModal.modal.querySelector(`[data-option-id="${id}"]`) as HTMLDivElement;
+                modalOption.style.display = visible ? "flex" : "none";
         });
 
         window.addEventListener(fieldEvents.disposeAll.type, () => {
                 if (!BoardStore.isInitialized) return;
                 HTML.fieldsDiv.querySelectorAll(".field-div").forEach(el => el.remove());
-        })
+        });
+
+        document.addEventListener("mousedown", (e: MouseEvent) => {
+                const elem = e.target as HTMLDivElement;
+                if (elem.classList[0] != "field-div") return;
+
+                dragProps = {
+                        field1: elem,
+                        field1Rect: elem.getBoundingClientRect(),
+                };
+
+                document.addEventListener("mousemove", fieldDrag);
+        });
+
+        document.addEventListener("mouseup", () => {
+                document.removeEventListener("mousemove", fieldDrag);
+
+                const fieldId1 = dragProps.field1?.dataset.fieldId;
+                const fieldId2 = dragProps.field2?.dataset.fieldId;
+
+                if ([fieldId1, fieldId2].includes(undefined) || fieldId1 == fieldId2) return;
+
+                switchIndex(fieldId1!, fieldId2!)
+                        .catch(err => showToast(`Error switching indecies ${err}`, "error"));
+
+                dragProps = {};
+
+                window.dispatchEvent(entryEvents.swapDOM({ field1_id: fieldId1!, field2_id: fieldId2!, styleSwap: false }));
+        });
 }

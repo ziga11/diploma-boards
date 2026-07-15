@@ -3,19 +3,19 @@ import { getAccount } from "../utils/utils";
 import { BoardStore } from "@/features/board/board-state";
 import { entryEvents } from "@/features/board/entries/custom-events";
 import { fieldEvents } from "@/features/board/fields/custom-events";
-import type { Field, FieldHelper } from "@/features/board/fields/types";
+import type { Field, FieldOption } from "@/features/board/fields/types";
 import { cache } from "./cache";
-import type { BoardCollaborator, NotificationFetchObject, ViewNotification } from "@/features/board/user-management/types";
+import type { BoardAccLink, InsertNotification, NotificationFetchObject, ViewNotification } from "@/features/board/user-management/types";
 import type { Board } from "@/features/dashboard/add-board/types";
 import { notificationEvents } from "@/features/dashboard/notifications/custom-events";
 import { dashboardEvents } from "@/features/dashboard/workspace/custom-events";
 import { userManagementEvents } from "@/features/board/user-management/custom-events";
 import type { BoardFetchObject } from "@/features/dashboard/workspace/types";
 import { workspaceEvents } from "@/features/board/workspace/custom-events";
-import type { Entry } from "@/features/board/entries/types";
 import { automationEvents } from "@/features/board/automations/custom-events";
 import type { Automation } from "@/features/board/automations/types";
 import { supabase } from "./supabase";
+import { PermissionId } from "../types/auth";
 
 export const CLIENT_ID = crypto.randomUUID();
 
@@ -28,16 +28,20 @@ export async function initGlobalRealtime(client: SupabaseClient) {
         if (isInitialized) return;
 
         const acc = await getAccount();
-        if (!acc) return;
+        if (!acc) {
+                console.log("starting global realtime --> no account");
+                return;
+        }
 
-        globalChannel = client.channel(`account_sync_${acc.id}`);
+        globalChannel = client.channel(`account_sync`);
 
         globalChannel
                 .on('postgres_changes', {
                         event: 'INSERT',
                         schema: 'public',
-                        table: 'board_account_link'
+                        table: 'board_account_link',
                 }, async (payload: { eventType: "INSERT", new: any, old: any }) => {
+                        console.log("board inserted");
                         handleBoardInserted(payload.new.board_id);
                 })
                 .on('postgres_changes', {
@@ -45,21 +49,13 @@ export async function initGlobalRealtime(client: SupabaseClient) {
                         schema: 'public',
                         table: 'board'
                 }, async (payload: { eventType: "UPDATE", new: Board, old: Board }) => {
+                        console.log("board updated");
                         handleBoardUpdated(payload.new);
                 })
                 .on('postgres_changes', {
                         event: '*',
                         schema: 'public',
-                        table: 'entry'
-                }, async (payload: { eventType: string, new: Entry, old: Entry }) => {
-                        if (payload.old.board_id == activeBoardId) return;
-
-                        await cache.clear(`entries_${payload.old.board_id}`)
-                })
-                .on('postgres_changes', {
-                        event: '*',
-                        schema: 'public',
-                        table: 'field'
+                        table: 'field',
                 }, async (payload: { eventType: string, new: Field, old: Field }) => {
                         if (payload.old.board_id == activeBoardId) return;
 
@@ -68,18 +64,26 @@ export async function initGlobalRealtime(client: SupabaseClient) {
                 .on('postgres_changes', {
                         event: 'INSERT',
                         schema: 'public',
-                        table: 'notification'
-                }, async (payload: RealtimePostgresInsertPayload<ViewNotification>) => {
+                        table: 'notification',
+                        filter: `to_acc_id=eq.${acc.id}`
+                }, async (payload: RealtimePostgresInsertPayload<InsertNotification>) => {
+                        console.log("notification inserted");
                         handleNotificationInserted(payload.new);
                 })
                 .on('postgres_changes', {
                         event: 'DELETE',
                         schema: 'public',
-                        table: 'notification'
-                }, async (payload: RealtimePostgresDeletePayload<ViewNotification>) => {
+                        table: 'notification',
+                        filter: `to_acc_id=eq.${acc.id}`
+                }, async (payload: RealtimePostgresDeletePayload<InsertNotification>) => {
                         handleNotificationDeleted(payload.old.id!);
                 })
-                .subscribe();
+                .subscribe((status, err) => {
+                        console.log("Realtime connection status:", status);
+                        if (err) {
+                                console.error("Subscription Error payload:", err);
+                        }
+                });
 
         isInitialized = true;
 }
@@ -100,7 +104,9 @@ export async function switchActiveBoardRealtime(client: SupabaseClient, newBoard
 
         activeBoardChannel
                 .on('broadcast', { event: 'ui_mutate' }, async (response: any) => {
-                        const { scope, eventType, data } = response.payload;
+                        const { scope, eventType, data, originClient } = response.payload;
+
+                        if (originClient === CLIENT_ID) return;
 
                         switch (scope) {
                                 case 'automation':
@@ -115,45 +121,58 @@ export async function switchActiveBoardRealtime(client: SupabaseClient, newBoard
                                 case 'field':
                                         await handleFieldRealtime(eventType, data);
                                         break;
-                                case 'board':
-                                        await handleFieldRealtime(eventType, data);
-                                        break;
-                                case 'field_helper':
-                                        await handleFieldHelperRealtime(eventType, data);
+                                case 'field_option':
+                                        await handleFieldOptionRealtime(eventType, data);
                                         break;
                                 case 'board_account_link':
                                         await handleBoardCollaboratorRealtime(eventType, data, acc);
                                         break;
                         }
                 })
-                .subscribe();
+        activeBoardChannel.subscribe();
 }
 
 export async function broadcastMutation(scope: string, eventType: string, data: any) {
         if (!activeBoardChannel) return;
 
         const payload = { originClient: CLIENT_ID, scope, eventType, data };
-        /*         await activeBoardChannel.httpSend("ui_mutate", payload); */
+        try {
+                await activeBoardChannel.httpSend("ui_mutate", payload);
+        }
+        catch (err) {
+                console.log(err);
+        }
 }
 
 async function handleBoardRealtime(eventType: string, data: Board) {
+        cache.clear(`board_${data.id}`);
+        const board = await supabase.fetchBoard(data.id!);
+
+
         switch (eventType) {
                 case 'UPDATE':
-                        window.dispatchEvent(workspaceEvents.boardTitleUpdate(data.name!));
+                        window.dispatchEvent(workspaceEvents.boardTitleUpdate(board.name!));
                         break;
                 case 'DELETE':
-                        window.dispatchEvent(workspaceEvents.boardDeleted());
+                        if (data.deleted && board.deleted) {
+                                window.dispatchEvent(workspaceEvents.boardDeleted());
+                        }
                         break;
         }
 }
 
-async function handleBoardCollaboratorRealtime(eventType: string, data: BoardCollaborator, acc: Account) {
+async function handleBoardCollaboratorRealtime(eventType: string, data: BoardAccLink, acc: Account) {
+        const boardCollaborators = await supabase.fetchCollaborators(data.board_id, [data.id]);
         switch (eventType) {
                 case 'INSERT':
-                        BoardStore.collaborators.set(data.account_id, data);
-                        window.dispatchEvent(userManagementEvents.addCollaborator(data));
+                        if (boardCollaborators.length == 0) return;
+
+                        BoardStore.collaborators.set(data.account_id, boardCollaborators[0]);
+                        window.dispatchEvent(userManagementEvents.addCollaborator(boardCollaborators[0]));
                         break;
                 case 'DELETE':
+                        if (boardCollaborators.length > 0) return;
+
                         BoardStore.collaborators.delete(data.account_id);
                         window.dispatchEvent(userManagementEvents.removeCollaborator(data.id));
                         if (acc.id == data.account_id) {
@@ -177,30 +196,34 @@ async function handleAutomationRealtime(eventType: string, data: Automation) {
 async function handleFieldRealtime(eventType: string, data: any) {
         switch (eventType) {
                 case 'INSERT':
-                        window.dispatchEvent(fieldEvents.realtimeAddField(data));
+                        window.dispatchEvent(fieldEvents.addField(data));
                         break;
                 case 'UPDATE':
-                        window.dispatchEvent(fieldEvents.realtimeFieldNameUpdate(data));
+                        window.dispatchEvent(fieldEvents.fieldNameUpdate(data));
                         break;
                 case 'UPDATE-SWAP':
-                        window.dispatchEvent(fieldEvents.swapField(data));
+                        window.dispatchEvent(fieldEvents.realtimeSwapField(data));
+
+                        data.styleSwap = true;
+                        window.dispatchEvent(entryEvents.swapDOM(data));
+
                         break;
                 case 'DELETE':
-                        window.dispatchEvent(fieldEvents.realtimeRemoveField(data.id))
+                        window.dispatchEvent(fieldEvents.removeField(data.id))
                         break;
         }
 }
 
-async function handleFieldHelperRealtime(eventType: string, data: FieldHelper) {
+async function handleFieldOptionRealtime(eventType: string, data: FieldOption) {
         switch (eventType) {
                 case 'INSERT':
-                        window.dispatchEvent(fieldEvents.realtimeAddFieldHelper(data));
+                        window.dispatchEvent(fieldEvents.addFieldOption({ id: data.id!, value: data.value, fieldId: data.field_id!, accountId: data.account_id }));
                         break;
                 case 'UPDATE':
-                        window.dispatchEvent(fieldEvents.realtimeUpdateFieldHelper(data));
+                        window.dispatchEvent(fieldEvents.updateFieldOption({ id: data.id!, value: data.value, fieldId: data.field_id!, accountId: data.account_id }));
                         break;
                 case 'DELETE':
-                        window.dispatchEvent(fieldEvents.realtimeRemoveFieldHelper({ fieldId: data.field_id!, helperId: data.id! }))
+                        window.dispatchEvent(fieldEvents.removeFieldOption({ id: data.id!, fieldId: data.field_id! }));
                         break;
         }
 }
@@ -208,7 +231,7 @@ async function handleFieldHelperRealtime(eventType: string, data: FieldHelper) {
 async function handleEntryRealtime(eventType: string, data: any) {
         switch (eventType) {
                 case 'INSERT-ROW':
-                        window.dispatchEvent(entryEvents.realtimeNewRows(data.entries))
+                        window.dispatchEvent(entryEvents.realtimeNewRows(data))
                         break;
                 case "INSERT-FIELD":
                         window.dispatchEvent(entryEvents.newFieldEntries({ field: data.field, entryIds: data.entryIds }));
@@ -222,7 +245,7 @@ async function handleEntryRealtime(eventType: string, data: any) {
                 case 'DELETE-FIELD':
                         window.dispatchEvent(entryEvents.realtimeRemoveEntries({ fieldId: data.field_id }));
                         break;
-                case 'DELETE-FIELD-HELPER':
+                case 'DELETE-FIELD-OPTION':
                         window.dispatchEvent(entryEvents.entryChangeFieldValues({ fieldId: data.field_id!, value: "", oldValue: data.value }))
                         break;
         }
@@ -248,9 +271,11 @@ async function handleBoardDeleted(id: string) {
         removeBoardFromCache(id);
 }
 
-async function handleNotificationInserted(data: ViewNotification) {
-        window.dispatchEvent(notificationEvents.addNotification(data));
-        addNotificationToCache(data);
+async function handleNotificationInserted(data: InsertNotification) {
+        const n = await supabase.fetchNotification(data.id!);
+
+        window.dispatchEvent(notificationEvents.addNotification(n));
+        addNotificationToCache(n);
 }
 async function handleNotificationDeleted(id: string) {
         window.dispatchEvent(notificationEvents.removeNotification(id));
@@ -295,7 +320,7 @@ async function removeBoardFromCache(id: string) {
         const ownedIndex = cached.owned.findIndex(b => b.id === id);
         if (ownedIndex !== -1) cached.owned.splice(sharedIndex, 1);
 
-        if (delBoard.is_owner) {
+        if (delBoard.permission_id == PermissionId.Owner) {
                 cached.deleted.push(delBoard);
         }
 

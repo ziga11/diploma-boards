@@ -585,6 +585,7 @@ export const pageContent: Record<string, HTMLDivElement> = {
                                     Add
                                 </button>
                             </div>
+                            <div class="status-option-nullable-div"><span>Nullable</span><input id="option-nullable-check" type="checkbox"/></div>
                         </div>
 
                         <div class="field-edit-section d-none" id="button-options-section">
@@ -620,7 +621,7 @@ export const pageContent: Record<string, HTMLDivElement> = {
                                     <button class="filter-btn filter-column active" data-column="ALL">ALL</button>
                                     <button class="filter-btn filter-column" data-column="Entry">Entry</button>
                                     <button class="filter-btn filter-column" data-column="Field">Field</button>
-                                    <button class="filter-btn filter-column" data-column="Field Helper">Field Helper</button>
+                                    <button class="filter-btn filter-column" data-column="Field Option">Field Option</button>
                                     <button class="filter-btn filter-column" data-column="Board">Board</button>
                                     <button class="filter-btn filter-column" data-column="Automation">Automation</button>
                                 </div>

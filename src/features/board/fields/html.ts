@@ -1,7 +1,6 @@
 const activePage = () => document.querySelector(`#page-board`) ?? document;
 
 export const HTML = {
-        /* field-dropdown */
         get fieldDropdown() { return activePage().querySelector(".field-dropdown") as HTMLDialogElement },
 
         editModal: {

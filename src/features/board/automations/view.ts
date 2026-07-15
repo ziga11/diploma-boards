@@ -27,8 +27,6 @@ export function previousDiv() {
 }
 
 export function setDiv(div: HTMLDivElement) {
-        console.log(div, automationState.activeDiv);
-
         if (div === automationState.activeDiv) return;
 
         setStateClass([div], [automationState.activeDiv], "shown");

@@ -101,6 +101,13 @@ export const BoardStore = {
                 state.entryCount = { rendered: rendered + 1, all: all + 1 };
         },
 
+        decrementRowCount() {
+                const rendered = state.entryCount.rendered;
+                const all = state.entryCount.all;
+
+                state.entryCount = { rendered: rendered - 1, all: all - 1 };
+        },
+
         setInitialized() {
                 state.isInitialized = true;
         },
@@ -124,7 +131,9 @@ export const BoardStore = {
                         if (!state.fieldIdAutomationMap.has(automation.field_id!)) {
                                 state.fieldIdAutomationMap.set(automation.field_id!, []);
                         }
-                        state.fieldIdAutomationMap.get(automation.field_id!)!.push(automation);
+
+                        const key = automation.field_id ?? `${automation.automation_id}`;
+                        state.fieldIdAutomationMap.get(key)!.push(automation);
                 }
         },
 

@@ -23,15 +23,15 @@ export function extractEntryValue(entryHTML: HTMLInputElement | HTMLDivElement):
         return (entryHTML instanceof HTMLDivElement) ? entryHTML.innerText : entryHTML.value;
 }
 
-export async function insertEntryRow(entries: Array<Entry>): Promise<void> {
+export async function insertEntryRow(entries: Array<Entry>): Promise<number> {
         return await supabase.insertEntryRow(entries);
 }
 
-export async function insertEntryRows(entrySets: Array<Array<Entry>>): Promise<void> {
+export async function insertEntryRows(entrySets: Array<Array<Entry>>): Promise<Array<number>> {
         return await supabase.insertEntryRows(entrySets);
 }
 
-export async function updateEntry(id: string, value: string) {
+export async function updateEntry(id: string, value: string, optionId?: string) {
         const acc = await getAccount();
         if (!acc) throw new Error("Failed to get the account");
 
@@ -41,10 +41,32 @@ export async function updateEntry(id: string, value: string) {
                 for (const elem of elems) changeDeepestValue(elem, value);
         }
 
-        return await supabase.updateEntry({ value, id });
+        const elem = elems[0];
+        const index = (elem.closest(".entry-set") as HTMLDivElement).dataset.index;
+        const entry = {
+                id: elem.dataset.entryId,
+                type: elem.dataset.type,
+                field_id: elem.dataset.fieldId,
+                index: index,
+        } as Entry;
+
+        supabase.triggerAutomation([
+                entry.type == "text" ? AutomationId.TextChange : AutomationId.StatusChange,
+                AutomationId.AnyFieldChange,
+        ], { entry });
+
+        let payload = { id } as any;
+        if (optionId) {
+                payload.optionId = optionId;
+        }
+        else {
+                payload.value = value;
+        }
+
+        return await supabase.updateEntry(payload);
 }
 
-export async function deleteRow(indices: Array<number>) {
+export async function deleteRows(indices: Array<number>) {
         const acc = await getAccount();
         if (!acc) throw new Error("Failed to get the account");
 
@@ -57,8 +79,5 @@ export async function deleteRow(indices: Array<number>) {
 export async function triggerAutomation(automationIds: AutomationId[], { entry, fieldId, entryId, rowIndex }: {
         entryId?: string, boardId?: string, fieldId?: string, rowIndex?: number, entry?: Entry
 }) {
-        const boardId = BoardStore.boardId;
-        if (!boardId) return;
-
-        return supabase.triggerAutomation(automationIds, { entry, boardId, fieldId, entryId, rowIndex });
+        return supabase.triggerAutomation(automationIds, { entry, fieldId, entryId, rowIndex });
 }

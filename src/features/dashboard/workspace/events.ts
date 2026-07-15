@@ -108,7 +108,7 @@ export function initWorkspaceEvents() {
         window.addEventListener(dashboardEvents.updateBoard.type, (e: Event) => {
                 const board = (e as ReturnType<typeof dashboardEvents.updateBoard>).detail;
 
-                const boardElem = HTML.boardList.div.querySelector(`.board-entry[board-id="${board.id}"]`) as HTMLDivElement;
+                const boardElem = HTML.boardList.div.querySelector(`.board-entry[data-board-id="${board.id}"]`) as HTMLDivElement;
                 const titleElem = boardElem.querySelector(".board-title") as HTMLDivElement;
 
                 if (board.name != undefined) {

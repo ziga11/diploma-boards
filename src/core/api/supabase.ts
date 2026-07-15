@@ -1,8 +1,8 @@
 import { createClient, SupabaseClient, type PostgrestResponse, type User } from '@supabase/supabase-js'
 import { BoardStore } from '@/features/board/board-state';
-import type { Automation, AutomationId } from '@/features/board/automations/types';
+import { AutomationId, type Automation } from '@/features/board/automations/types';
 import type { BoardCollaborator, InsertNotification, NotificationFetchObject, ViewNotification } from '@/features/board/user-management/types';
-import type { Field, FieldHelper } from '@/features/board/fields/types';
+import type { Field, FieldOption } from '@/features/board/fields/types';
 import type { Entry } from '@/features/board/entries/types';
 import type { Board } from '@/features/board/workspace/types';
 import type { BoardFetchObject } from '@/features/dashboard/workspace/types';
@@ -10,6 +10,7 @@ import { getAccount } from '../utils/utils';
 import { cache } from './cache';
 import { broadcastMutation, initGlobalRealtime, switchActiveBoardRealtime } from './realtime';
 import type { EntryLog, HistoryLog } from '@/features/board/history/types';
+import { PermissionId } from '../types/auth';
 
 export const CLIENT_ID = crypto.randomUUID();
 export class Supabase {
@@ -122,15 +123,35 @@ export class Supabase {
         }
 
         async updateBoard(id: string, newName: string) {
-                const { error } = await this.client.rpc('update_board', { p_name: newName }) as PostgrestResponse<Board>;
-
+                const { error } = await this.client.rpc('update_board', {
+                        p_board_id: id,
+                        p_name: newName,
+                }) as PostgrestResponse<Board>;
                 if (error) {
                         console.error(error);
                         throw error;
                 }
 
-                cache.clear("boards");
-                cache.clear(`board_${id}`);
+                const cachedBoard = await cache.get<Board>(`board_${id}`);
+                if (cachedBoard) {
+                        cachedBoard.name = newName;
+                        cache.set(`board_${id}`, cachedBoard);
+                }
+
+                const cachedBoards = await cache.get<BoardFetchObject>("boards");
+                if (cachedBoards) {
+                        const patchList = (list: Board[]) => {
+                                const idx = list.findIndex(b => b.id === id);
+                                if (idx !== -1) list[idx] = { ...list[idx], name: newName };
+                        };
+
+                        patchList(cachedBoards.owned);
+                        patchList(cachedBoards.shared);
+                        patchList(cachedBoards.all);
+                        cache.set("boards", cachedBoards);
+                }
+
+                broadcastMutation("board", "UPDATE", { id, name: newName } as Board);
         }
 
         async fetchBoards(): Promise<BoardFetchObject> {
@@ -144,8 +165,8 @@ export class Supabase {
                         return { shared: [], deleted: [], owned: [], all: [] } as BoardFetchObject;
                 }
 
-                const owned = data.filter(b => (b.is_owner && !b.deleted));
-                const shared = data.filter(b => !b.is_owner);
+                const owned = data.filter(b => ((b.permission_id == PermissionId.Owner) && !b.deleted));
+                const shared = data.filter(b => !(b.permission_id == PermissionId.Owner));
                 const deleted = data.filter(b => b.deleted);
                 const result = { owned, shared, deleted, all: data } as BoardFetchObject;
 
@@ -171,13 +192,12 @@ export class Supabase {
                         throw error;
                 }
 
-
                 const result = data as Board;
                 await cache.set(cacheKey, result);
 
                 const boardObj = (await cache.get("boards") ?? { all: [], shared: [], deleted: [], owned: [] }) as BoardFetchObject;
                 boardObj.all.push(result);
-                if (result.is_owner) {
+                if (result.permission_id == PermissionId.Owner) {
                         boardObj.owned.push(result);
                 }
                 else if (!result.deleted) {
@@ -190,9 +210,10 @@ export class Supabase {
                 return result;
         }
 
-        async boardCollaborators(boardId: string): Promise<Array<BoardCollaborator>> {
-                let { data, error } = await this.client.rpc("board_collaborators", {
+        async fetchCollaborators(boardId: string, boardAccLinkIds?: Array<string>): Promise<Array<BoardCollaborator>> {
+                let { data, error } = await this.client.rpc("fetch_collaborators", {
                         p_board_id: boardId,
+                        p_board_acc_link_ids: boardAccLinkIds,
                 });
 
                 if (error) {
@@ -232,6 +253,8 @@ export class Supabase {
                 }
 
                 boardObj.deleted.push(delBoard);
+
+                broadcastMutation("board", "DELETE", { id: boardId });
 
                 await cache.set("boards", boardObj);
         }
@@ -289,6 +312,8 @@ export class Supabase {
         }
 
         async insertFieldWithEntries(field: Field, entryIds: Array<string>): Promise<{ field: Field, entries: Entry[] }> {
+                const optionId = field.type === "button" ? crypto.randomUUID() : null;
+
                 const { data, error } = await this.client.rpc('create_field_with_entries', {
                         p_field_id: field.id,
                         p_entry_ids: entryIds,
@@ -300,13 +325,23 @@ export class Supabase {
 
                 if (error) throw error;
 
+                cache.clear(`fields_${field.board_id}`);
+
                 broadcastMutation("field", "INSERT", field);
                 broadcastMutation("entry", "INSERT-FIELD", { field, entryIds });
 
-                cache.clear(`fields_${field.board_id}`);
-                cache.clear(`entries_${field.board_id}`);
+                if (data.option_id) {
+                        const fieldOption = {
+                                id: optionId,
+                                account_id: field.account_id,
+                                value: "",
+                                field_id: field.id,
+                        } as FieldOption;
 
-                return data;
+                        field.options = [fieldOption];
+                }
+
+                return { field: data.field, entries: data.entries };
         }
 
         async updateField(id: string, newName: string): Promise<void> {
@@ -347,12 +382,6 @@ export class Supabase {
         }
 
         async fetchEntries(boardId: string, { fieldId, index }: { fieldId?: string; index?: number } = {}): Promise<Entry[]> {
-                const isBaseQuery = fieldId === undefined && index === undefined;
-                if (isBaseQuery) {
-                        const cached = await cache.get<Entry[]>(`entries_${boardId}`);
-                        if (cached) return cached;
-                }
-
                 let query = this.client
                         .from('entry_with_field')
                         .select('*')
@@ -376,11 +405,7 @@ export class Supabase {
                         throw error;
                 }
 
-                const result = data || [];
-                if (isBaseQuery) {
-                        cache.set(`entries_${boardId}`, result);
-                }
-                return result;
+                return data || [];
         }
 
         async *fetchPagedEntries(boardId: string, fieldCount: number): AsyncGenerator<Array<Entry>> {
@@ -404,12 +429,13 @@ export class Supabase {
 
                         if (error) throw error;
 
-                        if (!data || data.length === 0) {
-                                console.log("no data");
+                        if (!data) {
+                                console.log("data undefined/null");
                                 return;
                         }
 
                         yield data as Array<Entry>;
+
                         offset += data.length;
 
                         const currSearch = BoardStore.searchQuery;
@@ -454,15 +480,16 @@ export class Supabase {
                 if (isBaseQuery) {
                         cache.set(`fields_${boardId}`, result);
                 }
-                return result;
+                return data || [];
         }
 
         async deleteField(fieldId: string): Promise<void> {
                 const { error: fieldErr } =
-                        await this.client.from('field').update({
-                                id: fieldId,
-                                deleted: true,
-                        }).eq('id', fieldId);
+                        await this.client.from('field')
+                                .update({
+                                        id: fieldId,
+                                        deleted: true,
+                                }).eq('id', fieldId);
 
                 if (fieldErr) {
                         console.warn(`Failed to delete entry ${fieldErr.message}`);
@@ -475,14 +502,14 @@ export class Supabase {
                 cache.clearAll();
         }
 
-        async fetchFieldHelpers(fieldIds: Array<string>): Promise<Map<string, Array<FieldHelper>>> {
+        async fetchFieldOptions(fieldIds: Array<string>): Promise<Map<string, Array<FieldOption>>> {
                 const { data, error } = await this.client
-                        .from("field_helper")
+                        .from("field_option")
                         .select("id, field_id, value")
                         .in("field_id", fieldIds);
 
                 if (error) {
-                        console.warn("Error fetching field helpers:", error);
+                        console.warn("Error fetching field options:", error);
                         throw error;
                 }
 
@@ -491,46 +518,28 @@ export class Supabase {
                         if (!map.has(row.field_id)) {
                                 map.set(row.field_id, []);
                         };
-                        const fieldHelpersArr = map.get(row.field_id);
+                        const options = map.get(row.field_id);
 
-                        const fieldHelper = {
+                        const option = {
                                 id: row.id,
                                 field_id: row.field_id,
                                 value: row.value
-                        } as FieldHelper;
-                        fieldHelpersArr.push(fieldHelper);
+                        } as FieldOption;
+                        options.push(option);
                 }
 
                 return map;
         }
 
-        async updateFieldHelper(newValue: string, { id, fieldId, oldValue }:
-                { id?: string, fieldId?: string, oldValue?: string }) {
-                let updatePayload = { value: newValue } as { value: string, id?: string };
-
-                if (id) {
-                        updatePayload.id = id;
-                }
-
+        async updateFieldOption(id: string, value: string) {
                 let query = this.client
-                        .from('field_helper')
-                        .update(updatePayload);
-
-
-                if (id) {
-                        query = query.eq('id', id);
-                }
-                if (fieldId) {
-                        query = query.eq('field_id', fieldId);
-                }
-                if (oldValue) {
-                        query = query.eq('value', oldValue);
-                }
+                        .from('field_option')
+                        .update({ value: value })
+                        .eq('id', id);
 
                 const { error } = await query;
-                if (error) throw new Error(`Failed to update field helper ${error.message}`)
-
-                broadcastMutation("field_helper", "UPDATE", { id, value: newValue } as FieldHelper);
+                if (error) throw new Error(`Failed to update field option ${error.message}`)
+                broadcastMutation("field_option", "UPDATE", { id, value: value } as FieldOption);
 
                 const boardId = BoardStore.boardId;
                 if (!boardId) throw new Error(`Board wasn't set`)
@@ -538,27 +547,26 @@ export class Supabase {
                 cache.clear(`fields_${boardId}`);
         }
 
-        async insertFieldHelper(fieldHelper: FieldHelper): Promise<void> {
+        async insertFieldOption(fieldOption: FieldOption): Promise<void> {
                 const { error } = await this.client
-                        .from('field_helper')
-                        .insert(fieldHelper);
+                        .from('field_option')
+                        .insert(fieldOption);
 
                 if (error) {
-                        console.warn(`Failed to insert fieldHelper: ${error.message}`);
+                        console.warn(`Failed to insert fieldOption: ${error.message}`);
                         throw error;
                 }
 
                 const boardId = BoardStore.boardId;
                 if (!boardId) throw new Error(`Board wasn't set`)
 
-                broadcastMutation("field_helper", "INSERT", fieldHelper);
+                broadcastMutation("field_option", "INSERT", fieldOption);
                 cache.clear(`fields_${boardId}`);
         }
 
-
-        async deleteFieldHelpers({ id, fieldIds, values }: { id?: string, fieldIds?: Array<string>, values?: Array<string> }): Promise<void> {
+        async deleteFieldOptions({ id, fieldIds, values }: { id?: string, fieldIds?: Array<string>, values?: Array<string> }): Promise<void> {
                 let query = this.client
-                        .from('field_helper')
+                        .from('field_option')
                         .delete();
 
                 if (id) {
@@ -573,25 +581,26 @@ export class Supabase {
                 }
 
                 const { error } = await query;
-                broadcastMutation("field_helper", "DELETE", id);
-                broadcastMutation("entry", "DELETE-FIELD-HELPER", id);
+                broadcastMutation("field_option", "DELETE", id);
+                broadcastMutation("entry", "DELETE-FIELD-OPTION", id);
 
                 if (error) {
-                        console.warn(`Failed to delete field helper values: ${error.message}`);
+                        console.warn(`Failed to delete field option values: ${error.message}`);
                         throw error;
                 }
         }
 
-        async insertEntryRow(entries: Array<Entry>): Promise<void> {
+        async insertEntryRow(entries: Array<Entry>): Promise<number> {
                 const boardId = BoardStore.boardId;
                 if (!entries.length || !boardId) {
                         console.warn("error inserting entries, board_id is null or there's no entries");
+                        throw new Error("Board ID null or no entries");
                 }
 
                 const acc = await getAccount();
                 if (!acc) {
                         console.warn("account not set");
-                        return;
+                        throw new Error("Account not set");
                 }
 
                 const payload = {
@@ -600,10 +609,7 @@ export class Supabase {
                         p_entry_ids: [] as Array<string>,
                         p_field_ids: [] as Array<string>,
                         p_values: [] as Array<string>,
-                        p_index: entries[0].index,
                 };
-
-                console.log(payload);
 
                 for (const entry of entries) {
                         payload.p_entry_ids.push(entry.id ?? "");
@@ -611,18 +617,22 @@ export class Supabase {
                         payload.p_values.push(entry.value ?? "");
                 }
 
-                const { error } = await this.client.rpc("insert_entry_row", payload);
+                const { data, error } = await this.client.rpc("insert_entry_row", payload);
                 if (error) {
                         console.warn(`Failed to insert entries: ${error.message}`);
                         throw error;
                 }
 
+                for (const entry of entries) {
+                        entry.index = data;
+                }
+
                 broadcastMutation("entry", "INSERT-ROW", entries)
 
-                if (boardId) cache.clear(`entries_${boardId}`);
+                return data;
         }
 
-        async insertEntryRows(entrySets: Array<Array<Entry>>): Promise<void> {
+        async insertEntryRows(entrySets: Array<Array<Entry>>): Promise<Array<number>> {
                 const boardId = BoardStore.boardId;
                 if (!entrySets.length || !boardId) {
                         console.warn("error inserting entries, board_id is null or there's no entries");
@@ -631,35 +641,39 @@ export class Supabase {
                 const acc = await getAccount();
                 if (!acc) {
                         console.warn("account not set");
-                        return;
+                        throw new Error("account not set");
                 }
 
                 const payload = {
                         p_board_id: boardId,
                         p_account_id: acc.id,
-                        p_indices: entrySets.map(entries => entries[0]?.index ?? 0),
+                        p_row_count: entrySets.length,
                         p_entry_ids: [] as (string | null)[][],
                         p_field_ids: [] as string[][],
-                        p_values: [] as string[][]
+                        p_values: [] as string[][],
+                        p_option_ids: [] as (string | null)[][],
                 };
 
                 for (const entries of entrySets) {
                         const ids: (string | null)[] = [];
                         const fields: string[] = [];
                         const vals: string[] = [];
+                        const optionIds: (string | null)[] = [];
 
                         for (const entry of entries) {
                                 ids.push(entry.id ?? null);
                                 fields.push(entry.field_id!);
                                 vals.push(entry.value ?? "");
+                                optionIds.push(entry.option_id ?? null);
                         }
 
                         payload.p_entry_ids.push(ids);
                         payload.p_field_ids.push(fields);
                         payload.p_values.push(vals);
+                        payload.p_option_ids.push(optionIds);
                 }
 
-                const { error } = await this.client.rpc("insert_entry_rows", payload);
+                const { data, error } = await this.client.rpc("insert_entry_rows", payload);
                 if (error) {
                         console.warn(`Failed to insert entryRows: ${error.message}`);
                         throw error;
@@ -669,19 +683,16 @@ export class Supabase {
                         broadcastMutation("entry", "INSERT-ROW", entries);
                 }
 
-
-                if (boardId) cache.clear(`entries_${boardId}`);
+                return data;
         }
 
-        async switchFieldIndex({ boardId, fieldId, oldIndex, newIndex }: {
-                boardId: string, fieldId: string,
-                oldIndex: number, newIndex: number
+        async switchFieldIndex({ boardId, field1_id, field2_id }: {
+                boardId: string, field1_id: string, field2_id: string
         }) {
                 const { error } = await this.client.rpc("switch_field_index", {
                         p_board_id: boardId,
-                        p_field_id: fieldId,
-                        p_old_index: oldIndex,
-                        p_new_index: newIndex
+                        p_field1_id: field1_id,
+                        p_field2_id: field2_id
                 });
 
                 if (error) {
@@ -690,43 +701,83 @@ export class Supabase {
                 }
 
                 cache.clear(`fields_${boardId}`);
-                cache.clear(`entries_${boardId}`);
 
-                broadcastMutation("field", "UPDATE-SWAP", { boardId, fieldId, startIndex: oldIndex, finalIndex: newIndex });
+                broadcastMutation("field", "UPDATE-SWAP", { field1_id: field1_id, field2_id: field2_id });
         }
 
-        async updateEntry(entry: Entry): Promise<void> {
+        async updateEntries({ fieldId, oldValue, newValue }: { fieldId: string, oldValue: string, newValue: string }) {
                 const boardId = BoardStore.boardId;
                 if (!boardId) throw new Error("Failed to get the boardId");
 
                 const { error } = await this.client
                         .from('entry')
-                        .update({
-                                id: entry.id,
-                                value: entry.value,
-                        })
-                        .eq('id', entry.id);
+                        .update({ value: newValue })
+                        .eq('value', oldValue)
+                        .eq('board_id', boardId)
+                        .eq('field_id', fieldId);
 
                 if (error) throw error;
 
-                broadcastMutation("entry", "UPDATE", entry)
+                /*TODO: ...*/
+                broadcastMutation("entry", "MULTI-UPDATE", { fieldId, oldValue, newValue });
         }
 
-        async triggerAutomation(automationIds: AutomationId[], { entry, boardId, fieldId, entryId, rowIndex }: {
+        async updateEntry({ id, value, optionId }: { id: string, value?: string, optionId?: string }): Promise<void> {
+                const boardId = BoardStore.boardId;
+                if (!boardId) throw new Error("Failed to get the boardId");
+
+                let payload = { id } as any;
+
+                if (value) {
+                        payload.value = value;
+                }
+                else if (optionId) {
+                        payload.option_id = optionId;
+                }
+
+                const { error } = await this.client
+                        .from('entry')
+                        .update(payload)
+                        .eq('id', id);
+
+                if (error) {
+                        console.log(error);
+
+                        throw error;
+                }
+
+                broadcastMutation("entry", "UPDATE", { id, value })
+        }
+
+        async triggerAutomation(automationIds: Array<AutomationId>, { entry, fieldId, entryId, rowIndex }: {
                 entryId?: string,
-                boardId?: string,
                 fieldId?: string,
                 rowIndex?: number,
                 entry?: Entry
         }): Promise<boolean> {
-                if (!entry || (!fieldId || !entryId || !rowIndex || !boardId)) return false;
+                const boardId = BoardStore.boardId;
 
-                const automations = await this.fetchFieldAutomations(boardId ?? entry.board_id,
-                        { fieldId: fieldId ?? entry.field_id, automationIds: automationIds });
-                if (automations.length == 0) return false;
+                if (!(fieldId && entryId && rowIndex && boardId) && !entry) {
+                        return false;
+                }
 
-                const entries = await this.fetchEntries(boardId ?? entry.board_id, { index: rowIndex ?? entry.index });
-                const fields = await this.fetchFields(boardId ?? entry.board_id);
+                const automations: Array<Automation> = [];
+                for (const automationId of automationIds) {
+                        const key = automationId <= AutomationId.ButtonPress ? fieldId ?? entry!.field_id! : `${automationId}`;
+
+                        const as = (BoardStore.automations.get(key) ?? []) as Array<Automation>;
+                        for (const a of as) {
+                                if (a.automation_id === automationId) {
+                                        automations.push(a);
+                                        break;
+                                }
+                        }
+                }
+
+                if (!automations || automations.length == 0) return false;
+
+                const entries = await this.fetchEntries(boardId!, { index: rowIndex ?? entry!.index });
+                const fields = await this.fetchFields(boardId!);
 
                 const objArr: Record<string, { field: Field; entry: Entry }> = {};
                 for (let i = 0; i < fields.length; i++) {
@@ -742,7 +793,7 @@ export class Supabase {
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                         type: automation.type,
-                                        board_id: boardId ?? entry.board_id,
+                                        board_id: boardId,
                                         row_count: fields.length,
                                         rows: objArr,
                                 })
@@ -759,8 +810,7 @@ export class Supabase {
         async deleteEntryRows(boardId: string, indices: Array<number>): Promise<void> {
                 let query = this.client.rpc("delete_entry_rows", {
                         p_board_id: boardId,
-                        p_account_id: null,
-                        p_indices: indices
+                        p_indices: indices,
                 })
 
                 const { error } = await query;
@@ -770,8 +820,6 @@ export class Supabase {
                 }
 
                 broadcastMutation("entry", "DELETE-ROWS", { indices })
-
-                cache.clear(`entries_${boardId}`);
         }
 
         async insertFieldAutomation(automation: Automation): Promise<Automation> {
@@ -901,11 +949,11 @@ export class Supabase {
         }
 
         async fetchNotifications(): Promise<NotificationFetchObject> {
-                const cached = await cache.get<NotificationFetchObject>("notifications");
-                if (cached) return cached;
+                /* const cached = await cache.get<NotificationFetchObject>("notifications");
+                if (cached) return cached; */
 
                 const { data, error } = await this.client
-                        .rpc("get_all_my_notifications")
+                        .rpc("fetch_notifications")
                         .order("created_at", { ascending: false });
 
                 if (error) throw error;
@@ -915,8 +963,18 @@ export class Supabase {
                 const sent = all.filter(n => n.direction === 'sent');
 
                 const result = { received, sent, all } as NotificationFetchObject;
-                cache.set("notifications", result);
+                /*                 cache.set("notifications", result); */
                 return result;
+        }
+
+        async fetchNotification(id: string): Promise<ViewNotification> {
+                const { data, error } = await this.client
+                        .rpc("fetch_notifications", { p_id: id });
+
+                if (error) throw error;
+
+                const all = data as ViewNotification[];
+                return all[0];
         }
 
         async *fetchHistory(): AsyncGenerator<Array<HistoryLog>> {
@@ -982,6 +1040,7 @@ export class Supabase {
                         .eq('board_id', boardId);
 
                 if (error) throw error;
+
                 return count ?? 0;
         }
 

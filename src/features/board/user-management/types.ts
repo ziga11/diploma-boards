@@ -39,3 +39,11 @@ export interface BoardCollaborator {
         permission_id: PermissionId;
         added_at: Date;
 }
+
+export interface BoardAccLink {
+        id: string;
+        created_at: Date;
+        board_id: string;
+        account_id: string;
+        permission_id: number;
+}

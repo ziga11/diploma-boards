@@ -237,6 +237,7 @@ input[type="date"] {
         color: var(--text-primary, #fff);
         font-size: 14px;
         width: 220px;
+        padding: 10px;
 }
 
 #search::placeholder {
@@ -262,7 +263,7 @@ input[type="date"] {
 }
 
 .entry-rows {
-        height: 525px;
+        height: 390px;
         padding-right: 10px;
         overflow-y: auto;
 }
@@ -694,7 +695,13 @@ input[type="date"] {
 .field-div {
         border-top: 1px solid var(--bg-highlight);
         background: var(--dark-gray);
+        font-size: 14px;
 }
+
+.entry-status {
+        font-size: 13px;
+}
+
 
 .fields .pin-div {
         border-top: 1px solid var(--bg-highlight);

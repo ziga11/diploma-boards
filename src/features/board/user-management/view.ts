@@ -31,9 +31,6 @@ export async function createCollaboratorDiv(c: BoardCollaborator): Promise<HTMLD
 
         const isUser = c.account_id == acc.id;
 
-        console.log([PermissionId.Owner, PermissionId.Admin].includes(c.permission_id));
-
-
         div.innerHTML = DOMPurify.sanitize(`
                 <img class="collab-avatar" crossorigin="anonymous" referrerpolicy="no-referrer" src="${c.avatar_url}" alt="${c.name}" />
                 <div class="collab-info">

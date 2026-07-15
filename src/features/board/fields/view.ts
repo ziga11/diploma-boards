@@ -1,6 +1,6 @@
 import { HTML } from "./html";
 import DOMPurify from 'dompurify';
-import type { Field, FieldHelper } from "./types";
+import type { Field, FieldOption } from "./types";
 import { dragProps } from "./event";
 import { BoardStore } from "../board-state";
 import { setStateClass } from "@/core/utils/dom";
@@ -70,11 +70,13 @@ export function toggleNewFieldMenu() {
         addMenu.style.top = btnRect.top + 10 + window.scrollY + 'px';
 }
 
-export function createStatusOption(helper: FieldHelper) {
+export function createStatusOption(option: FieldOption) {
         const div = Object.assign(document.createElement("div"), { className: "status-option-item" });
-        div.dataset.helperId = `${helper.id}`;
+        div.dataset.optionId = `${option.id}`;
+        div.dataset.dbValue = `${option.value}`;
+
         div.innerHTML = DOMPurify.sanitize(
-                `<input type="text" class="field-edit-input" value="${helper.value}">
+                `<input type="text" class="field-edit-input" value="${option.value}">
                 <button class="btn btn-sm btn-outline-danger remove-status-option">×</button>`);
 
         return div
@@ -88,20 +90,20 @@ export function populateFieldEditModal(field: Field): void {
 
         if (field.type === "status") {
                 HTML.editModal.status.list.innerHTML = "";
-                for (const helper of field.fieldHelpers ?? []) {
-                        HTML.editModal.status.list.appendChild(createStatusOption(helper));
+                for (const option of field.options ?? []) {
+                        HTML.editModal.status.list.appendChild(createStatusOption(option));
                 }
                 HTML.editModal.status.section.classList.remove("d-none");
         }
         else if (field.type == "button") {
-                const fieldHelper = field?.fieldHelpers?.at(0);
+                const option = field?.options?.at(0);
                 HTML.editModal.button.section.classList.remove("d-none");
 
                 const input = HTML.editModal.button.input
-                input.value = fieldHelper?.value ?? "";
+                input.value = option?.value ?? "";
                 input.dataset.dbValue = input.value;
                 input.dataset.fieldId = `${field.id}`;
-                input.dataset.helperId = `${fieldHelper?.id ?? ""}`;
+                input.dataset.optionId = `${option?.id ?? ""}`;
         }
         else {
                 HTML.editModal.status.list.innerHTML = "";
@@ -110,24 +112,26 @@ export function populateFieldEditModal(field: Field): void {
 
 
 export async function fieldDrag(e: MouseEvent) {
-        if (!dragProps.field || !dragProps.fieldRect) return;
-        if (e.x >= dragProps.fieldRect.left && e.x <= dragProps.fieldRect.right) return;
+        if (!dragProps.field1 || !dragProps.field1Rect) return;
+        if (e.x >= dragProps.field1Rect.left && e.x <= dragProps.field1Rect.right) return;
 
-        const increase = e.x > dragProps.fieldRect.right;
+        const increase = e.x > dragProps.field1Rect.right;
 
-        const field1 = dragProps.field;
+        const field1 = dragProps.field1;
         const field2 = (increase ? field1.nextElementSibling : field1.previousElementSibling) as HTMLDivElement;
 
         const fieldSwapObj = { field1, field2 };
 
         swapField(fieldSwapObj);
 
-        dragProps.fieldRect = dragProps.field!.getBoundingClientRect();
+        dragProps.field1Rect = dragProps.field1!.getBoundingClientRect();
+
+        dragProps.field2 = field2;
 
         window.dispatchEvent(entryEvents.visuallySwap({ field1_id: field1.dataset.fieldId!, field2_id: field2.dataset.fieldId! }));
 }
 
-function swapField({ field1: field1, field2 }: { field1: HTMLDivElement, field2: HTMLDivElement }) {
+export function swapField({ field1, field2 }: { field1: HTMLDivElement, field2: HTMLDivElement }) {
         const [o1, o2] = [Number(field1.dataset.order), Number(field2.dataset.order)];
 
         if (o1 < o2) {
@@ -139,7 +143,6 @@ function swapField({ field1: field1, field2 }: { field1: HTMLDivElement, field2:
 
         field1.dataset.order = `${o2}`;
         field2.dataset.order = `${o1}`;
-
 }
 
 export function appendFieldDivs(fields: Array<Field>) {

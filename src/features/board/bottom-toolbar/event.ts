@@ -19,20 +19,6 @@ export function initBottomToolbarEvents() {
                 setStateClass([], [HTML.outerDiv], "shown");
         })
 
-        HTML.deleteSelected.addEventListener("mouseover", () => {
-                const currSvg = HTML.deleteSelected.querySelector(".bi-trash3") as SVGSVGElement;
-                const newSvg = HTML.deleteSelected.querySelector(".bi-trash3-fill") as SVGSVGElement;
-
-                setStateClass([newSvg], [currSvg], "shown");
-        });
-
-        HTML.deleteSelected.addEventListener("mouseout", () => {
-                const currSvg = HTML.deleteSelected.querySelector(".bi-trash3") as SVGSVGElement;
-                const newSvg = HTML.deleteSelected.querySelector(".bi-trash3-fill") as SVGSVGElement;
-
-                setStateClass([newSvg], [currSvg], "shown");
-        });
-
         HTML.deleteSelected.addEventListener("click", () => {
                 setToolbarVisibility(false);
 
@@ -40,24 +26,11 @@ export function initBottomToolbarEvents() {
                 window.dispatchEvent(entryEvents.removeSelected());
         });
 
-        HTML.duplicateSelected.addEventListener("mouseover", () => {
-                const currSvg = HTML.duplicateSelected.querySelector(".bi-layers") as SVGSVGElement;
-                const newSvg = HTML.duplicateSelected.querySelector(".bi-layers-fill") as SVGSVGElement;
-
-                setStateClass([newSvg], [currSvg], "shown");
-        });
-
-        HTML.duplicateSelected.addEventListener("mouseout", () => {
-                const currSvg = HTML.duplicateSelected.querySelector(".bi-layers") as SVGSVGElement;
-                const newSvg = HTML.duplicateSelected.querySelector(".bi-layers-fill") as SVGSVGElement;
-
-                setStateClass([newSvg], [currSvg], "shown");
-        });
-
         HTML.duplicateSelected.addEventListener("click", async () => {
                 const entrySets = document.querySelectorAll(".entry-set:has(.entry-check:checked)") as NodeListOf<HTMLDivElement>;
 
                 window.dispatchEvent(entryEvents.copyRow(entrySets));
+                HTML.deselectSelected.click();
         });
 
         window.addEventListener(bottomToolbarEvents.visible.type, (e: Event) => {

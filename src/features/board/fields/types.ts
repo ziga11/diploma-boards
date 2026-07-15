@@ -5,12 +5,11 @@ export interface Field {
         account_id?: string;
         name?: string;
         type?: string;
-        gen_value?: string;
         date_modified?: Date;
-        fieldHelpers?: Array<FieldHelper>;
+        options?: Array<FieldOption>;
 }
 
-export interface FieldHelper {
+export interface FieldOption {
         id?: string;
         account_id?: string;
         field_id?: string;

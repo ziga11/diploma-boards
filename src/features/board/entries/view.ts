@@ -24,14 +24,14 @@ export function entryCheckChange(check: HTMLInputElement) {
 
         const checkedInPinned = entrySet.parentElement?.className === "pinned-entry-rows";
 
-        const index = check.dataset.index;
+        const index = entrySet.dataset.index;
 
         if (checkedInPinned) {
-                const elem = HTML.entriesList.querySelector(`.entry-check[data-index="${index}"]`) as HTMLInputElement;
+                const elem = HTML.entriesList.querySelector(`.entry-set[data-index="${index}"] .entry-check`) as HTMLInputElement;
                 elem.checked = checkState;
         }
         else if (entrySet.classList.contains("pinned")) {
-                const elem = HTML.pinnedEntriesList.querySelector(`.entry-check[data-index="${index}"]`) as HTMLInputElement;
+                const elem = HTML.pinnedEntriesList.querySelector(`.entry-set[data-index="${index}"] .entry-check`) as HTMLInputElement;
                 elem.checked = checkState;
         }
 
@@ -72,21 +72,33 @@ export function swapEntriesVisually({ field1_id, field2_id }: { field1_id: strin
         }
 }
 
-export function swapEntriesDOM({ finalIndex, increase }: { finalIndex: number, increase: boolean }) {
-        const entries1 = HTML.entriesContainer.querySelectorAll(`.entry[data-order="${finalIndex}"]`) as NodeListOf<HTMLDivElement>;
-        const otherIndex = increase ? finalIndex - 1 : finalIndex + 1;
+export function swapEntriesDOM({ field1_id, field2_id, styleSwap }: { field1_id: string, field2_id: string, styleSwap: boolean }) {
+        const entries1 = HTML.entriesContainer.querySelectorAll(`.entry[data-field-id="${field1_id}"]`) as NodeListOf<HTMLDivElement>;
+        const entries2 = HTML.entriesContainer.querySelectorAll(`.entry[data-field-id="${field2_id}"]`) as NodeListOf<HTMLDivElement>;
 
-        const entries2 = HTML.entriesContainer.querySelectorAll(`.entry[data-order="${otherIndex}"]`) as NodeListOf<HTMLDivElement>;
         if (!entries2 || !entries1 || entries1.length == 0) return;
 
+        const [o1, o2] = [Number(entries1.item(0).dataset.order), Number(entries2.item(0).dataset.order)];
+
+        /* if !styleSwap the entries's order was already swapped meaning the <> must be the opposite */
+        const increase = styleSwap ? o1 > o2 : o1 < o2;
+
         for (let i = 0; i < entries2.length; i++) {
-                const e1 = entries2[i] as HTMLElement;
-                const e2 = entries1[i] as HTMLElement;
+                const e1 = entries1[i] as HTMLElement;
+                const e2 = entries2[i] as HTMLElement;
 
                 if (increase)
                         e1.after(e2);
                 else {
                         e1.before(e2);
+                }
+
+                if (styleSwap) {
+                        e1.dataset.order = `${o2}`;
+                        e2.dataset.order = `${o1}`;
+
+                        e1.style.order = `${o2!}`;
+                        e2.style.order = `${o1!}`;
                 }
         }
 }
@@ -102,10 +114,7 @@ export function createEntryRow(entries: Array<Entry>): HTMLDivElement {
                 className: "entry-check",
                 disabled: BoardStore.permissionId == PermissionId.Member
         });
-        Object.assign(checkbox.dataset, {
-                "boardId": `${BoardStore.boardId}`,
-                "index": `${entries[0].index}`,
-        });
+        Object.assign(checkbox.dataset, { "boardId": `${BoardStore.boardId}`, });
         checkboxDiv.appendChild(checkbox);
 
         const pinDiv = Object.assign(document.createElement("div"), { className: "pin-div" });
@@ -163,7 +172,7 @@ export function setEntryRows(entries: Array<Entry>, append: boolean = true) {
                 HTML.entriesList.replaceChildren(...rows);
         }
 
-        const newRows = entries.length / fieldCount
+        const newRows = entries.length > 0 ? entries.length / fieldCount : 0;
         BoardStore.setRowCount({ rendered: append ? BoardStore.rowCount.rendered + newRows : newRows });
 }
 
@@ -189,9 +198,9 @@ export async function createEntryCopiesFromEntrySet(entrySet: HTMLDivElement): P
                         value: val,
                         account_id: acc.id,
                         board_id: boardId,
-                        index: BoardStore.rowCount.all,
                         date_modified: new Date(),
                         type: entryElem.dataset.type,
+                        option_id: entryElem.dataset.optionId,
                 };
 
                 entries.push(entry);
@@ -200,14 +209,14 @@ export async function createEntryCopiesFromEntrySet(entrySet: HTMLDivElement): P
         return entries;
 }
 
-export function createFieldEntries(field: Field, entryIds: Array<string>, index: number) {
+export function createFieldEntries(field: Field, entryIds: Array<string>) {
         const entriesDivs = HTML.entriesList.querySelectorAll(".entries-div") as NodeListOf<HTMLDivElement>;
         if (entriesDivs.length == 0) return;
 
         for (let i = 0; i < entryIds.length; i++) {
                 const entry = genEntry({ id: entryIds[i], field_id: field.id, type: field.type } as Entry);
-                entry.dataset.order = `${index}`;
-                entry.style.order = `${index}`;
+                entry.dataset.order = `${field.index}`;
+                entry.style.order = `${field.index}`;
 
                 entriesDivs[i].appendChild(entry);
         }
@@ -242,7 +251,7 @@ export function setupStatusDropdown(entryElem: HTMLDivElement) {
         if (!fieldId) return;
 
         const field = BoardStore.getField(fieldId)!;
-        const options = (field.fieldHelpers ?? []);
+        const options = field.options!;
 
         setDropdownOptions(options)
 }
@@ -268,6 +277,7 @@ export function genEntry(entry: Entry): HTMLElement {
                 type: entry.type,
                 fieldId: `${entry.field_id}`,
                 entryId: `${entry.id}`,
+                optionId: entry.option_id
         });
 
         return element;

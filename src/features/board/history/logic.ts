@@ -5,5 +5,5 @@ export async function fetchCollaborators() {
         const boardId = BoardStore.boardId;
         if (!boardId) throw new Error(`Board ID not set`);
 
-        return supabase.boardCollaborators(boardId);
+        return supabase.fetchCollaborators(boardId);
 }

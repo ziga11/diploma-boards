@@ -41,7 +41,7 @@ export function addHistoryLogs(logs: Array<HistoryLog>) {
 function renderHistoryItem(log: HistoryLog): string {
         const fieldName = targetFieldName(log.target_column, log.target_id);
         const actionLower = actionType(log.action);
-        const displayField = fieldName ? `(Field "${fieldName}")` : "";
+        const displayField = fieldName ? `(${log.target_column != "field" ? "Field" : ""} "${fieldName}")` : "";
 
         return `
         <div class="history-item history-item--${actionLower}" data-id="${log.id}" data-column="${log.target_column}" data-action="${log.action}">
@@ -56,11 +56,6 @@ function renderHistoryItem(log: HistoryLog): string {
     `;
 }
 
-/**
- * Maps a raw log action ("INSERT", "DELETE-ROW", "INSERT-FIELD", ...) down to its
- * base ActionFilter ("insert" / "update" / "delete") for CSS classing + filtering.
- * Compound actions ("X-ROW", "X-FIELD") share the base action's styling.
- */
 export function actionType(rawAction: string): string {
         const base = rawAction.split('-')[0].toUpperCase();
         const known = Object.values(ActionFilter) as string[];
@@ -161,9 +156,9 @@ function targetFieldName(column: string, id: string): string {
                 }
                 case "field":
                         return BoardStore.getField(id)?.name ?? "";
-                case "field helper": {
+                case "field options": {
                         for (const field of BoardStore.fields.values()) {
-                                if (field.fieldHelpers?.some(fh => fh.id === id)) {
+                                if (field.options?.some(fh => fh.id === id)) {
                                         return field.name ?? "";
                                 }
                         }

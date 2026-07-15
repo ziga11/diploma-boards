@@ -57,7 +57,7 @@ export function initWorkspaceEvents() {
         window.addEventListener(workspaceEvents.boardTitleUpdate.type, (e: Event) => {
                 const newTitle = (e as ReturnType<typeof workspaceEvents.boardTitleUpdate>).detail;
 
-                HTML.tabTitleTag.innerText = `diploma boards - ${newTitle}`;
+                HTML.tabTitleTag.innerText = `Diploma Boards - ${newTitle}`;
                 HTML.titleSpan.innerText = newTitle;
         });
 

@@ -18,7 +18,10 @@ export async function initEntries(fieldCount: number) {
         });
 
         const allEntryCount = await supabase.fetchEntryCount();
-        BoardStore.setRowCount({ all: allEntryCount / fieldCount });
+
+        const entryCount = [fieldCount, allEntryCount].includes(0) ? 0 : allEntryCount / fieldCount;
+
+        BoardStore.setRowCount({ all: entryCount });
 
         initEntryEvents();
 }

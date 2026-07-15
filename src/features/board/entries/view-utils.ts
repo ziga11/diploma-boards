@@ -1,5 +1,4 @@
-import { BoardStore } from "../board-state";
-import type { FieldHelper } from "../fields/types";
+import type { FieldOption } from "../fields/types";
 import { HTML } from "./html";
 import { firstDeepestNode } from "./logic";
 import type { Entry } from "./types";
@@ -15,17 +14,14 @@ export function createStatusEntry(entry: Entry): HTMLDivElement {
 }
 
 export function createButtonEntry(entry: Entry): HTMLDivElement {
-        const field = BoardStore.getField(entry.field_id!);
-        const fieldHelper = field?.fieldHelpers?.at(0);
-
         const div = Object.assign(document.createElement("div"), { className: "entry" });
         const btn = Object.assign(document.createElement("button"), {
                 type: "button",
                 className: "btn-entry",
-                title: fieldHelper?.value ?? "",
+                title: entry?.value,
         });
 
-        const span = Object.assign(document.createElement("span"), { innerText: fieldHelper?.value ?? "", });
+        const span = Object.assign(document.createElement("span"), { innerText: entry?.value ?? "", });
 
         btn.appendChild(span);
         div.appendChild(btn);
@@ -41,12 +37,13 @@ export function createTextEntry(entry: Entry): HTMLInputElement {
         });
 }
 
-function createOption(optionText: string): HTMLDivElement {
+function createOption(option: FieldOption): HTMLDivElement {
         const div = Object.assign(document.createElement("div"), { className: "dropdown-option", });
-        div.dataset.value = optionText;
+        div.dataset.value = option.value;
+        div.dataset.id = option.id;
 
         const span = Object.assign(document.createElement("span"), {
-                innerText: optionText,
+                innerText: option.value,
                 className: `dropdown-option-span`,
         });
 
@@ -54,9 +51,8 @@ function createOption(optionText: string): HTMLDivElement {
         return div;
 }
 
-export function setDropdownOptions(fhOptions: Array<FieldHelper>) {
-        const options = fhOptions.map(fh => createOption(fh.value));
-
+export function setDropdownOptions(fhOptions: Array<FieldOption>) {
+        const options = fhOptions.map(fh => createOption(fh));
         const emptyOption = Object.assign(document.createElement("div"), {
                 id: "empty-option",
                 className: "dropdown-option",

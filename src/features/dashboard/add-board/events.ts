@@ -25,8 +25,7 @@ export function initAddBoardEvents() {
                 const board = {
                         id: crypto.randomUUID(),
                         date_created: new Date(),
-                        is_owner: true,
-                        permission_id: PermissionId.Admin,
+                        permission_id: PermissionId.Owner,
                         deleted: false,
                         name,
                         color,
@@ -37,7 +36,6 @@ export function initAddBoardEvents() {
                         type: "owned",
                 }));
 
-                /* Add inserting class to the board*/
                 insertBoard(board)
                         .catch(err => {
                                 showToast(`Failed to insert new board ${err}`, "error");

@@ -28,8 +28,13 @@ export const entryEvents = {
         ),
 
         newFieldEntries: Object.assign(
-                (detail: { field: Field, entryIds: Array<string>, index: number }) => new CustomEvent("entry:new-field", { detail }),
+                (detail: { field: Field, entryIds: Array<string> }) => new CustomEvent("entry:new-field", { detail }),
                 { type: "entry:new-field" as const }
+        ),
+
+        setFieldEntriesIndices: Object.assign(
+                (detail: { fieldId: string, index: number }) => new CustomEvent("entry:set-field-indices", { detail }),
+                { type: "entry:set-field-indices" as const }
         ),
 
         updateFieldEntries: Object.assign(
@@ -42,8 +47,8 @@ export const entryEvents = {
                 { type: "entry:delete-field" as const }
         ),
 
-        hideFieldEntries: Object.assign(
-                (detail: { fieldId?: string, index?: number }) => new CustomEvent("entry:hide-field", { detail }),
+        setEntryVisibility: Object.assign(
+                (detail: { fieldId?: string, index?: number, visible: boolean }) => new CustomEvent("entry:hide-field", { detail }),
                 { type: "entry:hide-field" as const }
         ),
 
@@ -58,7 +63,7 @@ export const entryEvents = {
         ),
 
         swapDOM: Object.assign(
-                (detail: { finalIndex: number, increase: boolean }) => new CustomEvent("entry:swap-dom", { detail }),
+                (detail: { field1_id: string, field2_id: string, styleSwap: boolean }) => new CustomEvent("entry:swap-dom", { detail }),
                 { type: "entry:swap-dom" as const }
         ),
 
