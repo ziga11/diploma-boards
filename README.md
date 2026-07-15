@@ -29,6 +29,7 @@ The Board System allows the user to create entries of different types, for now i
 * **Premade Actions:** Manipulating another board on change or sending an email, on date occoured actions etc.
 * **Outside tool integrations:** Adding Zapier, n8n and other tools instant integration without any hassle.
 * **File Field**: Adding a file type as well as file view right on the website (if possible)
+* **Parnas Module Structure**: Shift the code from the current state where its just separated via dirs to information hiding. Described in the paper by Parnas.
 
 ## Previews
 ![ER Diagram](/public/assets/er.jpg)
