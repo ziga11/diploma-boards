@@ -1,11 +1,12 @@
 import DOMPurify from 'dompurify';
 
 export function createAPIKeyElem(apiKey: ApiKey): HTMLDivElement {
-        const div = document.createElement("div");
-        div.dataset.id = `${apiKey.id}`;
+        const div = Object.assign(document.createElement("div"), {
+                className: "api-key-row",
+        });
+        div.dataset.keyId = `${apiKey.id}`;
 
         const rawHTML = `
-        <div class="api-key-row" data-key-id="${apiKey.id}">
             <span class="api-key-name">${apiKey.name}</span>
             <span class="api-key-value">${apiKey.key_preview ?? "Pending"}</span>
             <div class="api-key-actions">
@@ -16,7 +17,6 @@ export function createAPIKeyElem(apiKey: ApiKey): HTMLDivElement {
                     <i class="ti ti-trash-x"></i>
                 </button>
             </div>
-        </div>
     `;
 
         div.innerHTML = DOMPurify.sanitize(rawHTML);

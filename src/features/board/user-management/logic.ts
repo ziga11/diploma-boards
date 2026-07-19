@@ -1,7 +1,6 @@
 import { supabase } from "@/core/api/supabase";
 import { BoardStore } from "../board-state";
 import type { InsertNotification } from "./types";
-import { getAccount } from "@/core/utils/utils";
 
 export function isValidEmail(email: string) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -9,7 +8,7 @@ export function isValidEmail(email: string) {
 }
 
 export async function sendCollabInvitation(id: string, email: string, permission: number) {
-        const acc = await getAccount();
+        const acc = await supabase.getAccount();
         const boardId = BoardStore.boardId;
         const boardTitle = BoardStore.boardTitle;
 
@@ -35,3 +34,7 @@ export async function removeCollaborator(collaboratorAccId: string) {
         supabase.kickCollaborator(collaboratorAccId, boardId);
 }
 
+
+export async function changeCollaboratorAccess(collaboratorAccId: string, newPermissionId: number) {
+        supabase.changeCollaboratorAccess(collaboratorAccId, newPermissionId);
+}

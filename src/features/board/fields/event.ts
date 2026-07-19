@@ -2,7 +2,7 @@ import { closeDialog, setStateClass, showToast } from "@/core/utils/dom";
 import { BoardStore } from "../board-state";
 import { HTML } from "./html";
 import { deleteField, insertFieldAndEntries, insertFieldOption, removeFieldOption, switchIndex, updateFieldName, updateFieldOption } from "./logic";
-import { addHTMLField, createStatusOption, fieldDrag, populateFieldEditModal, swapField, toggleNewFieldMenu } from "./view";
+import { addHTMLField, applyPermissionRestrictions, createStatusOption, fieldDrag, populateFieldEditModal, swapField, toggleNewFieldMenu } from "./view";
 import type { Field, FieldOption } from "./types";
 import { entryEvents, } from "../entries/custom-events";
 import { fieldEvents } from "./custom-events";
@@ -386,6 +386,10 @@ export function initFieldEvents() {
                 if (inputElem) {
                         inputElem.value = value;
                 }
+        });
+
+        window.addEventListener(fieldEvents.applyPermissionRestrictions.type, () => {
+                applyPermissionRestrictions();
         });
 
         window.addEventListener(fieldEvents.removeFieldOption.type, (e: Event) => {

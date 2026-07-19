@@ -1,7 +1,7 @@
 import { closeDialog, setStateClass, showToast } from "@/core/utils/dom";
 import { HTML } from "./html";
 import { changeAllEntryChecks, changeFieldEntries, createEntryCopiesFromEntrySet, createEntryRow, createFieldEntries, entryCheckChange, setEntryRows, setupStatusDropdown, swapEntriesDOM, swapEntriesVisually, updateFieldEntries } from "./view";
-import { insertEntryRow, updateEntry, deleteRows, triggerAutomation, insertEntryRows, } from "./logic";
+import { updateEntry, deleteRows, triggerAutomation, insertEntryRows, insertEmptyEntryRows, } from "./logic";
 import { BoardStore } from "../board-state";
 import { entryEvents } from "./custom-events";
 import { AutomationId } from "../automations/types";
@@ -98,9 +98,6 @@ export function initEntryEvents() {
                         if (result.done) return;
                         const entries = result.value ?? [];
 
-                        console.log(entries);
-
-
                         setEntryRows(entries, false);
                 }, value.length < 2 ? 500 : 300);
         });
@@ -182,7 +179,7 @@ export function initEntryEvents() {
                                 BoardStore.setRowCount({ rendered: renderedRows, all: allRows });
                         })
                         .catch(err => {
-                                entrySets.forEach(e => e.style.display = "block");
+                                entrySets.forEach(e => e.style.display = "flex");
                                 showToast(`Failed to delete rows: ${err}`, "error");
                         });
         });
@@ -290,20 +287,24 @@ export function initEntryEvents() {
                 BoardStore.incrementRowCount()
 
                 const fields = Array.from(BoardStore.fields.values()).sort((a, b) => a.index! - b.index!);
-                const entries = fields.map(field => ({
-                        id: crypto.randomUUID(),
-                        field_id: field.id,
-                        value: field.type == "button" ? field!.options![0].value ?? "" : "",
-                        type: field.type,
-                        date_modified: new Date(),
-                } as Entry));
+                const entries = fields.map(field => {
+                        let val = field.type == "button" && field.options ? field.options[0].value : "";
+
+                        return {
+                                id: crypto.randomUUID(),
+                                field_id: field.id,
+                                value: val,
+                                type: field.type,
+                                date_modified: new Date(),
+                        } as Entry;
+                });
 
                 const row = createEntryRow(entries);
 
                 HTML.entriesList.appendChild(row);
 
-                insertEntryRow(entries)
-                        .then(index => row.dataset.index = `${index}`)
+                insertEmptyEntryRows(entries.map(e => e.id!))
+                        .then(indices => row.dataset.index = `${indices[0]}`)
                         .catch(err => {
                                 row.remove();
                                 BoardStore.decrementRowCount();
@@ -312,18 +313,9 @@ export function initEntryEvents() {
         });
 
         window.addEventListener(entryEvents.realtimeNewRows.type, (e: Event) => {
-                const entries = (e as ReturnType<typeof entryEvents.realtimeNewRows>).detail;
+                const entryRowsArr = (e as ReturnType<typeof entryEvents.realtimeNewRows>).detail;
 
-                const rows = [] as Array<HTMLDivElement>;
-                const rowLen = BoardStore.fields.size;
-
-                for (let i = 0; i < entries.length; i += rowLen) {
-                        const rowEntries = entries.slice(i, i + rowLen);
-
-                        const row = createEntryRow(rowEntries);
-
-                        rows.push(row);
-                }
+                const rows = entryRowsArr.map(createEntryRow);
 
                 HTML.entriesList.append(...rows);
         });
@@ -331,7 +323,7 @@ export function initEntryEvents() {
         window.addEventListener(entryEvents.copyRow.type, async (e: Event) => {
                 const entrySets = (e as ReturnType<typeof entryEvents.copyRow>).detail;
 
-                const entriesArr = [] as Array<Array<Entry>>;
+                const entryRowsArr = [] as Array<Array<Entry>>;
                 const rows = [] as Array<HTMLDivElement>;
 
                 for (const entrySet of entrySets) {
@@ -339,12 +331,12 @@ export function initEntryEvents() {
                         const row = createEntryRow(entries);
 
                         rows.push(row)
-                        entriesArr.push(entries)
+                        entryRowsArr.push(entries)
                 }
 
                 HTML.entriesList.append(...rows);
 
-                insertEntryRows(entriesArr)
+                insertEntryRows(entryRowsArr)
                         .then((indArr) => {
                                 for (let i = 0; i < rows.length; i++) {
                                         const row = rows[i];
@@ -398,5 +390,6 @@ export function initEntryEvents() {
         window.addEventListener(entryEvents.disposeAll.type, () => {
                 if (!BoardStore.isInitialized) return;
                 HTML.entriesList.innerHTML = "";
+                HTML.pinnedEntriesList.innerHTML = "";
         });
 }

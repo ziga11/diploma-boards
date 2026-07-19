@@ -1,9 +1,9 @@
 import DOMPurify from 'dompurify';
-import { getAccount } from "@/core/utils/utils";
 import type { BoardFetchObject, Board } from "./types";
 import { HTML } from "./html";
 import { getDominantColor } from "./view-utils";
 import { dashboardEvents } from "./custom-events";
+import { supabase } from '@/core/api/supabase';
 
 export function createBoard(board: Board): HTMLDivElement {
         const div = Object.assign(document.createElement('div'), { className: `board-entry${board.deleted ? " deleted" : ""}` });
@@ -36,7 +36,7 @@ export function updateBoard(elem: HTMLDivElement, board: Board) {
 }
 
 export async function setUserData() {
-        const acc = await getAccount();
+        const acc = await supabase.getAccount();
         if (!acc) throw new Error(`Not logged in`);
 
         HTML.toolbar.profileImg.src = acc.avatar_url!;

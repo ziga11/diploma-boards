@@ -164,6 +164,12 @@
                     "type": "string",
                     "required": true,
                     "desc": "New field name"
+                },
+                {
+                    "name": "type",
+                    "type": "string",
+                    "required": false,
+                    "desc": "New field type"
                 }
             ],
             "response": "{ \"id\": \"b2d16395-c334-4e5f-a77d-2222bd561703\", \"name\": \"Renamed Field\", \"type\": \"status\" }"
@@ -188,32 +194,35 @@
         {
             "method": "GET",
             "path": "/entries",
-            "summary": "Fetch all entries for a board",
+            "summary": "Fetch entries filtered by board and optionally target fields, indices, or specific entry IDs",
             "params": [
                 {
                     "name": "board_id",
                     "type": "string",
                     "required": true,
                     "desc": "Board UUID"
+                },
+                {
+                    "name": "entry_ids",
+                    "type": "string",
+                    "required": false,
+                    "desc": "Comma-separated entry UUIDs"
+                },
+                {
+                    "name": "field_id",
+                    "type": "string",
+                    "required": false,
+                    "desc": "Field UUID to filter"
+                },
+                {
+                    "name": "index",
+                    "type": "string",
+                    "required": false,
+                    "desc": "Target index filter"
                 }
             ],
             "body": null,
             "response": "[ { \"id\": \"e5f49628-f667-4f8f-ba0a-5555ed892006\", \"index\": 0, \"value\": \"In progress\" } ]"
-        },
-        {
-            "method": "GET",
-            "path": "/entries",
-            "summary": "Fetch single entry",
-            "params": [
-                {
-                    "name": "entry_id",
-                    "type": "string",
-                    "required": true,
-                    "desc": "UUID of the entry"
-                }
-            ],
-            "body": null,
-            "response": "{ \"id\": \"e5f49628-f667-4f8f-ba0a-5555ed892006\", \"index\": 0, \"value\": \"In progress\" }"
         },
         {
             "method": "POST",
@@ -222,10 +231,22 @@
             "params": [],
             "body": [
                 {
-                    "name": "entries",
+                    "name": "board_id",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Board UUID"
+                },
+                {
+                    "name": "count",
+                    "type": "number",
+                    "required": true,
+                    "desc": "Number of rows to create"
+                },
+                {
+                    "name": "entry_rows",
                     "type": "array",
                     "required": true,
-                    "desc": "Array of Entry objects containing board_id, field_id, account_id, index, and value"
+                    "desc": "Array containing initial entry row data structures"
                 }
             ],
             "response": "[ { \"id\": \"f6a50739-0778-4faf-bb1b-6666fe903107\", \"board_id\": \"d3b07384-d113-4c4e-a55e-330dad351501\", \"index\": 3, \"value\": \"\" } ]"
@@ -233,14 +254,27 @@
         {
             "method": "PATCH",
             "path": "/entries",
-            "summary": "Update entries",
-            "params": [],
+            "summary": "Update a single entry",
+            "params": [
+                {
+                    "name": "entry_id",
+                    "type": "string",
+                    "required": true,
+                    "desc": "UUID of the entry to modify"
+                }
+            ],
             "body": [
                 {
-                    "name": "entries",
-                    "type": "array",
-                    "required": true,
-                    "desc": "Array of entry items containing id and value updates"
+                    "name": "value",
+                    "type": "string",
+                    "required": false,
+                    "desc": "New textual value"
+                },
+                {
+                    "name": "option_id",
+                    "type": "string",
+                    "required": false,
+                    "desc": "Target option configuration UUID lookup value"
                 }
             ],
             "response": "{ \"success\": true }"
@@ -248,31 +282,20 @@
         {
             "method": "DELETE",
             "path": "/entries",
-            "summary": "Delete entries",
-            "params": [
+            "summary": "Delete specific entry rows",
+            "params": [],
+            "body": [
                 {
                     "name": "board_id",
                     "type": "string",
                     "required": true,
-                    "desc": "Target board UUID"
+                    "desc": "Context board UUID targeting identifier"
                 },
                 {
-                    "name": "entry_ids",
+                    "name": "indices",
                     "type": "array",
-                    "required": false,
-                    "desc": "Optional array of entry UUIDs to delete"
-                },
-                {
-                    "name": "field_ids",
-                    "type": "array",
-                    "required": false,
-                    "desc": "Optional array of field UUIDs to filter delete"
-                },
-                {
-                    "name": "indicies",
-                    "type": "array",
-                    "required": false,
-                    "desc": "Optional array of row indices to delete"
+                    "required": true,
+                    "desc": "Array of specific row index integers to delete"
                 }
             ],
             "body": null,
@@ -283,13 +306,13 @@
         {
             "method": "GET",
             "path": "/field-options",
-            "summary": "Fetch option options for fields",
+            "summary": "Fetch field options",
             "params": [
                 {
-                    "name": "field_ids",
-                    "type": "array",
+                    "name": "field_id",
+                    "type": "string",
                     "required": true,
-                    "desc": "Array of field UUID strings"
+                    "desc": "Field UUID context lookup key"
                 }
             ],
             "body": null,
@@ -320,31 +343,38 @@
             "method": "PATCH",
             "path": "/field-options",
             "summary": "Update a field option",
-            "params": [],
+            "params": [
+                {
+                    "name": "option_id",
+                    "type": "string",
+                    "required": false,
+                    "desc": "UUID of the field option (Can alternatively be provided in the request body)"
+                }
+            ],
             "body": [
                 {
-                    "name": "newValue",
-                    "type": "string",
-                    "required": true,
-                    "desc": "Replacement value"
-                },
-                {
-                    "name": "id",
+                    "name": "field_id",
                     "type": "string",
                     "required": false,
-                    "desc": "Optional field option record UUID"
+                    "desc": "Field ID targeting filter"
                 },
                 {
-                    "name": "fieldId",
+                    "name": "old_value",
                     "type": "string",
                     "required": false,
-                    "desc": "Optional field UUID scope"
+                    "desc": "Previous option label string used for matching"
                 },
                 {
-                    "name": "oldValue",
+                    "name": "new_value",
                     "type": "string",
                     "required": false,
-                    "desc": "Optional existing string value match pattern"
+                    "desc": "Replacement value label"
+                },
+                {
+                    "name": "value",
+                    "type": "string",
+                    "required": false,
+                    "desc": "Alternative key for newValue string fallback mapping"
                 }
             ],
             "response": "{ \"success\": true }"
@@ -352,28 +382,35 @@
         {
             "method": "DELETE",
             "path": "/field-options",
-            "summary": "Delete field option values",
+            "summary": "Delete field options",
             "params": [
                 {
-                    "name": "id",
+                    "name": "option_id",
                     "type": "string",
                     "required": false,
-                    "desc": "Delete specific record UUID"
-                },
-                {
-                    "name": "fieldIds",
-                    "type": "array",
-                    "required": false,
-                    "desc": "Delete matching array of field UUIDs"
-                },
-                {
-                    "name": "values",
-                    "type": "array",
-                    "required": false,
-                    "desc": "Delete matching explicit array of string labels"
+                    "desc": "Delete specific matching query option UUID key"
                 }
             ],
-            "body": null,
+            "body": [
+                {
+                    "name": "optionId",
+                    "type": "string",
+                    "required": false,
+                    "desc": "Direct target option UUID"
+                },
+                {
+                    "name": "fieldId",
+                    "type": "string",
+                    "required": false,
+                    "desc": "Target field UUID filtering context scope"
+                },
+                {
+                    "name": "value",
+                    "type": "string",
+                    "required": false,
+                    "desc": "Target option name/value string matching pattern"
+                }
+            ],
             "response": "{ \"success\": true }"
         }
     ],
@@ -387,7 +424,7 @@
                     "name": "board_id",
                     "type": "string",
                     "required": true,
-                    "desc": "Board UUID to list collaborators for"
+                    "desc": "Board UUID context"
                 }
             ],
             "body": null,
@@ -396,52 +433,62 @@
         {
             "method": "POST",
             "path": "/users",
-            "summary": "Invite or add a collaborator via Notification",
-            "params": [],
-            "body": [
-                {
-                    "name": "id",
-                    "type": "string",
-                    "required": true,
-                    "desc": "Notification unique UUID"
-                },
-                {
-                    "name": "to_acc_email",
-                    "type": "string",
-                    "required": true,
-                    "desc": "Email of the target account user to invite"
-                },
-                {
-                    "name": "board_id",
-                    "type": "string",
-                    "required": true,
-                    "desc": "Target board UUID"
-                },
-                {
-                    "name": "permission_id",
-                    "type": "string",
-                    "required": true,
-                    "desc": "Target role/permission configuration tier identifier"
-                }
-            ],
-            "response": "{ \"success\": true }"
-        },
-        {
-            "method": "DELETE",
-            "path": "/users",
-            "summary": "Kick a collaborator",
+            "summary": "Invite or add a collaborator",
             "params": [
                 {
                     "name": "board_id",
                     "type": "string",
                     "required": true,
-                    "desc": "Board UUID location context"
-                },
+                    "desc": "Target board UUID context"
+                }
+            ],
+            "body": [
                 {
-                    "name": "account_id",
+                    "name": "to_email",
                     "type": "string",
                     "required": true,
-                    "desc": "Account UUID payload profile to eject"
+                    "desc": "Email of the user to invite"
+                },
+                {
+                    "name": "role",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Collaborator access role permissions context mapping"
+                }
+            ],
+            "response": "{ \"success\": true }"
+        },
+        {
+            "method": "PATCH",
+            "path": "/users",
+            "summary": "Update collaborator permissions (Not Supported)",
+            "params": [
+                {
+                    "name": "board_id",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Target board UUID context"
+                }
+            ],
+            "body": null,
+            "response": "{ \"error\": \"Can't update permissions. Remove collaborator and add them again with the updated role.\" }"
+        },
+        {
+            "method": "DELETE",
+            "path": "/users",
+            "summary": "Remove a collaborator",
+            "params": [
+                {
+                    "name": "board_id",
+                    "type": "string",
+                    "required": true,
+                    "desc": "Board UUID context lookup identifier"
+                },
+                {
+                    "name": "permission_id",
+                    "type": "number",
+                    "required": true,
+                    "desc": "ID index for the user permission configuration"
                 }
             ],
             "body": null,

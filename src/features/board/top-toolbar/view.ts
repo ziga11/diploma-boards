@@ -19,7 +19,5 @@ export function applyPermissionRestrictions() {
         HTML.btns.newEntry.classList.toggle("shown", permission >= PermissionId.Editor);
 
         HTML.btns.automations.classList.toggle("shown", permission >= PermissionId.Manager);
-
-        HTML.btns.history.classList.toggle("shown", permission >= PermissionId.Admin);
-        HTML.btns.addUser.classList.toggle("shown", permission >= PermissionId.Admin);
+        HTML.btns.history.classList.toggle("shown", permission >= PermissionId.Manager);
 }

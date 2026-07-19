@@ -34,6 +34,9 @@ export const BoardStore = {
         get isInitialized() {
                 return state.isInitialized;
         },
+        get activeBoard() {
+                return state.activeBoard;
+        },
         get boardId() {
                 return state.activeBoard?.id ?? null;
         },
@@ -71,6 +74,10 @@ export const BoardStore = {
                 return state.fetchEntryGenerator;
         },
 
+        setPermissionId(permissionId: number) {
+                if (!state.activeBoard) return;
+                state.activeBoard.permission_id = permissionId;
+        },
         setEntryFetchGenerator(generator: AsyncGenerator<Array<Entry>>) {
                 state.fetchEntryGenerator = generator;
         },
@@ -117,7 +124,12 @@ export const BoardStore = {
                 state.activeBoard.name = newTitle;
         },
 
-        setBoard(board: Board) {
+        setBoardColor(newColor: string) {
+                if (!state.activeBoard) return;
+                state.activeBoard.color = newColor;
+        },
+
+        setActiveBoard(board: Board) {
                 state.activeBoard = board;
         },
 
@@ -127,13 +139,13 @@ export const BoardStore = {
         },
 
         setAutomations(automations: Array<Automation>) {
-                for (const automation of automations) {
-                        if (!state.fieldIdAutomationMap.has(automation.field_id!)) {
-                                state.fieldIdAutomationMap.set(automation.field_id!, []);
+                for (const a of automations) {
+                        if (!state.fieldIdAutomationMap.has(a.field_id!)) {
+                                state.fieldIdAutomationMap.set(a.field_id!, []);
                         }
 
-                        const key = automation.field_id ?? `${automation.automation_id}`;
-                        state.fieldIdAutomationMap.get(key)!.push(automation);
+                        const key = a.field_id ?? `${a.automation_id}`;
+                        state.fieldIdAutomationMap.get(key)!.push(a);
                 }
         },
 
@@ -145,7 +157,21 @@ export const BoardStore = {
                 state.accIdCollaboratorMap = new Map(collaborators.map(c => [c.account_id!, c]));
         },
 
-        getField(fieldId: string) {
-                return state.fieldsMap.get(fieldId);
+        addCollaborator(c: BoardCollaborator) {
+                state.accIdCollaboratorMap.set(c.account_id, c);
+        },
+
+        updateCollaboratorPermission(accId: string, permissionId: number) {
+                const c = state.accIdCollaboratorMap.get(accId);
+                if (!c) return;
+                c.permission_id = permissionId;
+        },
+
+        removeCollaborator(accId: string) {
+                state.accIdCollaboratorMap.delete(accId);
+        },
+
+        getField(id: string) {
+                return state.fieldsMap.get(id);
         }
 }

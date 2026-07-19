@@ -13,5 +13,10 @@ export const HTML = {
                 get div() { return activePage().querySelector("#manage-users-section") as HTMLDivElement },
                 get userContainer() { return activePage().querySelector("#manage-users-section")?.querySelector(".user-container") as HTMLDivElement },
                 get btn() { return activePage().querySelector("#manage-users-section-btn") as HTMLInputElement },
+        },
+
+        changeRoleDropdown: {
+                get dialog() { return activePage().querySelector("#change-permission-dialog") as HTMLDialogElement },
+                get menu() { return activePage().querySelector("#change-permission-dialog .permission-menu") as HTMLDialogElement }
         }
 }

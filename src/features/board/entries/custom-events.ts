@@ -23,7 +23,7 @@ export const entryEvents = {
         ),
 
         realtimeNewRows: Object.assign(
-                (detail: Array<Entry>) => new CustomEvent("entry:realtime-new-row", { detail }),
+                (detail: Array<Array<Entry>>) => new CustomEvent("entry:realtime-new-row", { detail }),
                 { type: "entry:realtime-new-row" as const }
         ),
 

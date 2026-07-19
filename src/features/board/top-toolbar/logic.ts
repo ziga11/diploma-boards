@@ -9,12 +9,3 @@ export async function recoverBoard() {
 
         return supabase.recoverBoard(boardId)
 }
-
-export async function updateBoard(newName: string) {
-        const boardId = BoardStore.boardId;
-        if (!boardId) throw new Error("Board ID not set");
-
-        BoardStore.setBoardTitle(newName);
-
-        return supabase.updateBoard(boardId, newName);
-}

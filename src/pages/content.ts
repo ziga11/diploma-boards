@@ -67,13 +67,13 @@ export const pageContent: Record<string, HTMLDivElement> = {
                 </div>
                 <div class="modal-body">
                     <div class="form-group mb-4">
-                        <input id="new-board-name" type="text" placeholder="Board Name" class="form-control">
+                        <input type="text" placeholder="Board Name" class="form-control new-board-name">
                     </div>
                     <div class="form-group">
                         <label class="color-label"><b>Table Color</b></label>
                         <div class="color-picker-wrapper">
-                            <input type="color" id="board-color-picker" class="color-picker-input" value="#ff4757">
-                            <input type="text" id="color-hex-input" class="color-hex-input" maxlength="7" value="#ff4757">
+                            <input type="color" class="color-picker-input" value="#ff4757">
+                            <input type="text" class="color-hex-input" maxlength="7" value="#ff4757">
                         </div>
                         <div class="preset-colors">
                             <button type="button" class="preset-color active" data-color="#ff4757"></button>
@@ -166,18 +166,8 @@ export const pageContent: Record<string, HTMLDivElement> = {
                 <button class="btn-cancel" id="back-button">Back</button>
                 <div id="toolbar-board">
                     <div class="title-display">
-                        <b class="title-text" contenteditable="true" data-db-value="xd">xd</b>
-                        <div class="icons">
-                            <div class="hover-title-icons shown">
-                                <i class="ti ti-pencil"></i>
-                            </div>
-                            <div class="edit-title-icons">
-                                <button type="button" class="confirm-button">
-                                    <i class="ti ti-check"></i>
-                                </button>
-                                <i class="ti ti-x"></i>
-                            </div>
-                        </div>
+                        <b class="title-text"></b>
+                        <i id="edit-board-btn" class="ti ti-pencil"></i>
                     </div>
                     <div class="top-toolbar-btns">
                         <div class="btns-container">
@@ -191,7 +181,7 @@ export const pageContent: Record<string, HTMLDivElement> = {
                             </button>
                         </div>
                         <div class="btns-container">
-                            <button type="button" id="add-user-btn" class="btn-default" data-bs-toggle="modal" data-bs-target="#add-user-modal">
+                            <button type="button" id="add-user-btn" class="btn-default shown" data-bs-toggle="modal" data-bs-target="#add-user-modal">
                                 <i class="ti ti-user-plus"></i>
                                 Manage Users
                             </button>
@@ -217,6 +207,39 @@ export const pageContent: Record<string, HTMLDivElement> = {
                     </div>
                 </div>
 
+                <dialog id="edit-board-modal" class="modal modal-sm">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Board</h5>
+                        <button type="button" class="btn-close" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group mb-4">
+                            <input type="text" placeholder="Board Name" class="board-name form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="color-label"><b>Table Color</b></label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" class="color-picker-input" value="#ff4757">
+                                <input type="text" class="color-hex-input" maxlength="7" value="#ff4757">
+                            </div>
+                            <div class="preset-colors">
+                                <button type="button" class="preset-color" data-color="#ff4757"></button>
+                                <button type="button" class="preset-color" data-color="#3742fa"></button>
+                                <button type="button" class="preset-color" data-color="#2ed573"></button>
+                                <button type="button" class="preset-color" data-color="#ff6348"></button>
+                                <button type="button" class="preset-color" data-color="#ff6b9d"></button>
+                                <button type="button" class="preset-color" data-color="#a55eea"></button>
+                                <button type="button" class="preset-color" data-color="#7bed9f"></button>
+                                <button type="button" class="preset-color" data-color="#1dd1a1"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="modal-add-btn" id="trigger-update-board">Update Board</button>
+                        <button type="button" class="modal-close-btn">Cancel</button>
+                    </div>
+                </dialog>
+
                 <dialog class="add-field-menu-dialog">
                     <div class="add-field-menu">
                         <div data-field-type="text">
@@ -234,6 +257,78 @@ export const pageContent: Record<string, HTMLDivElement> = {
                         <div data-field-type="date">
                             <i class="ti ti-calendar-plus"></i>
                             Date
+                        </div>
+                    </div>
+                </dialog>
+
+                <dialog id="change-permission-dialog">
+                    <div class="permission-menu">
+                        <div data-permission-id="1" class="dropdown-option">
+                            <div class="tier-bars">
+                                <div class="tier-bar active"></div>
+                                <div class="tier-bar"></div>
+                                <div class="tier-bar"></div>
+                                <div class="tier-bar"></div>
+                                <div class="tier-bar"></div>
+                            </div>
+                            <span class="option-text">
+                                <span class="option-label">Member</span>
+                                <span class="option-desc">View Content</span>
+                            </span>
+                        </div>
+                        <div data-permission-id="2" class="dropdown-option">
+                            <div class="tier-bars">
+                                <div class="tier-bar active"></div>
+                                <div class="tier-bar active"></div>
+                                <div class="tier-bar"></div>
+                                <div class="tier-bar"></div>
+                                <div class="tier-bar"></div>
+                            </div>
+                            <span class="option-text">
+                                <span class="option-label">Editor</span>
+                                <span class="option-desc">Edit Content</span>
+                            </span>
+                        </div>
+                        <div data-permission-id="3" class="dropdown-option">
+                            <div class="tier-bars">
+                                <div class="tier-bar active"></div>
+                                <div class="tier-bar active"></div>
+                                <div class="tier-bar active"></div>
+                                <div class="tier-bar"></div>
+                                <div class="tier-bar"></div>
+                            </div>
+                            <span class="option-text">
+                                <span class="option-label">Manager</span>
+                                <span class="option-desc">Edit and Automations</span>
+                            </span>
+                            <i class="ti ti-check option-check"></i>
+                        </div>
+                        <div data-permission-id="4" class="dropdown-option">
+                            <div class="tier-bars">
+                                <div class="tier-bar active"></div>
+                                <div class="tier-bar active"></div>
+                                <div class="tier-bar active"></div>
+                                <div class="tier-bar active"></div>
+                                <div class="tier-bar"></div>
+                            </div>
+                            <span class="option-text">
+                                <span class="option-label">Admin</span>
+                                <span class="option-desc">Full access, Can't assign Admins</span>
+                            </div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div data-permission-id="5" class="dropdown-option">
+                            <div class="tier-bars">
+                                <div class="tier-bar active"></div>
+                                <div class="tier-bar active"></div>
+                                <div class="tier-bar active"></div>
+                                <div class="tier-bar active"></div>
+                                <div class="tier-bar active"></div>
+                            </div>
+                            <span class="option-text">
+                                <span class="option-label">Owner</span>
+                                <span class="option-desc">Transfer Ownership</span>
+                            </span>
                         </div>
                     </div>
                 </dialog>
@@ -585,7 +680,6 @@ export const pageContent: Record<string, HTMLDivElement> = {
                                     Add
                                 </button>
                             </div>
-                            <div class="status-option-nullable-div"><span>Nullable</span><input id="option-nullable-check" type="checkbox"/></div>
                         </div>
 
                         <div class="field-edit-section d-none" id="button-options-section">

@@ -3,19 +3,11 @@ const activePage = () => document.querySelector(`#page-board`) ?? document;
 export const HTML = {
         get backButton() { return activePage().querySelector("#back-button") as HTMLButtonElement },
 
+        get toolbarDiv() { return activePage().querySelector("#toolbar-board") as HTMLButtonElement },
+
         title: {
                 get div() { return activePage().querySelector(".title-display") as HTMLButtonElement },
                 get text() { return activePage().querySelector(".title-text") as HTMLSpanElement },
-                icons: {
-                        get div() { return activePage().querySelector(".title-display .icons") as HTMLButtonElement },
-                        edit: {
-                                get div() { return activePage().querySelector(".edit-title-icons") as HTMLDivElement },
-                                get confirm() { return activePage().querySelector(".edit-title-icons .confirm-button") as HTMLButtonElement }
-                        },
-                        hover: {
-                                get div() { return activePage().querySelector(".hover-title-icons") as HTMLButtonElement }
-                        },
-                },
         },
         btns: {
                 get newEntry() { return activePage().querySelector("#new-entry-btn") as HTMLButtonElement },

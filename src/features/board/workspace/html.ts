@@ -22,5 +22,19 @@ export const HTML = {
                 get confirm() { return activePage().querySelector("#confirm-delete") as HTMLButtonElement },
 
                 get cancel() { return this.modal.querySelector(".modal-close-btn") as HTMLButtonElement }
+        },
+
+        editBoard: {
+                get modal() { return activePage().querySelector("#edit-board-modal") as HTMLDialogElement; },
+
+                get colorPicker() { return activePage().querySelector('.color-picker-input') as HTMLInputElement; },
+
+                get hexInput() { return activePage().querySelector('.color-hex-input') as HTMLInputElement; },
+
+                get presetColors() { return activePage().querySelectorAll('.preset-color') as NodeListOf<HTMLButtonElement>; },
+
+                get nameInput() { return activePage().querySelector(".board-name") as HTMLInputElement; },
+
+                get updateBoard() { return activePage().querySelector("#trigger-update-board") as HTMLButtonElement; },
         }
 }

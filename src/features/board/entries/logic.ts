@@ -1,7 +1,6 @@
 import { supabase } from "@/core/api/supabase";
 import type { Entry } from "./types";
 import { BoardStore } from "../board-state";
-import { getAccount } from "@/core/utils/utils";
 import { AutomationId } from "../automations/types";
 import { HTML } from "./html";
 import { changeDeepestValue } from "./view-utils";
@@ -23,16 +22,16 @@ export function extractEntryValue(entryHTML: HTMLInputElement | HTMLDivElement):
         return (entryHTML instanceof HTMLDivElement) ? entryHTML.innerText : entryHTML.value;
 }
 
-export async function insertEntryRow(entries: Array<Entry>): Promise<number> {
-        return await supabase.insertEntryRow(entries);
+export async function insertEmptyEntryRows(ids: Array<string>): Promise<Array<number>> {
+        return await supabase.insertEmptyEntryRows(ids);
 }
 
-export async function insertEntryRows(entrySets: Array<Array<Entry>>): Promise<Array<number>> {
-        return await supabase.insertEntryRows(entrySets);
+export async function insertEntryRows(entryRows: Array<Array<Entry>>): Promise<Array<number>> {
+        return await supabase.insertEntryRows(entryRows);
 }
 
 export async function updateEntry(id: string, value: string, optionId?: string) {
-        const acc = await getAccount();
+        const acc = await supabase.getAccount();
         if (!acc) throw new Error("Failed to get the account");
 
         const elems = HTML.entriesContainer.querySelectorAll(`.entry[data-entry-id="${id}"]`) as NodeListOf<HTMLElement>;
@@ -67,7 +66,7 @@ export async function updateEntry(id: string, value: string, optionId?: string) 
 }
 
 export async function deleteRows(indices: Array<number>) {
-        const acc = await getAccount();
+        const acc = await supabase.getAccount();
         if (!acc) throw new Error("Failed to get the account");
 
         const boardId = BoardStore.boardId;

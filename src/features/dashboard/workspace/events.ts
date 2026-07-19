@@ -50,7 +50,6 @@ export function initWorkspaceEvents() {
                         case "shared":
                                 HTML.boardList.shared.boardDiv.append(...boardElems);
                                 break;
-
                         case "deleted":
                                 HTML.boardList.deleted.boardDiv.append(...boardElems);
                                 break;
@@ -61,6 +60,9 @@ export function initWorkspaceEvents() {
                 const id = (e as ReturnType<typeof dashboardEvents.removeBoard>).detail;
 
                 const boardElem: HTMLDivElement | null = HTML.boardList.div.querySelector(`[data-board-id="${id}"]`);
+                const isOwner = boardElem?.closest(".deleted-boards") != null;
+
+                if (isOwner) return;
                 boardElem?.remove();
         });
 
@@ -106,13 +108,16 @@ export function initWorkspaceEvents() {
         });
 
         window.addEventListener(dashboardEvents.updateBoard.type, (e: Event) => {
-                const board = (e as ReturnType<typeof dashboardEvents.updateBoard>).detail;
+                const { id, name, color } = (e as ReturnType<typeof dashboardEvents.updateBoard>).detail;
 
-                const boardElem = HTML.boardList.div.querySelector(`.board-entry[data-board-id="${board.id}"]`) as HTMLDivElement;
+                const boardElem = HTML.boardList.div.querySelector(`.board-entry[data-board-id="${id}"]`) as HTMLDivElement;
                 const titleElem = boardElem.querySelector(".board-title") as HTMLDivElement;
 
-                if (board.name != undefined) {
-                        titleElem.innerText = board.name;
+                if (name) {
+                        titleElem.innerText = name;
+                }
+                if (color) {
+                        boardElem.style.borderLeftColor = color;
                 }
         });
 }

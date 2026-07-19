@@ -1,11 +1,11 @@
-import { getAccount } from "@/core/utils/utils";
 import { fetchNotifications } from "./logic";
 import { notificationElem } from "./view";
 import { HTML } from "./html";
 import { initNotificationEvents } from "./events";
+import { supabase } from "@/core/api/supabase";
 
 export async function initNotifications() {
-        const acc = await getAccount();
+        const acc = await supabase.getAccount();
         if (!acc) return;
 
         const notifications = await fetchNotifications();

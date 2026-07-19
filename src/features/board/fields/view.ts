@@ -163,15 +163,14 @@ export function applyPermissionRestrictions() {
         const permission = BoardStore.permissionId;
         if (!permission) throw new Error(`Permission not set`);
 
-        HTML.fieldCheck.disabled = permission == PermissionId.Member;
+        const isMember = permission == PermissionId.Member;
 
-        if (permission == PermissionId.Member) {
-                HTML.editModal.input.disabled = true;
-                HTML.editModal.deleteBtn.disabled = true;
-                HTML.editModal.button.input.disabled = true;
-                HTML.editModal.status.addBtn.disabled = true;
-                HTML.editModal.status.addInput.disabled = true;
-        }
+        HTML.fieldCheck.disabled = isMember;
+        HTML.editModal.input.disabled = isMember;
+        HTML.editModal.deleteBtn.disabled = isMember;
+        HTML.editModal.button.input.disabled = isMember;
+        HTML.editModal.status.addBtn.disabled = isMember;
+        HTML.editModal.status.addInput.disabled = isMember;
 
         if (permission >= PermissionId.Editor) {
                 setStateClass([HTML.newFieldBtn], [], "shown")

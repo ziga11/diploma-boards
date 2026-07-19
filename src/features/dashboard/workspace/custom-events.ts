@@ -7,7 +7,7 @@ export const dashboardEvents = {
         ),
 
         updateBoard: Object.assign(
-                (detail: Board) => new CustomEvent("board:update", { detail }),
+                (detail: { id: string, name?: string, color?: string }) => new CustomEvent("board:update", { detail }),
                 { type: "board:update" }
         ),
 

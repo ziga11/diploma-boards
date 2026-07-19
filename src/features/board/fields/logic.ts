@@ -2,11 +2,10 @@ import { supabase } from "@/core/api/supabase";
 import type { FieldOption } from "./types";
 import { BoardStore } from "../board-state";
 import type { Field } from "./types";
-import { getAccount } from "@/core/utils/utils";
 import type { Entry } from "../entries/types";
 
 export async function insertFieldAndEntries(type: string, fieldId: string, entryIds: Array<string>): Promise<{ field: Field, entries: Array<Entry> }> {
-        const acc = await getAccount();
+        const acc = await supabase.getAccount();
         const boardId = BoardStore.boardId;
 
         if (!boardId || !acc) throw new Error("Bug occourred, account or boardId not set");
@@ -46,7 +45,7 @@ export async function updateFieldName(fieldId: string, newName: string) {
 }
 
 export async function insertFieldOption(id: string, fieldId: string, value: string): Promise<void> {
-        const acc = await getAccount();
+        const acc = await supabase.getAccount();
         if (!acc) throw new Error("Not logged in");
 
         const option = { id, field_id: fieldId, account_id: acc.id, value } as FieldOption;

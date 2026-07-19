@@ -9,6 +9,11 @@ export const workspaceEvents = {
                 { type: "workspace:show-delete-modal" as const }
         ),
 
+        showEditBoardModal: Object.assign(
+                () => new CustomEvent("workspace:edit-board-modal"),
+                { type: "workspace:edit-board-modal" as const }
+        ),
+
         kickedFromBoard: Object.assign(
                 () => new CustomEvent("workspace:board-deleted"),
                 { type: "workspace:board-deleted" as const }

@@ -36,6 +36,11 @@ export const fieldEvents = {
                 { type: "field:set-visibility" as const }
         ),
 
+        applyPermissionRestrictions: Object.assign(
+                () => new CustomEvent("field:apply-permission-restrictions"),
+                { type: "field:apply-permission-restrictions" }
+        ),
+
         addFieldOption: Object.assign(
                 (detail: { id: string, fieldId: string, value: string, accountId?: string }) => new CustomEvent("field-option:add", { detail }),
                 { type: "field-option:add" as const }

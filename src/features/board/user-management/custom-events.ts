@@ -13,4 +13,9 @@ export const userManagementEvents = {
                 (detail: string) => new CustomEvent("user-management:remove-collaborator", { detail }),
                 { type: "user-management:remove-collaborator" }
         ),
+
+        loadCollaborators: Object.assign(
+                () => new CustomEvent("user-management:load-collaborators"),
+                { type: "user-management:load-collaborators" }
+        ),
 }

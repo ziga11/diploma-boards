@@ -5,6 +5,7 @@ import { displayLoginForm } from "./view";
 
 export async function initLogin() {
         const loggedIn = await isLoggedIn();
+
         if (!loggedIn) {
                 displayLoginForm();
                 initLoginEvents();

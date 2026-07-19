@@ -1,11 +1,10 @@
 import type { RealtimeChannel, RealtimePostgresDeletePayload, RealtimePostgresInsertPayload, SupabaseClient } from "@supabase/supabase-js";
-import { getAccount } from "../utils/utils";
 import { BoardStore } from "@/features/board/board-state";
 import { entryEvents } from "@/features/board/entries/custom-events";
 import { fieldEvents } from "@/features/board/fields/custom-events";
 import type { Field, FieldOption } from "@/features/board/fields/types";
 import { cache } from "./cache";
-import type { BoardAccLink, InsertNotification, NotificationFetchObject, ViewNotification } from "@/features/board/user-management/types";
+import type { BoardCollaborator, InsertNotification, NotificationFetchObject, ViewNotification } from "@/features/board/user-management/types";
 import type { Board } from "@/features/dashboard/add-board/types";
 import { notificationEvents } from "@/features/dashboard/notifications/custom-events";
 import { dashboardEvents } from "@/features/dashboard/workspace/custom-events";
@@ -16,165 +15,177 @@ import { automationEvents } from "@/features/board/automations/custom-events";
 import type { Automation } from "@/features/board/automations/types";
 import { supabase } from "./supabase";
 import { PermissionId } from "../types/auth";
+import type { Entry } from "@/features/board/entries/types";
+import { topToolbarEvents } from "@/features/board/top-toolbar/custom-events";
 
-export const CLIENT_ID = crypto.randomUUID();
+export class RealtimeManager {
+        private client: SupabaseClient;
+        private clientId: string;
+        private isInitialized = false;
+        private activeBoardId: string | null = null;
+        private activeBoardChannel: RealtimeChannel | null = null;
+        private globalChannel: RealtimeChannel | null = null;
 
-let isInitialized = false;
-let globalChannel: RealtimeChannel | null = null;
-let activeBoardChannel: RealtimeChannel | null = null;
-let activeBoardId: string | null = null;
-
-export async function initGlobalRealtime(client: SupabaseClient) {
-        if (isInitialized) return;
-
-        const acc = await getAccount();
-        if (!acc) {
-                console.log("starting global realtime --> no account");
-                return;
+        constructor(client: SupabaseClient, clientId: string) {
+                this.client = client;
+                this.clientId = clientId;
         }
 
-        globalChannel = client.channel(`account_sync`);
+        async initGlobal(): Promise<void> {
+                if (this.isInitialized) return;
 
-        globalChannel
-                .on('postgres_changes', {
-                        event: 'INSERT',
-                        schema: 'public',
-                        table: 'board_account_link',
-                }, async (payload: { eventType: "INSERT", new: any, old: any }) => {
-                        console.log("board inserted");
-                        handleBoardInserted(payload.new.board_id);
-                })
-                .on('postgres_changes', {
-                        event: 'UPDATE',
-                        schema: 'public',
-                        table: 'board'
-                }, async (payload: { eventType: "UPDATE", new: Board, old: Board }) => {
-                        console.log("board updated");
-                        handleBoardUpdated(payload.new);
-                })
-                .on('postgres_changes', {
-                        event: '*',
-                        schema: 'public',
-                        table: 'field',
-                }, async (payload: { eventType: string, new: Field, old: Field }) => {
-                        if (payload.old.board_id == activeBoardId) return;
+                const acc = await supabase.getAccount();
+                if (!acc) {
+                        return;
+                }
 
-                        await cache.clear(`fields_${payload.old.board_id}`)
-                })
-                .on('postgres_changes', {
-                        event: 'INSERT',
-                        schema: 'public',
-                        table: 'notification',
-                        filter: `to_acc_id=eq.${acc.id}`
-                }, async (payload: RealtimePostgresInsertPayload<InsertNotification>) => {
-                        console.log("notification inserted");
-                        handleNotificationInserted(payload.new);
-                })
-                .on('postgres_changes', {
-                        event: 'DELETE',
-                        schema: 'public',
-                        table: 'notification',
-                        filter: `to_acc_id=eq.${acc.id}`
-                }, async (payload: RealtimePostgresDeletePayload<InsertNotification>) => {
-                        handleNotificationDeleted(payload.old.id!);
-                })
-                .subscribe((status, err) => {
-                        console.log("Realtime connection status:", status);
-                        if (err) {
-                                console.error("Subscription Error payload:", err);
-                        }
+                this.globalChannel = this.client.channel('account_sync');
+                this.globalChannel
+                        .on('postgres_changes', {
+                                event: 'UPDATE',
+                                schema: 'public',
+                                table: 'board'
+                        }, async (payload: { eventType: "UPDATE", new: Board, old: Board }) => {
+                                handleBoardUpdated(payload.new);
+                        })
+                        .on('postgres_changes', {
+                                event: '*',
+                                schema: 'public',
+                                table: 'field',
+                        }, async (payload: { eventType: string, new: Field, old: Field }) => {
+                                if (payload.old.board_id == this.activeBoardId) return;
+
+                                await cache.clear(`fields_${payload.old.board_id}`)
+                        })
+                        .on('postgres_changes', {
+                                event: 'INSERT',
+                                schema: 'public',
+                                table: 'notification',
+                                filter: `to_acc_id=eq.${acc.id}`
+                        }, async (payload: RealtimePostgresInsertPayload<InsertNotification>) => {
+                                handleNotificationInserted(payload.new);
+                        })
+                        .on('postgres_changes', {
+                                event: 'DELETE',
+                                schema: 'public',
+                                table: 'notification',
+                                filter: `to_acc_id=eq.${acc.id}`
+                        }, async (payload: RealtimePostgresDeletePayload<InsertNotification>) => {
+                                handleNotificationDeleted(payload.old.id!);
+                        })
+                        .subscribe((status, err) => {
+                                console.log("Realtime connection status:", status);
+                                if (err) {
+                                        console.error("Subscription Error payload:", err);
+                                }
+                        });
+
+                this.isInitialized = true;
+        }
+
+        async switchActiveBoard(newBoardId: string): Promise<void> {
+                if (this.activeBoardId === newBoardId) return;
+
+                const acc = await supabase.getAccount();
+                if (!acc) return;
+
+                if (this.activeBoardChannel) {
+                        await this.activeBoardChannel.unsubscribe();
+                        this.activeBoardChannel = null;
+                }
+
+                this.activeBoardId = newBoardId;
+
+                this.activeBoardChannel = this.client.channel(`board_ui_${newBoardId}`, {
+                        config: { private: true }
                 });
 
-        isInitialized = true;
-}
+                this.activeBoardChannel
+                        .on('broadcast', { event: 'ui_mutate' }, async (response: any) => {
+                                const { scope, eventType, data, originClient } = response.payload;
 
-export async function switchActiveBoardRealtime(client: SupabaseClient, newBoardId: string) {
-        if (activeBoardId === newBoardId) return;
-        const acc = await getAccount();
-        if (!acc) return;
+                                if (originClient === this.clientId) return;
 
-        if (activeBoardChannel) {
-                await activeBoardChannel.unsubscribe();
-                activeBoardChannel = null;
+                                switch (scope) {
+                                        case 'automation':
+                                                await handleAutomationRealtime(eventType, data);
+                                                break;
+                                        case 'board':
+                                                await handleBoardRealtime(eventType, data);
+                                                break;
+                                        case 'entry':
+                                                await handleEntryRealtime(eventType, data);
+                                                break;
+                                        case 'field':
+                                                await handleFieldRealtime(eventType, data);
+                                                break;
+                                        case 'field_option':
+                                                await handleFieldOptionRealtime(eventType, data);
+                                                break;
+                                        case 'user':
+                                                await handleBoardCollaboratorRealtime(eventType, data, acc);
+                                                break;
+                                }
+                        });
+
+                this.activeBoardChannel.subscribe();
         }
 
-        activeBoardId = newBoardId;
+        async broadcastMutation(scope: string, eventType: string, data: any): Promise<void> {
+                if (!this.activeBoardChannel) return;
 
-        activeBoardChannel = client.channel(`board_ui_${newBoardId}`, { config: { private: true } });
-
-        activeBoardChannel
-                .on('broadcast', { event: 'ui_mutate' }, async (response: any) => {
-                        const { scope, eventType, data, originClient } = response.payload;
-
-                        if (originClient === CLIENT_ID) return;
-
-                        switch (scope) {
-                                case 'automation':
-                                        await handleAutomationRealtime(eventType, data);
-                                        break;
-                                case 'board':
-                                        await handleBoardRealtime(eventType, data);
-                                        break;
-                                case 'entry':
-                                        await handleEntryRealtime(eventType, data);
-                                        break;
-                                case 'field':
-                                        await handleFieldRealtime(eventType, data);
-                                        break;
-                                case 'field_option':
-                                        await handleFieldOptionRealtime(eventType, data);
-                                        break;
-                                case 'board_account_link':
-                                        await handleBoardCollaboratorRealtime(eventType, data, acc);
-                                        break;
-                        }
-                })
-        activeBoardChannel.subscribe();
-}
-
-export async function broadcastMutation(scope: string, eventType: string, data: any) {
-        if (!activeBoardChannel) return;
-
-        const payload = { originClient: CLIENT_ID, scope, eventType, data };
-        try {
-                await activeBoardChannel.httpSend("ui_mutate", payload);
-        }
-        catch (err) {
-                console.log(err);
+                try {
+                        await this.client.rpc("secure_broadcast_mutation", {
+                                p_board_id: this.activeBoardId,
+                                p_scope: scope,
+                                p_origin_client: this.clientId,
+                                p_event_type: eventType,
+                                p_data: data
+                        });
+                } catch (err) {
+                        console.error("Broadcast failed:", err);
+                }
         }
 }
 
 async function handleBoardRealtime(eventType: string, data: Board) {
         cache.clear(`board_${data.id}`);
-        const board = await supabase.fetchBoard(data.id!);
-
 
         switch (eventType) {
                 case 'UPDATE':
-                        window.dispatchEvent(workspaceEvents.boardTitleUpdate(board.name!));
+                        window.dispatchEvent(workspaceEvents.boardTitleUpdate(data.name!));
                         break;
                 case 'DELETE':
-                        if (data.deleted && board.deleted) {
-                                window.dispatchEvent(workspaceEvents.boardDeleted());
-                        }
+                        window.dispatchEvent(workspaceEvents.boardDeleted());
+                        window.dispatchEvent(dashboardEvents.removeBoard(data.id!));
                         break;
         }
 }
 
-async function handleBoardCollaboratorRealtime(eventType: string, data: BoardAccLink, acc: Account) {
-        const boardCollaborators = await supabase.fetchCollaborators(data.board_id, [data.id]);
+async function handleBoardCollaboratorRealtime(eventType: string, data: BoardCollaborator, acc: Account) {
         switch (eventType) {
-                case 'INSERT':
-                        if (boardCollaborators.length == 0) return;
-
-                        BoardStore.collaborators.set(data.account_id, boardCollaborators[0]);
-                        window.dispatchEvent(userManagementEvents.addCollaborator(boardCollaborators[0]));
+                case 'INVITE-COLLABORATOR':
+                        BoardStore.addCollaborator(data);
+                        window.dispatchEvent(userManagementEvents.addCollaborator(data));
                         break;
-                case 'DELETE':
-                        if (boardCollaborators.length > 0) return;
+                case 'UPDATE-COLLABORATOR':
 
-                        BoardStore.collaborators.delete(data.account_id);
-                        window.dispatchEvent(userManagementEvents.removeCollaborator(data.id));
+                        BoardStore.updateCollaboratorPermission(data.account_id, data.permission_id);
+                        if (acc.id != data.account_id) return
+                        BoardStore.setPermissionId(data.permission_id);
+                        const board = BoardStore.activeBoard;
+                        if (board) {
+                                updateBoardInCache(board)
+                        }
+
+                        window.dispatchEvent(topToolbarEvents.applyPermissionRestrictions());
+                        window.dispatchEvent(fieldEvents.applyPermissionRestrictions());
+
+                        break;
+                case 'REMOVE-COLLABORATOR':
+                        BoardStore.removeCollaborator(data.account_id);
+
+                        window.dispatchEvent(userManagementEvents.removeCollaborator(data.account_id));
                         if (acc.id == data.account_id) {
                                 window.dispatchEvent(workspaceEvents.kickedFromBoard());
                         }
@@ -230,14 +241,18 @@ async function handleFieldOptionRealtime(eventType: string, data: FieldOption) {
 
 async function handleEntryRealtime(eventType: string, data: any) {
         switch (eventType) {
-                case 'INSERT-ROW':
-                        window.dispatchEvent(entryEvents.realtimeNewRows(data))
+                case 'INSERT-ROWS':
+                        const rows = data as Array<Array<Entry>>;
+                        window.dispatchEvent(entryEvents.realtimeNewRows(rows))
                         break;
                 case "INSERT-FIELD":
                         window.dispatchEvent(entryEvents.newFieldEntries({ field: data.field, entryIds: data.entryIds }));
                         break;
                 case 'UPDATE':
                         window.dispatchEvent(entryEvents.realtimeEntryChange({ entryId: data.id, value: data.value }));
+                        break;
+                case 'MULTI-UPDATE':
+                        window.dispatchEvent(entryEvents.entryChangeFieldValues({ fieldId: data.fieldId, oldValue: data.oldValue, value: data.newValue }));
                         break;
                 case 'DELETE-ROWS':
                         window.dispatchEvent(entryEvents.realtimeRemoveEntries({ indices: data.indices }));
@@ -251,18 +266,12 @@ async function handleEntryRealtime(eventType: string, data: any) {
         }
 }
 
-async function handleBoardInserted(boardId: string) {
-        const board = await supabase.fetchBoard(boardId)
-
-        window.dispatchEvent(dashboardEvents.addMultipleBoards({ boards: [board], type: "shared" }));
-        addBoardToCache(board);
-}
 async function handleBoardUpdated(data: Board) {
         if (data.deleted) {
                 handleBoardDeleted(data.id!);
         }
         else {
-                window.dispatchEvent(dashboardEvents.updateBoard(data));
+                window.dispatchEvent(dashboardEvents.updateBoard({ id: data.id!, color: data.color, name: data.name }));
                 updateBoardInCache(data);
         }
 }
@@ -282,25 +291,28 @@ async function handleNotificationDeleted(id: string) {
         removeNotificationFromCache(id);
 }
 
-async function addBoardToCache(board: Board) {
-        let cached = await cache.get<BoardFetchObject>("boards");
-        if (!cached) {
-                cached = { all: [], deleted: [], shared: [], owned: [] };
+async function updateBoardInCache(board: Board) {
+        const cachedBoard = await cache.get<Board>(`board_${board.id}`);
+        if (cachedBoard) {
+                cachedBoard.color = board.color;
+                cachedBoard.name = board.name;
+                cache.set(`board_${board.id}`, cachedBoard);
         }
 
-        cached.all.unshift(board);
-        cached.shared.unshift(board);
-
-        cache.set("boards", cached);
-}
-
-async function updateBoardInCache(board: Board) {
         const cached = await cache.get<BoardFetchObject>("boards");
         if (!cached) return;
 
-        cached.owned = cached.owned.map(b => b.id == board.id ? board : b);
-        cached.all = cached.all.map(b => b.id == board.id ? board : b);
-        cached.shared = cached.shared.map(b => b.id == board.id ? board : b);
+        const patchList = (list: Board[]) => {
+                const idx = list.findIndex(b => b.id === board.id);
+                if (idx === -1) return;
+
+                list[idx].color = board.color;
+                list[idx].name = board.name;
+        };
+
+        patchList(cached.owned);
+        patchList(cached.shared);
+        patchList(cached.deleted);
 
         cache.set("boards", cached);
 }

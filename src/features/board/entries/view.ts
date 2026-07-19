@@ -7,7 +7,7 @@ import { changeDeepestValue, createButtonEntry, createStatusEntry, createTextEnt
 import { bottomToolbarEvents } from "../bottom-toolbar/custom-events";
 import { fieldEvents } from "../fields/custom-events";
 import { extractEntryValue, firstDeepestNode } from "./logic";
-import { getAccount } from "@/core/utils/utils";
+import { supabase } from "@/core/api/supabase";
 
 export async function changeFieldEntries({ fieldId, value, oldValue }: { fieldId: string, value: string, oldValue?: string }) {
         const elems = HTML.entriesList.querySelectorAll(`[data-field-id="${fieldId}"]`) as NodeListOf<HTMLSpanElement>;
@@ -156,6 +156,8 @@ export function createEntryRow(entries: Array<Entry>): HTMLDivElement {
 }
 
 export function setEntryRows(entries: Array<Entry>, append: boolean = true) {
+        console.log(entries);
+
         const fieldCount = BoardStore.fields.size;
 
         const rows = [] as Array<HTMLDivElement>;
@@ -179,7 +181,7 @@ export function setEntryRows(entries: Array<Entry>, append: boolean = true) {
 export async function createEntryCopiesFromEntrySet(entrySet: HTMLDivElement): Promise<Array<Entry>> {
         let entries: Entry[] = []
 
-        const acc = await getAccount();
+        const acc = await supabase.getAccount();
         if (!acc) throw new Error("Failed to get the account");
 
         const boardId = BoardStore.boardId;
@@ -200,7 +202,7 @@ export async function createEntryCopiesFromEntrySet(entrySet: HTMLDivElement): P
                         board_id: boardId,
                         date_modified: new Date(),
                         type: entryElem.dataset.type,
-                        option_id: entryElem.dataset.optionId,
+                        option_id: entryElem.dataset.optionId ?? undefined,
                 };
 
                 entries.push(entry);
@@ -277,8 +279,10 @@ export function genEntry(entry: Entry): HTMLElement {
                 type: entry.type,
                 fieldId: `${entry.field_id}`,
                 entryId: `${entry.id}`,
-                optionId: entry.option_id
         });
+
+        if (entry.option_id)
+                element.dataset.optionId = entry.option_id
 
         return element;
 }

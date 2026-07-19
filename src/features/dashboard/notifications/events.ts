@@ -44,7 +44,7 @@ export function initNotificationEvents() {
         window.addEventListener(notificationEvents.addNotification.type, (e: Event) => {
                 const notification = (e as ReturnType<typeof notificationEvents.addNotification>).detail;
 
-                showToast(`New Notification received: ${notification.message}`)
+                showToast(`New Notification received from ${notification.from_acc.name}: ${notification.message}`)
 
                 const notificationHTML = notificationElem(notification);
                 HTML.body.container.appendChild(notificationHTML);

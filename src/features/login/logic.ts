@@ -1,5 +1,11 @@
 import { supabase } from "@/core/api/supabase";
 
 export async function isLoggedIn(): Promise<boolean> {
-        return (await supabase.getAuthUser()) != null;
+        try {
+                await supabase.getAccount();
+                return true;
+        }
+        catch (_) {
+                return false;
+        }
 }

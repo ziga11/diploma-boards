@@ -6,7 +6,7 @@ import { showToast } from "@/core/utils/dom";
 import { BoardStore } from "../board-state";
 import { automationEvents } from "./custom-events";
 import { AutomationId, type Automation } from "./types";
-import { getAccount } from "@/core/utils/utils";
+import { supabase } from "@/core/api/supabase";
 
 export function initAutomationEvents() {
         if (BoardStore.isInitialized) return;
@@ -51,7 +51,7 @@ export function initAutomationEvents() {
         HTML.create.url.finish.addEventListener("click", async () => {
                 let errText = "";
 
-                const acc = await getAccount();
+                const acc = await supabase.getAccount();
                 const boardId = BoardStore.boardId;
 
                 if (!acc) { errText = "Failed to get the account"; }

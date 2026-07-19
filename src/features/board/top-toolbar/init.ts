@@ -11,6 +11,8 @@ export function initTopToolbar() {
         applyPermissionRestrictions();
 
         initTopToolbarEvents();
+
+        HTML.toolbarDiv.style.borderLeftColor = BoardStore.activeBoard!.color!;
         HTML.title.text.dataset.dbValue = boardTitle;
         HTML.title.text.innerText = boardTitle;
 }
