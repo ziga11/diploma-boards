@@ -11,6 +11,7 @@ interface DragInterface {
         field1?: HTMLDivElement,
         field2?: HTMLDivElement,
         field1Rect?: DOMRect,
+        leeway: number,
         isDragging: boolean
 }
 
@@ -453,6 +454,7 @@ export function initFieldEvents() {
 
                 if (elem.classList[0] == "field-div") {
                         swapFieldProps = {
+                                leeway: 0,
                                 field1: elem,
                                 field1Rect: elem.getBoundingClientRect(),
                                 isDragging: true
@@ -499,7 +501,7 @@ export function initFieldEvents() {
                         addDynamicFieldWidthToStorage(fieldId, newWidth);
                 }
 
-                swapFieldProps = { isDragging: false };
+                swapFieldProps = { leeway: 0, isDragging: false };
                 resizeFieldProps = { isResizing: false };
         });
 }

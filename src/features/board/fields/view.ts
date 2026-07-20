@@ -118,7 +118,7 @@ export function populateFieldEditModal(field: Field): void {
 
 export async function fieldDrag(e: MouseEvent) {
         if (!swapFieldProps.field1 || !swapFieldProps.field1Rect) return;
-        if (e.x >= swapFieldProps.field1Rect.left && e.x <= swapFieldProps.field1Rect.right) return;
+        if (e.x >= swapFieldProps.field1Rect.left - swapFieldProps.leeway && e.x <= swapFieldProps.field1Rect.right + swapFieldProps.leeway) return;
 
         const increase = e.x > swapFieldProps.field1Rect.right;
 
@@ -129,7 +129,16 @@ export async function fieldDrag(e: MouseEvent) {
 
         swapField(fieldSwapObj);
 
-        swapFieldProps.field1Rect = swapFieldProps.field1!.getBoundingClientRect();
+        const f1Rect = swapFieldProps.field1!.getBoundingClientRect();
+
+        swapFieldProps.field1Rect = f1Rect
+
+        if (swapFieldProps.field2 != field2) {
+                const f2Rect = field2.getBoundingClientRect();
+                if (f2Rect.width > f1Rect.width) {
+                        swapFieldProps.leeway = f2Rect.width - swapFieldProps.field1Rect.width;
+                }
+        }
 
         swapFieldProps.field2 = field2;
 
