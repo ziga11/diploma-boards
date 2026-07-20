@@ -129,6 +129,10 @@ function formatPayloadValue(key: string, value: unknown, action: string): string
                 return renderPayload(value as Record<string, unknown>, action);
         }
 
+        if (key == "Color") {
+                return `<span class="history-payload-value-color"><input type="color" value="${value}" title="${value}" disabled/></span>`;
+        }
+
         return `<span class="history-payload-value-text">${String(value)}</span>`;
 }
 

@@ -17,7 +17,7 @@ export const fieldEvents = {
         ),
 
         fieldNameUpdate: Object.assign(
-                (detail: { id: string, newName: string }) => new CustomEvent("field:update-name", { detail }),
+                (detail: { id: string, name: string }) => new CustomEvent("field:update-name", { detail }),
                 { type: "field:update-name" as const }
         ),
 

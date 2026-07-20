@@ -9,7 +9,7 @@ export const HTML = {
         get search() { return activePage().querySelector("#search") as HTMLInputElement },
 
         dropdown: {
-                get menu() { return activePage().querySelector(".dropdown-menu") as HTMLDialogElement },
-                get optionsContainer() { return activePage().querySelector(".dropdown-options") as HTMLDivElement },
+                get menu() { return activePage().querySelector(".status-dropdown-menu") as HTMLDialogElement },
+                get optionsContainer() { return activePage().querySelector(".status-dropdown-options") as HTMLDivElement },
         },
 };

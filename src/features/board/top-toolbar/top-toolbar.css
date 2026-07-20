@@ -1,0 +1,158 @@
+#toolbar-board {
+        display: flex;
+        background: var(--bg-dark);
+        padding: 3rem 1.5rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        border-left: 10px solid;
+        justify-content: space-between;
+        align-items: center;
+        width: 75%;
+        margin: 2.5rem auto 0 auto;
+}
+
+.title-display {
+        display: inline-flex;
+        align-items: center;
+        width: max-content;
+        max-width: max-content;
+        gap: 0.5em;
+
+        transition: background 0.15s ease;
+}
+
+.title-text {
+        font-weight: 600;
+        font-size: 1.3rem;
+        justify-content: center;
+        align-items: center;
+        outline: none;
+        border: none;
+        background: transparent;
+        pointer-events: none;
+        cursor: text;
+        border-radius: 4px;
+        padding: 2px 6px;
+}
+
+#edit-board-btn {
+        opacity: 0;
+
+        transition: opacity 0.15s ease;
+}
+
+.title-display:hover {
+        background: color-mix(in srgb, var(--bg-highlight) 15%, transparent);
+}
+
+.title-display:hover #edit-board-btn {
+        opacity: 1;
+}
+
+#recover-btn.shown,
+#automate-btn.shown,
+#delete-btn.shown,
+#leave-btn.shown,
+#history-btn.shown,
+#new-entry-btn.shown,
+#add-user-btn.shown {
+        display: flex;
+}
+
+#new-entry-btn {
+        background: var(--primary);
+        color: var(--white);
+        display: none;
+}
+
+#recover-btn {
+        background: var(--secondary);
+        color: var(--white);
+        display: none;
+}
+
+#recover-btn:hover {
+        box-shadow: 0 4px 20px color-mix(in srgb, var(--secondary) 35%, transparent);
+}
+
+#recover-btn i {
+        color: var(--white);
+}
+
+#new-entry-btn:hover {
+        box-shadow: 0 4px 20px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+#new-entry-btn i {
+        color: var(--white);
+}
+
+#add-user-btn {
+        color: var(--secondary);
+        display: flex;
+}
+
+#add-user-btn:hover {
+        border: 1px solid var(--secondary);
+        box-shadow: 0 4px 20px color-mix(in srgb, #7B68EE 15%, transparent);
+}
+
+#add-user-btn i {
+        color: #7B68EE;
+}
+
+#automate-btn {
+        color: var(--primary);
+        display: none;
+}
+
+#automate-btn i {
+        color: var(--primary);
+}
+
+#automate-btn:hover {
+        border: 1px solid var(--primary);
+        box-shadow: 0 4px 20px color-mix(in srgb, var(--primary) 15%, transparent);
+}
+
+#history-btn {
+        display: none;
+}
+
+#delete-btn,
+#leave-btn {
+        color: color-mix(in srgb, var(--red) 70%, transparent);
+        transition: all 0.3s;
+        font-weight: 800;
+        display: none;
+}
+
+#delete-btn i,
+#leave-btn i {
+        color: var(--red);
+}
+
+#delete-btn:hover,
+#leave-btn:hover {
+        border: 1px solid var(--red);
+        box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
+}
+
+.btns-container,
+.top-toolbar-btns {
+        display: flex;
+        grid-area: 1 / 1;
+        flex-wrap: wrap;
+        row-gap: 15px;
+        column-gap: 10px;
+        justify-content: center;
+}
+
+.btns-container {
+        margin-right: 10px;
+        display: none;
+}
+
+.btns-container:has(> .shown) {
+        display: flex;
+}

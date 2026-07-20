@@ -38,7 +38,7 @@ export function createTextEntry(entry: Entry): HTMLInputElement {
 }
 
 function createOption(option: FieldOption): HTMLDivElement {
-        const div = Object.assign(document.createElement("div"), { className: "dropdown-option", });
+        const div = Object.assign(document.createElement("div"), { className: "status-dropdown-option", });
         div.dataset.value = option.value;
         div.dataset.id = option.id;
 
@@ -55,7 +55,7 @@ export function setDropdownOptions(fhOptions: Array<FieldOption>) {
         const options = fhOptions.map(fh => createOption(fh));
         const emptyOption = Object.assign(document.createElement("div"), {
                 id: "empty-option",
-                className: "dropdown-option",
+                className: "status-dropdown-option",
         });
         emptyOption.dataset.value = "";
         emptyOption.innerHTML = `<span>Empty</span>`;

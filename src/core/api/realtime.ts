@@ -2,19 +2,16 @@ import type { RealtimeChannel, RealtimePostgresDeletePayload, RealtimePostgresIn
 import { BoardStore } from "@/features/board/board-state";
 import { entryEvents } from "@/features/board/entries/custom-events";
 import { fieldEvents } from "@/features/board/fields/custom-events";
-import type { Field, FieldOption } from "@/features/board/fields/types";
-import { cache } from "./cache";
-import type { BoardCollaborator, InsertNotification, NotificationFetchObject, ViewNotification } from "@/features/board/user-management/types";
+import type { FieldOption } from "@/features/board/fields/types";
+import type { BoardCollaborator, InsertNotification } from "@/features/board/user-management/types";
 import type { Board } from "@/features/dashboard/add-board/types";
 import { notificationEvents } from "@/features/dashboard/notifications/custom-events";
 import { dashboardEvents } from "@/features/dashboard/workspace/custom-events";
 import { userManagementEvents } from "@/features/board/user-management/custom-events";
-import type { BoardFetchObject } from "@/features/dashboard/workspace/types";
 import { workspaceEvents } from "@/features/board/workspace/custom-events";
 import { automationEvents } from "@/features/board/automations/custom-events";
 import type { Automation } from "@/features/board/automations/types";
 import { supabase } from "./supabase";
-import { PermissionId } from "../types/auth";
 import type { Entry } from "@/features/board/entries/types";
 import { topToolbarEvents } from "@/features/board/top-toolbar/custom-events";
 
@@ -47,15 +44,6 @@ export class RealtimeManager {
                                 table: 'board'
                         }, async (payload: { eventType: "UPDATE", new: Board, old: Board }) => {
                                 handleBoardUpdated(payload.new);
-                        })
-                        .on('postgres_changes', {
-                                event: '*',
-                                schema: 'public',
-                                table: 'field',
-                        }, async (payload: { eventType: string, new: Field, old: Field }) => {
-                                if (payload.old.board_id == this.activeBoardId) return;
-
-                                await cache.clear(`fields_${payload.old.board_id}`)
                         })
                         .on('postgres_changes', {
                                 event: 'INSERT',
@@ -149,8 +137,6 @@ export class RealtimeManager {
 }
 
 async function handleBoardRealtime(eventType: string, data: Board) {
-        cache.clear(`board_${data.id}`);
-
         switch (eventType) {
                 case 'UPDATE':
                         window.dispatchEvent(workspaceEvents.boardTitleUpdate(data.name!));
@@ -173,10 +159,6 @@ async function handleBoardCollaboratorRealtime(eventType: string, data: BoardCol
                         BoardStore.updateCollaboratorPermission(data.account_id, data.permission_id);
                         if (acc.id != data.account_id) return
                         BoardStore.setPermissionId(data.permission_id);
-                        const board = BoardStore.activeBoard;
-                        if (board) {
-                                updateBoardInCache(board)
-                        }
 
                         window.dispatchEvent(topToolbarEvents.applyPermissionRestrictions());
                         window.dispatchEvent(fieldEvents.applyPermissionRestrictions());
@@ -242,17 +224,17 @@ async function handleFieldOptionRealtime(eventType: string, data: FieldOption) {
 async function handleEntryRealtime(eventType: string, data: any) {
         switch (eventType) {
                 case 'INSERT-ROWS':
-                        const rows = data as Array<Array<Entry>>;
+                        const rows = data as Array<{ entries: Array<Entry>, index: number }>;
                         window.dispatchEvent(entryEvents.realtimeNewRows(rows))
                         break;
                 case "INSERT-FIELD":
-                        window.dispatchEvent(entryEvents.newFieldEntries({ field: data.field, entryIds: data.entryIds }));
+                        window.dispatchEvent(entryEvents.newFieldEntries({ field: data.field, entryIds: data.entry_ids }));
                         break;
                 case 'UPDATE':
-                        window.dispatchEvent(entryEvents.realtimeEntryChange({ entryId: data.id, value: data.value }));
+                        window.dispatchEvent(entryEvents.realtimeEntryChange({ entry_id: data.id, value: data.value, option_id: data.option_id }));
                         break;
                 case 'MULTI-UPDATE':
-                        window.dispatchEvent(entryEvents.entryChangeFieldValues({ fieldId: data.fieldId, oldValue: data.oldValue, value: data.newValue }));
+                        window.dispatchEvent(entryEvents.entryChangeFieldValues({ field_id: data.fieldId, old_value: data.oldValue, value: data.newValue }));
                         break;
                 case 'DELETE-ROWS':
                         window.dispatchEvent(entryEvents.realtimeRemoveEntries({ indices: data.indices }));
@@ -261,7 +243,7 @@ async function handleEntryRealtime(eventType: string, data: any) {
                         window.dispatchEvent(entryEvents.realtimeRemoveEntries({ fieldId: data.field_id }));
                         break;
                 case 'DELETE-FIELD-OPTION':
-                        window.dispatchEvent(entryEvents.entryChangeFieldValues({ fieldId: data.field_id!, value: "", oldValue: data.value }))
+                        window.dispatchEvent(entryEvents.entryChangeFieldValues({ field_id: data.field_id!, value: "", old_value: data.value }))
                         break;
         }
 }
@@ -271,100 +253,19 @@ async function handleBoardUpdated(data: Board) {
                 handleBoardDeleted(data.id!);
         }
         else {
+
                 window.dispatchEvent(dashboardEvents.updateBoard({ id: data.id!, color: data.color, name: data.name }));
-                updateBoardInCache(data);
         }
 }
 async function handleBoardDeleted(id: string) {
         window.dispatchEvent(dashboardEvents.removeBoard(id));
-        removeBoardFromCache(id);
 }
 
 async function handleNotificationInserted(data: InsertNotification) {
         const n = await supabase.fetchNotification(data.id!);
 
         window.dispatchEvent(notificationEvents.addNotification(n));
-        addNotificationToCache(n);
 }
 async function handleNotificationDeleted(id: string) {
         window.dispatchEvent(notificationEvents.removeNotification(id));
-        removeNotificationFromCache(id);
-}
-
-async function updateBoardInCache(board: Board) {
-        const cachedBoard = await cache.get<Board>(`board_${board.id}`);
-        if (cachedBoard) {
-                cachedBoard.color = board.color;
-                cachedBoard.name = board.name;
-                cache.set(`board_${board.id}`, cachedBoard);
-        }
-
-        const cached = await cache.get<BoardFetchObject>("boards");
-        if (!cached) return;
-
-        const patchList = (list: Board[]) => {
-                const idx = list.findIndex(b => b.id === board.id);
-                if (idx === -1) return;
-
-                list[idx].color = board.color;
-                list[idx].name = board.name;
-        };
-
-        patchList(cached.owned);
-        patchList(cached.shared);
-        patchList(cached.deleted);
-
-        cache.set("boards", cached);
-}
-
-async function removeBoardFromCache(id: string) {
-        const cached = await cache.get<BoardFetchObject>("boards");
-        if (!cached) return;
-
-        const allIndex = cached.all.findIndex(b => b.id === id);
-        if (allIndex == -1) return;
-
-        const [delBoard] = cached.all.splice(allIndex, 1);
-
-        const sharedIndex = cached.shared.findIndex(b => b.id === id);
-        if (sharedIndex !== -1) cached.shared.splice(sharedIndex, 1);
-
-        const ownedIndex = cached.owned.findIndex(b => b.id === id);
-        if (ownedIndex !== -1) cached.owned.splice(sharedIndex, 1);
-
-        if (delBoard.permission_id == PermissionId.Owner) {
-                cached.deleted.push(delBoard);
-        }
-
-        await cache.clear(`board_${id}`);
-        cache.set("boards", cached);
-}
-
-async function addNotificationToCache(notification: ViewNotification) {
-        let cached = await cache.get<NotificationFetchObject>("notifications");
-        if (!cached) {
-                cached = { all: [], received: [], sent: [] };
-        }
-
-        cached.all.unshift(notification);
-        if (notification.direction === 'received') {
-                cached.received.unshift(notification);
-        } else {
-                cached.sent.unshift(notification);
-        }
-
-        await cache.set("notifications", cached);
-}
-
-async function removeNotificationFromCache(id: string) {
-        let cached = await cache.get<NotificationFetchObject>("notifications");
-        if (!cached) {
-                cached = { all: [], received: [], sent: [] };
-        }
-
-
-        cached.all = cached.all.filter(n => n.id != id);
-        cached.received = cached.received.filter(n => n.id != id);
-
-        await cache.set("notifications", cached);
 }

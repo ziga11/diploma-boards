@@ -2,7 +2,7 @@ import { closeDialog, setStateClass, showToast } from "@/core/utils/dom";
 import { BoardStore } from "../board-state";
 import { HTML } from "./html";
 import { deleteField, insertFieldAndEntries, insertFieldOption, removeFieldOption, switchIndex, updateFieldName, updateFieldOption } from "./logic";
-import { addHTMLField, applyPermissionRestrictions, createStatusOption, fieldDrag, populateFieldEditModal, swapField, toggleNewFieldMenu } from "./view";
+import { addDynamicFieldWidthToStorage, addHTMLField, applyPermissionRestrictions, createStatusOption, fieldDrag, populateFieldEditModal, resizeField, swapField, toggleNewFieldMenu } from "./view";
 import type { Field, FieldOption } from "./types";
 import { entryEvents, } from "../entries/custom-events";
 import { fieldEvents } from "./custom-events";
@@ -11,9 +11,18 @@ interface DragInterface {
         field1?: HTMLDivElement,
         field2?: HTMLDivElement,
         field1Rect?: DOMRect,
+        isDragging: boolean
 }
 
-export let dragProps = {} as DragInterface
+interface ResizeInterface {
+        field?: HTMLDivElement,
+        startRect?: DOMRect,
+        newWidth?: number,
+        isResizing: boolean,
+}
+
+export let swapFieldProps = {} as DragInterface
+export let resizeFieldProps = {} as ResizeInterface
 
 export function initFieldEvents() {
         if (BoardStore.isInitialized) return;
@@ -57,7 +66,7 @@ export function initFieldEvents() {
                         });
         });
 
-        HTML.editModal.modal.addEventListener("click", (e: MouseEvent) => {
+        HTML.editModal.dialog.addEventListener("click", (e: MouseEvent) => {
                 const elem = e.target as HTMLElement;
                 const fieldId = HTML.editModal.idSpan.innerText;
 
@@ -128,7 +137,7 @@ export function initFieldEvents() {
                 if (e.key == "Enter") input.blur();
         });
 
-        HTML.editModal.modal.addEventListener("focusout", async (e: FocusEvent) => {
+        HTML.editModal.dialog.addEventListener("focusout", async (e: FocusEvent) => {
                 const elem = e.target as HTMLInputElement;
                 const fieldId = HTML.editModal.idSpan.innerText;
 
@@ -159,18 +168,18 @@ export function initFieldEvents() {
                         const newName = HTML.editModal.input.value;
                         if (HTML.editModal.input.dataset.dbValue == newName || !fieldId) return;
 
-                        window.dispatchEvent(fieldEvents.fieldNameUpdate({ id: fieldId, newName }));
+                        window.dispatchEvent(fieldEvents.fieldNameUpdate({ id: fieldId, name: newName }));
 
                         updateFieldName(fieldId, newName)
                                 .then(_ => HTML.editModal.input.dataset.dbValue = newName)
                                 .catch(err => {
                                         const oldName = HTML.editModal.input.dataset.dbValue!;
-                                        window.dispatchEvent(fieldEvents.fieldNameUpdate({ id: fieldId, newName: oldName }));
+                                        window.dispatchEvent(fieldEvents.fieldNameUpdate({ id: fieldId, name: oldName }));
 
                                         showToast(`Failed to change the field name: ${err}`, "error");
                                 });
                 }
-                else if (elem.className == "field-edit-input") {
+                else if (elem.className == "field-edit-input" && elem != HTML.editModal.status.addInput) {
                         const newValue = elem.value;
                         const statusDiv = elem.closest(".status-option-item") as HTMLDivElement;
                         const oldValue = statusDiv.dataset.dbValue;
@@ -192,7 +201,7 @@ export function initFieldEvents() {
                 }
         });
 
-        HTML.editModal.modal.addEventListener("close", () => {
+        HTML.editModal.dialog.addEventListener("close", () => {
                 HTML.editModal.button.section.classList.add("d-none");
                 HTML.editModal.status.section.classList.add("d-none");
         });
@@ -245,17 +254,29 @@ export function initFieldEvents() {
                         populateFieldEditModal(field);
 
                         closeDialog(HTML.fieldDropdown);
-                        HTML.editModal.modal.showModal();
+                        HTML.editModal.dialog.showModal();
                 }
                 else {
                         const ascending = elem.id === "sort-ascending-btn";
 
+                        const boardId = BoardStore.boardId!;
+
                         const currSort = BoardStore.sortedBy;
                         if (currSort?.fieldId == fieldId && currSort.ascending == ascending) {
                                 BoardStore.setSortedBy(undefined, undefined);
+                                localStorage.removeItem(`${boardId}-sort-field-id`);
+                                localStorage.setItem(`${boardId}-sort-ascending`, "t");
                         }
                         else {
                                 BoardStore.setSortedBy(fieldId, ascending);
+
+                                if (fieldId) {
+                                        localStorage.setItem(`${boardId}-sort-field-id`, fieldId);
+                                }
+
+                                if (!currSort.ascending) {
+                                        localStorage.setItem(`${boardId}-sort-ascending`, "f");
+                                }
                         }
 
                         window.dispatchEvent(entryEvents.sortChange());
@@ -318,15 +339,18 @@ export function initFieldEvents() {
         });
 
         window.addEventListener(fieldEvents.fieldNameUpdate.type, (e: Event) => {
-                const { id, newName } = (e as ReturnType<typeof fieldEvents.fieldNameUpdate>).detail;
+                const { id, name } = (e as ReturnType<typeof fieldEvents.fieldNameUpdate>).detail;
 
                 const f = BoardStore.getField(id!) as Field;
-                f.name = newName!;
+                f.name = name!;
 
                 const fieldDiv = HTML.fieldsDiv.querySelector(`.field-div[data-field-id="${id}"]`) as HTMLDivElement;
 
                 const inp = fieldDiv.firstChild as HTMLSpanElement;
-                inp.innerText = newName!;
+                inp.innerText = name!;
+
+                if (!HTML.editModal.dialog.open) return;
+                HTML.editModal.title.innerText = `Edit Field: ${name}`
         });
 
         window.addEventListener(fieldEvents.addField.type, (e: Event) => {
@@ -353,7 +377,7 @@ export function initFieldEvents() {
 
                 field.options!.push(option);
 
-                if (!HTML.editModal.modal.open || HTML.editModal.idSpan.innerText != fieldId)
+                if (!HTML.editModal.dialog.open || HTML.editModal.idSpan.innerText != fieldId)
                         return;
 
                 const statusOptionDiv = createStatusOption(option);
@@ -374,10 +398,10 @@ export function initFieldEvents() {
                 const index = field.options!.findIndex(fh => fh.id == id)!;
                 field.options![index] = option;
 
-                window.dispatchEvent(entryEvents.entryChangeFieldValues({ fieldId, value, oldValue }));
+                window.dispatchEvent(entryEvents.entryChangeFieldValues({ field_id: fieldId, value, old_value: oldValue }));
 
-                if (!HTML.editModal.modal.open || HTML.editModal.idSpan.innerText != fieldId) return;
-                const targetElem = HTML.editModal.modal.querySelector(`[data-option-id="${id}"]`);
+                if (!HTML.editModal.dialog.open || HTML.editModal.idSpan.innerText != fieldId) return;
+                const targetElem = HTML.editModal.dialog.querySelector(`[data-option-id="${id}"]`);
 
                 const inputElem = targetElem instanceof HTMLDivElement
                         ? targetElem.querySelector("input")
@@ -400,7 +424,7 @@ export function initFieldEvents() {
 
                 field.options = field.options?.filter(fh => fh.id != id);
 
-                if (!HTML.editModal.modal.open || HTML.editModal.idSpan.innerText != fieldId) {
+                if (!HTML.editModal.dialog.open || HTML.editModal.idSpan.innerText != fieldId) {
                         return;
                 }
 
@@ -410,11 +434,11 @@ export function initFieldEvents() {
         window.addEventListener(fieldEvents.setFieldOptionVisibility.type, (e: Event) => {
                 const { id, fieldId, visible } = (e as ReturnType<typeof fieldEvents.setFieldOptionVisibility>).detail;
 
-                if (!HTML.editModal.modal.open || HTML.editModal.idSpan.innerText != fieldId) {
+                if (!HTML.editModal.dialog.open || HTML.editModal.idSpan.innerText != fieldId) {
                         return;
                 }
 
-                const modalOption = HTML.editModal.modal.querySelector(`[data-option-id="${id}"]`) as HTMLDivElement;
+                const modalOption = HTML.editModal.dialog.querySelector(`[data-option-id="${id}"]`) as HTMLDivElement;
                 modalOption.style.display = visible ? "flex" : "none";
         });
 
@@ -425,29 +449,57 @@ export function initFieldEvents() {
 
         document.addEventListener("mousedown", (e: MouseEvent) => {
                 const elem = e.target as HTMLDivElement;
-                if (elem.classList[0] != "field-div") return;
+                console.log(elem);
 
-                dragProps = {
-                        field1: elem,
-                        field1Rect: elem.getBoundingClientRect(),
-                };
+                if (elem.classList[0] == "field-div") {
+                        swapFieldProps = {
+                                field1: elem,
+                                field1Rect: elem.getBoundingClientRect(),
+                                isDragging: true
+                        };
 
-                document.addEventListener("mousemove", fieldDrag);
+                        document.addEventListener("mousemove", fieldDrag);
+                }
+                else if (elem.className == "resizer") {
+                        const parentField = elem.closest(".field-div") as HTMLDivElement;
+                        if (!parentField) return;
+
+                        resizeFieldProps = {
+                                field: parentField,
+                                startRect: parentField.getBoundingClientRect(),
+                                isResizing: true
+                        };
+
+                        document.addEventListener("mousemove", resizeField);
+                }
         });
 
         document.addEventListener("mouseup", () => {
+                document.removeEventListener("mousemove", resizeField);
                 document.removeEventListener("mousemove", fieldDrag);
 
-                const fieldId1 = dragProps.field1?.dataset.fieldId;
-                const fieldId2 = dragProps.field2?.dataset.fieldId;
+                if (swapFieldProps.isDragging) {
 
-                if ([fieldId1, fieldId2].includes(undefined) || fieldId1 == fieldId2) return;
+                        const fieldId1 = swapFieldProps.field1?.dataset.fieldId;
+                        const fieldId2 = swapFieldProps.field2?.dataset.fieldId;
 
-                switchIndex(fieldId1!, fieldId2!)
-                        .catch(err => showToast(`Error switching indecies ${err}`, "error"));
+                        if ([fieldId1, fieldId2].includes(undefined) || fieldId1 == fieldId2) return;
 
-                dragProps = {};
+                        switchIndex(fieldId1!, fieldId2!)
+                                .catch(err => showToast(`Error switching indecies ${err}`, "error"));
 
-                window.dispatchEvent(entryEvents.swapDOM({ field1_id: fieldId1!, field2_id: fieldId2!, styleSwap: false }));
+
+                        window.dispatchEvent(entryEvents.swapDOM({ field1_id: fieldId1!, field2_id: fieldId2!, styleSwap: false }));
+                }
+                else if (resizeFieldProps.isResizing) {
+
+                        const fieldId = resizeFieldProps.field!.dataset.fieldId!;
+                        const newWidth = resizeFieldProps.newWidth!;
+
+                        addDynamicFieldWidthToStorage(fieldId, newWidth);
+                }
+
+                swapFieldProps = { isDragging: false };
+                resizeFieldProps = { isResizing: false };
         });
 }

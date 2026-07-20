@@ -1,0 +1,73 @@
+.bottom-toolbar.shown,
+.bottom-toolbar.shown .entries-selected-div {
+        display: flex;
+}
+
+.bottom-toolbar {
+        display: none;
+        position: fixed;
+        background: var(--bg-light);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 12px;
+        align-self: center;
+        justify-self: center;
+        left: 50%;
+        transform: translateX(-50%);
+        height: 52px;
+        bottom: 4rem;
+        padding: 0;
+        gap: 0;
+}
+
+.entries-selected-div {
+        font-size: 13px;
+        font-weight: 600;
+        color: color-mix(in srgb, var(--white) 70%, transparent);
+        min-width: 36px;
+        padding: 0 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-right: 1px solid rgba(102, 126, 234, 0.3);
+        white-space: nowrap;
+}
+
+.entries-selected-div::after {
+        content: ' Selected';
+        font-weight: 400;
+        color: var(--bg-highlight);
+        margin-left: 4px;
+}
+
+.checked-options-buttons {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0 8px;
+        gap: 2px;
+}
+
+.bottom-toolbar button {
+        background: transparent;
+        outline: none;
+        border: none;
+        border-radius: 8px;
+        padding: 6px 8px;
+        height: auto;
+        color: var(--white);
+        opacity: 0.7;
+        transition: opacity 0.2s ease, background 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+}
+
+#delete-selected-btn:hover {
+        background: color-mix(in srgb, var(--red) 20%, transparent);
+}
+
+.bottom-toolbar button:hover {
+        opacity: 1;
+        background: color-mix(in srgb, var(--primary) 20%, transparent);
+        border: none;
+}

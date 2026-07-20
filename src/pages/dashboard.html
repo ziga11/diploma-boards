@@ -1,0 +1,156 @@
+<div id="toolbar">
+    <div class="toolbar-left">
+        <div id="profile-pic">
+            <img id="profile-img" crossorigin="anonymous" width="80" height="80" referrerpolicy="no-referrer">
+            <i class="logout-icon ti ti-logout-2"></i>
+        </div>
+        <div class="user-info">
+            <h2 id="user-boards">My Boards</h2>
+            <p>Efficiently Organize Your Work</p>
+        </div>
+    </div>
+    <div class="toolbar-right">
+        <button type="button" id="notifications-modal-btn">
+            <i class="ti ti-bell"></i>
+            <span class="icon-item-new"></span>
+        </button>
+
+        <button type="button" type="button" id="api-modal-btn">
+            <i class="ti ti-api"></i>
+        </button>
+        <button type="button" id="add-board-modal-btn" class="btn-default">
+            <i class="ti ti-plus"></i>
+            New Table
+        </button>
+    </div>
+</div>
+<div class="board-list">
+    <div class="owned-boards">
+        <h4><b>My Boards</b></h4>
+        <div class="board-div"></div>
+        <div class="no-boards">
+            <div class="svg-wrapper"><i class="ti ti-layout-board"></i>
+            </div>
+            <p>You havent created any boards.</p>
+            <button type="button" class="btn-default" id="create-board-cta-btn">
+                <i class="ti ti-table-plus"></i>
+                Create Your First Board</button>
+        </div>
+    </div>
+
+    <div class="other-boards">
+        <h4><b>Shared with Me</b></h4>
+        <div class="board-div"></div>
+        <div class="no-boards">
+            <div class="svg-wrapper">
+                <i class="ti ti-users"></i>
+            </div>
+            <p>Boards others share with you will appear here</p>
+        </div>
+    </div>
+
+    <div class="deleted-boards">
+        <h4><b>Deleted Boards</b></h4>
+        <div class="board-div"></div>
+    </div>
+</div>
+
+<dialog id="add-board-modal" class="modal modal-sm">
+    <div class="modal-header">
+        <h5 class="modal-title">Add new board</h5>
+        <button type="button" class="btn-close" aria-label="Close"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+        <div class="form-group mb-4">
+            <input type="text" placeholder="Board Name" class="form-control new-board-name">
+        </div>
+        <div class="form-group">
+            <label class="color-label"><b>Table Color</b></label>
+            <div class="color-picker-wrapper">
+                <input type="color" class="color-picker-input" value="#ff4757">
+                <input type="text" class="color-hex-input" maxlength="7" value="#ff4757">
+            </div>
+            <div class="preset-colors">
+                <button type="button" class="preset-color active" data-color="#ff4757"></button>
+                <button type="button" class="preset-color" data-color="#3742fa"></button>
+                <button type="button" class="preset-color" data-color="#2ed573"></button>
+                <button type="button" class="preset-color" data-color="#ff6348"></button>
+                <button type="button" class="preset-color" data-color="#ff6b9d"></button>
+                <button type="button" class="preset-color" data-color="#a55eea"></button>
+                <button type="button" class="preset-color" data-color="#7bed9f"></button>
+                <button type="button" class="preset-color" data-color="#1dd1a1"></button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn-default-filled" id="trigger-add-board">Add Table</button>
+        <button type="button" class="modal-close-btn">Cancel</button>
+    </div>
+</dialog>
+
+<dialog id="api-keys-modal" class="modal modal-sm">
+    <div class="modal-header">
+        <div>
+            <h5 class="modal-title">API Keys</h5>
+            <div class="modal-header-actions">
+                <a class="api-docs-link">
+                    <i class="ti ti-book"></i>
+                    Docs
+                </a>
+            </div>
+        </div>
+        <button type="button" class="btn-close" aria-label="Close"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+        <div id="api-keys-list"></div>
+        <hr class="api-keys-divider">
+        <div class="api-key-input-row">
+            <input type="text" id="new-api-key-name" class="api-key-name-input" placeholder="Key name (e.g. My app)">
+            <button type="button" class="api-generate-btn" id="generate-api-key">
+                <i class="ti ti-plus"></i>
+                Generate
+            </button>
+        </div>
+    </div>
+</dialog>
+
+<dialog id="api-docs-modal" class="modal modal-lg">
+    <div class="modal-header api-docs-header">
+        <h5 class="modal-title">API Documentation</h5>
+        <button type="button" class="btn-close" aria-label="Close"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="base-url">
+        <span class="base-url-label">BASE URL</span>
+        <span class="base-url-value">https://ywsumeablzezlaoiufts.supabase.co/functions/v1/v1</span>
+        <button class="base-url-copy">
+            <i class="ti ti-copy"></i>
+        </button>
+    </div>
+    <div class="modal-body api-docs-body">
+        <div class="api-docs-tabs">
+            <button class="api-tab active" data-resource="boards">Boards</button>
+            <button class="api-tab" data-resource="fields">Fields</button>
+            <button class="api-tab" data-resource="entries">Entries</button>
+            <button class="api-tab" data-resource="field-options">Field Options</button>
+            <button class="api-tab" data-resource="users">Users</button>
+        </div>
+        <div id="api-docs-endpoints" class="api-docs-endpoints"></div>
+    </div>
+</dialog>
+
+<dialog id="notifications-modal" class="modal modal-sm">
+    <div class="modal-header">
+        <h5 class="modal-title">Notifications</h5>
+        <button type="button" class="btn-close" aria-label="Close"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+        <div class="notificataions-container"></div>
+        <div class="no-notifications-container">
+            <div class="no-notif-icon">
+                <i class="ti ti-bell-off"></i>
+            </div>
+            <p class="no-notif-title">No notifications</p>
+            <p class="no-notif-body">Boards others share with you will appear here</p>
+        </div>
+    </div>
+</dialog>

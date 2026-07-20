@@ -1,0 +1,475 @@
+.fields {
+        transform: rotateX(180deg);
+        display: flex;
+        width: fit-content;
+}
+
+.field-div {
+        display: flex;
+        align-items: center;
+        position: relative;
+        color: var(--white);
+        text-align: center;
+        border-radius: 0;
+        padding: 0;
+        justify-content: center;
+        background: var(--dark-gray);
+        border: 1px solid var(--bg-highlight);
+        border-left: none;
+        flex: 0 0 auto;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        transition: background-color 0.2s ease, border-color 0.2s ease opacity 0.3s;
+        width: var(--col-width, 220px);
+        height: 34px;
+        box-sizing: border-box;
+        font-size: 14px;
+        text-overflow: ellipsis;
+}
+
+.field-div.hidden {
+        opacity: 0;
+}
+
+.field-div.switch {
+        cursor: grab;
+        background-color: color-mix(in-srgb, var(--dark-gray) 60%, transparent);
+}
+
+.field {
+        padding: 0;
+        line-height: 1;
+        background-color: transparent;
+        text-align: center;
+        font-weight: 500;
+        border: none;
+        width: 100%;
+        user-select: none;
+        pointer-events: none;
+}
+
+.fields:not(:has(.add-field-btn.shown)) .field-div:last-of-type {
+        border-radius: 0 10px 10px 0;
+}
+
+.field:focus,
+.field-div:focus {
+        color: white;
+        outline: none;
+        background-color: var(--bg-highlight);
+        border: 1px solid var(--white);
+}
+
+.field:focus {
+        outline: none;
+}
+
+.field-div:hover {
+        background-color: var(--bg-highlight);
+}
+
+.resizer {
+        position: absolute;
+        top: 0;
+        right: -3px;
+        width: 6px;
+        height: 100%;
+        cursor: col-resize;
+        z-index: 10;
+}
+
+.field-label {
+        opacity: 0;
+        height: 24px;
+        position: absolute;
+        background-color: var(--secondary);
+        border-radius: 10px 10px 0 0;
+        text-align: center;
+        z-index: 1000;
+        pointer-events: none;
+        transition: opacity 0.5s ease;
+}
+
+.field-dropdown {
+        position: absolute;
+        background-color: color-mix(in srgb, var(--bg-light) 55%, var(--bg-dark));
+        z-index: -1;
+        width: 220px;
+        border-radius: 15px;
+}
+
+.field-dropdown span {
+        margin: 2rem 0 auto 1rem;
+}
+
+.field-dropdown-options {
+        margin: 1rem 0;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+}
+
+.field-dropdown-option {
+        display: flex;
+        gap: 10px;
+        padding: 5px 0;
+        padding-left: 10px;
+}
+
+.field-dropdown-option.active:hover,
+.field-dropdown-option:hover {
+        background-color: var(--bg-light);
+}
+
+.field-dropdown-option.active {
+        background-color: color-mix(in srgb, var(--primary) 15%, transparent);
+}
+
+#edit-field {
+        margin-top: 10px;
+}
+
+.add-field-btn {
+        order: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: var(--white);
+        background-color: var(--dark-gray);
+        border: 1px solid var(--bg-highlight);
+        height: 34px;
+        padding: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+        border-radius: 0 10px 10px 0px;
+        text-align: center;
+}
+
+.add-field-btn.shown {
+        display: inline-flex;
+}
+
+.add-field-btn:hover {
+        background-color: var(--bg-highlight);
+        border-color: var(--white);
+        outline: none;
+}
+
+.add-field-btn i {
+        color: var(--white);
+        transition: color 0.2s ease;
+        padding: 0;
+}
+
+.fields:not(:has(.field)) .add-field-btn {
+        border-radius: 10px;
+}
+
+.field-check-div {
+        display: flex;
+        padding: 8px 10px;
+        border: 1px solid var(--bg-highlight);
+        border-right: none;
+        align-items: center;
+        border-radius: 8px 0 0 0;
+        justify-content: center;
+        background: var(--dark-gray);
+}
+
+.board-container:not(:has(.entry-set)) .field-check-div {
+        display: none;
+}
+
+.board-container:not(:has(.entry-set)) .field-check-div+.field-div {
+        border-radius: 10px 0 0 10px;
+}
+
+.fields .pin-div {
+        border-top: 1px solid var(--bg-highlight);
+        background: var(--dark-gray);
+}
+
+.board-container:not(:has(.entry-set)) .fields>.pin-div {
+        display: none;
+}
+
+.board-container:not(:has(.entry-set)) .fields>.pin-div+.field-div {
+        border: solid 1px var(--bg-highlight);
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+}
+
+/* | Add Field |*/
+
+.add-field-menu-dialog {
+        position: absolute;
+        background-color: color-mix(in srgb, var(--secondary) 25%, var(--bg-dark));
+        z-index: -1;
+        width: 180px;
+        height: 160px;
+        border-radius: 15px;
+        align-content: center;
+}
+
+.add-field-menu-dialog.shown {
+        z-index: 100;
+}
+
+.add-field-menu {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 10px 0;
+        gap: 5px;
+}
+
+.add-field-menu div {
+        display: flex;
+        border-radius: 5px;
+        align-items: center;
+        flex: 1;
+        padding: 0;
+        padding-left: min(15px, 20%);
+}
+
+.add-field-menu div i {
+        padding: 0;
+}
+
+.add-field-menu div:hover {
+        cursor: pointer;
+        background-color: color-mix(in srgb, var(--secondary) 65%, var(--bg-dark));
+}
+
+.add-field-menu div i {
+        margin-right: 4px;
+}
+
+/* | Edit Field |*/
+.edit-field {
+        display: block;
+        position: absolute;
+        opacity: 0;
+        padding: 0;
+        font-size: 14px;
+        line-height: 1;
+        left: 5px;
+        border: none;
+        cursor: pointer;
+
+        transition: opacity 0.3s;
+}
+
+.edit-field .ti {
+        color: var(--white);
+        transition: color 0.15s;
+}
+
+.edit-field:hover .ti {
+        color: #fff;
+}
+
+.edit-field.shown {
+        opacity: 1;
+}
+
+.field-edit-modal-content {
+        background-color: var(--bg-dark);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 12px;
+        color: var(--white);
+}
+
+.field-edit-modal-header {
+        border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+        padding: 1rem 1.25rem;
+}
+
+.field-edit-modal-header .modal-title {
+        margin-right: auto;
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--white);
+}
+
+.field-edit-modal-body {
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+}
+
+.field-edit-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+}
+
+#add-status-option-section {
+        display: flex;
+        gap: 2rem;
+}
+
+#add-status-option-section.hidden {
+        display: none;
+}
+
+.field-edit-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: capitalize;
+        color: var(--bg-highlight);
+        margin-bottom: 0.1rem;
+}
+
+.field-edit-input {
+        flex: 1;
+        background-color: var(--bg-light);
+        border: 1px solid transparent;
+        color: var(--white);
+        border-radius: 8px;
+        font-size: 13px;
+        transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.field-edit-input:disabled {
+        opacity: 0.5;
+}
+
+.field-edit-input::placeholder {
+        color: color-mix(in srgb, var(--white) 70%, transparent);
+}
+
+.field-edit-modal-title-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+}
+
+.field-edit-id-badge {
+        font-size: 11px;
+        color: var(--bg-highlight);
+}
+
+.field-edit-id-badge b {
+        color: var(--primary);
+        font-weight: 600;
+}
+
+.field-edit-input:focus {
+        background-color: color-mix(in srgb, var(--secondary) 35%, transparent);
+        border-color: var(--secondary);
+        color: var(--white);
+        box-shadow: none;
+}
+
+.status-options-list,
+.button-options-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+}
+
+.status-option-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-light);
+        border: 1px solid transparent;
+        border-radius: 8px;
+        transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.status-option-item:hover {
+        border-color: var(--primary);
+        background: color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+.status-option-item .field-edit-input {
+        width: 100%;
+        background-color: transparent;
+        border: none;
+        outline: none;
+        border-color: transparent;
+}
+
+.remove-status-option {
+        width: 24px;
+        height: 24px;
+        margin-right: 0.5em;
+        font-size: 14px;
+        display: flex;
+        justify-content: center;
+        border-radius: 6px !important;
+        border-color: transparent !important;
+        background: transparent;
+        color: var(--bg-highlight);
+        transition: background 0.2s ease, color 0.2s ease;
+}
+
+.remove-status-option:hover {
+        background: rgba(255, 50, 80, 0.15) !important;
+        color: #ff6680 !important;
+}
+
+.field-edit-danger-zone {
+        border-top: 1px solid rgba(102, 126, 234, 0.15);
+        padding-top: 1rem;
+}
+
+.field-edit-danger-zone .btn-outline-danger {
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        color: var(--bg-highlight);
+        font-size: 13px;
+        padding: 10px 12px;
+        text-align: left;
+        transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.field-edit-danger-zone .btn-outline-danger:hover {
+        border-color: #ff6680;
+        background: rgba(255, 50, 80, 0.15);
+        color: #ff6680;
+}
+
+#field-name-input {
+        padding: 12px;
+}
+
+#delete-field-btn:not(:disabled):hover {
+        color: var(--red);
+        border: 1px solid var(--red);
+}
+
+#delete-field-btn i {
+        transition: color 0.3s ease;
+}
+
+#delete-field-btn:not(:disabled):hover i {
+        color: var(--red);
+}
+
+#add-status-option-btn:hover i {
+        color: var(--white);
+}
+
+#add-status-option-btn:hover {
+        background-color: color-mix(in srgb, var(--bg-highlight) 50%, transparent);
+        box-shadow: 0 6px 20px color-mix(in srgb, var(--bg-highlight) 20%, transparent);
+        color: var(--white);
+}
+
+#add-status-option-btn {
+        background-color: var(--dark-gray);
+        color: var(--bg-highlight);
+        transition: transform 0.15s linear, background-color 0.15s linear, color 0.15s linear;
+}
+
+#add-status-option-btn i {
+        color: var(--bg-highlight);
+        transition: color 0.15s linear;
+}

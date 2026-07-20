@@ -1,3 +1,4 @@
+import "./entries.css";
 import { InfiniteScrollLoader } from "@/core/utils/dom";
 import { initEntryEvents } from "./event";
 import { fetchPagedEntries } from "./logic";

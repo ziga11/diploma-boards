@@ -320,38 +320,6 @@
         padding-top: 12px;
 }
 
-.id-div {
-        cursor: pointer;
-        color: var(--bg-highlight);
-        display: flex;
-        gap: 0.5em;
-        background: rgba(255, 255, 255, 0.08);
-        padding: 6px;
-        border-radius: 4px;
-}
-
-.id-div #field-edit-id {
-        color: var(--bg-highlight);
-        transition: color 0.15s linear;
-}
-
-.id-div i {
-        color: var(--bg-highlight);
-        transition: color 0.15s linear;
-}
-
-.id-div:hover #field-edit-id {
-        color: var(--white);
-}
-
-.id-div:hover i {
-        color: var(--white);
-}
-
-.id-text {
-        font-family: monospace;
-}
-
 .board-date {
         font-weight: 600;
 }
@@ -390,34 +358,9 @@
         gap: 10px;
 }
 
-#api-keys-modal .modal-header {
-        justify-content: space-between;
-}
-
 .api-key-input-row {
         display: flex;
         gap: 1rem;
-}
-
-.modal-header {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.modal-title {
-        align-self: center;
-        font-size: 22px;
-        font-weight: 600;
-        color: var(--white);
-}
-
-.btn-close {
-        filter: invert(1) brightness(2);
-        opacity: 0.8;
-        transition: opacity 0.3s ease;
-}
-
-.btn-close:hover {
-        opacity: 1;
 }
 
 .color-label {
@@ -426,28 +369,6 @@
         color: rgba(255, 255, 255, 0.9);
         font-size: 14px;
         font-weight: 500;
-}
-
-.form-control {
-        background: var(--bg);
-        width: 65%;
-        border: 2px solid var(--bg-light);
-        color: white !important;
-        padding: 12px 16px;
-        border-radius: 10px;
-        font-size: 15px;
-        transition: all 0.3s ease;
-}
-
-.form-control:focus {
-        background: var(--bg-dark);
-        border-color: var(--primary);
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-}
-
-.form-control::placeholder {
-        color: rgba(255, 255, 255, 0.4);
 }
 
 /* Color Picker Styles */
@@ -587,69 +508,6 @@
         border-color: white;
         box-shadow: 0 0 0 2px var(--bg-dark), 0 0 0 4px white;
         transform: scale(1.05);
-}
-
-.modal-footer {
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 20px 32px;
-        display: flex;
-        gap: 12px;
-        justify-content: flex-end;
-}
-
-.modal-add-btn {
-        background: var(--primary);
-        color: white;
-        border: none;
-        padding: 12px 28px;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 15px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.modal-add-btn:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-        background: var(--primary);
-        filter: saturate(130%);
-}
-
-.modal-add-btn:active {
-        transform: translateY(0);
-}
-
-.modal-close-btn {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: rgba(255, 255, 255, 0.1);
-        color: rgba(255, 255, 255, 0.9);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        padding: 12px 28px;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 15px;
-        gap: 0.5em;
-        cursor: pointer;
-        transition: all 0.3s ease;
-}
-
-.modal-close-btn:disabled {
-        opacity: 0.5;
-}
-
-.modal-close-btn:not(:disabled):hover {
-        transform: translateY(-2px);
-        background: rgba(255, 71, 87, 0.2);
-        border-color: var(--red);
-        color: var(--red);
-}
-
-.modal-close-btn:not(:disabled):active {
-        transform: scale(0.98);
 }
 
 .modal-backdrop {
@@ -897,11 +755,6 @@
 .api-docs-header {
         border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
         padding: 18px 22px 16px;
-}
-
-.api-docs-header .modal-title {
-        font-size: 16px;
-        font-weight: 500;
 }
 
 .api-docs-body {
@@ -1166,10 +1019,5 @@
 
         .modal-footer {
                 flex-direction: column-reverse;
-        }
-
-        .modal-add-btn,
-        .modal-close-btn {
-                width: 100%;
         }
 }

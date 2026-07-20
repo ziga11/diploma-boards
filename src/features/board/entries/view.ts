@@ -10,7 +10,7 @@ import { extractEntryValue, firstDeepestNode } from "./logic";
 import { supabase } from "@/core/api/supabase";
 
 export async function changeFieldEntries({ fieldId, value, oldValue }: { fieldId: string, value: string, oldValue?: string }) {
-        const elems = HTML.entriesList.querySelectorAll(`[data-field-id="${fieldId}"]`) as NodeListOf<HTMLSpanElement>;
+        const elems = HTML.entriesContainer.querySelectorAll(`[data-field-id="${fieldId}"]`) as NodeListOf<HTMLSpanElement>;
 
         for (const elem of elems) {
                 changeDeepestValue(elem, value, oldValue);
@@ -156,8 +156,6 @@ export function createEntryRow(entries: Array<Entry>): HTMLDivElement {
 }
 
 export function setEntryRows(entries: Array<Entry>, append: boolean = true) {
-        console.log(entries);
-
         const fieldCount = BoardStore.fields.size;
 
         const rows = [] as Array<HTMLDivElement>;

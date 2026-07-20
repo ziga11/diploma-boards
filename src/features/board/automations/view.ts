@@ -71,7 +71,6 @@ export function showAutomation(elem: HTMLDivElement) {
         setDiv(HTML.modify.existingAutomations);
 }
 
-
 export function fillFields() {
         if (!automationState.automationId) return;
 

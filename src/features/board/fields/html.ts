@@ -4,7 +4,7 @@ export const HTML = {
         get fieldDropdown() { return activePage().querySelector(".field-dropdown") as HTMLDialogElement },
 
         editModal: {
-                get modal() { return activePage().querySelector("#field-edit-modal") as HTMLDialogElement },
+                get dialog() { return activePage().querySelector("#field-edit-modal") as HTMLDialogElement },
 
                 get idDiv() { return activePage().querySelector(".id-div") as HTMLDivElement },
                 get idSpan() { return activePage().querySelector("#field-edit-id") as HTMLSpanElement },

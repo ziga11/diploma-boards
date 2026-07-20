@@ -138,3 +138,5 @@ class CacheService {
 }
 
 export const cache = new CacheService();
+
+/*! Unused cause keeping up to date data is more computationally expensive than just refetching it!*/

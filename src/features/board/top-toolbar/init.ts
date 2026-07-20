@@ -1,3 +1,4 @@
+import "./top-toolbar.css";
 import { BoardStore } from "../board-state";
 import { initTopToolbarEvents } from "./event";
 import { HTML } from "./html";

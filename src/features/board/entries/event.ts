@@ -8,9 +8,10 @@ import { AutomationId } from "../automations/types";
 import { changeDeepestValue } from "./view-utils";
 import type { Entry } from "./types";
 
-let prevEntryVal: string | undefined;
-
 let debounceTimer: number;
+
+let prevEntryVal: string | undefined;
+let entryElems: undefined | NodeListOf<HTMLElement>;
 
 export function initEntryEvents() {
         if (BoardStore.isInitialized) return;
@@ -42,6 +43,7 @@ export function initEntryEvents() {
 
         HTML.entriesContainer.addEventListener("focusout", (e: FocusEvent) => {
                 const elem = e.target as HTMLElement;
+
                 if (elem.classList[0] != "entry") return;
 
                 const value = (elem as HTMLInputElement).value;
@@ -49,15 +51,34 @@ export function initEntryEvents() {
 
                 const entryId = elem.dataset.entryId;
                 updateEntry(entryId!, value);
+
+                entryElems = undefined;
+        })
+
+        HTML.entriesContainer.addEventListener("input", (e: Event) => {
+                const elem = e.target as HTMLElement;
+
+                if (elem.classList[0] != "entry") return;
+
+                const id = elem.dataset.entryId;
+                const value = (elem as HTMLInputElement).value;
+                if (!entryElems) {
+                        entryElems = HTML.entriesContainer.querySelectorAll(`.entry[data-entry-id="${id}"]`) as NodeListOf<HTMLElement>;
+                }
+
+                if (entryElems.length > 1) {
+                        for (const elem of entryElems) changeDeepestValue(elem, value);
+                }
         })
 
         HTML.dropdown.optionsContainer.addEventListener("click", (e: MouseEvent) => {
                 const elem = e.target as HTMLDivElement;
 
-                if (elem.className !== "dropdown-option") {
+                if (elem.className !== "status-dropdown-option") {
                         closeDialog(HTML.dropdown.menu);
                         return;
                 }
+
                 closeDialog(HTML.dropdown.menu);
 
                 const entryId = HTML.dropdown.menu.dataset.entryId;
@@ -120,33 +141,46 @@ export function initEntryEvents() {
         });
 
         window.addEventListener(entryEvents.realtimeEntryChange.type, (e: Event) => {
-                const object = (e as ReturnType<typeof entryEvents.realtimeEntryChange>).detail;
+                let { entry_id: entryId, value, option_id: optionId } = (e as ReturnType<typeof entryEvents.realtimeEntryChange>).detail;
 
-                const elem = HTML.entriesList.querySelector(`.entry[data-entry-id="${object.entryId}"]`) as HTMLDivElement | HTMLInputElement;
-                if (!elem) return;
+                const elems = HTML.entriesContainer.querySelectorAll(`.entry[data-entry-id="${entryId}"]`) as NodeListOf<HTMLDivElement | HTMLInputElement>;
 
-                changeDeepestValue(elem, object.value);
+                const fieldId = elems[0].dataset.fieldId;
+
+                if (!elems || !fieldId) return;
+                const field = BoardStore.getField(fieldId)!;
+
+                if (["status", "button"].includes(field.type!)) {
+                        value = field?.options?.find(fo => fo.id == optionId)?.value;
+                }
+
+                for (const elem of elems) {
+                        changeDeepestValue(elem, value!);
+                }
         });
 
         window.addEventListener(entryEvents.entryChangeFieldValues.type, (e: Event) => {
-                const object = (e as ReturnType<typeof entryEvents.entryChangeFieldValues>).detail;
+                const { field_id, old_value, value } = (e as ReturnType<typeof entryEvents.entryChangeFieldValues>).detail;
 
-                changeFieldEntries(object);
+                changeFieldEntries({ fieldId: field_id, oldValue: old_value, value });
         });
+
         window.addEventListener(entryEvents.checkChange.type, (e: Event) => {
-                const check = (e as ReturnType<typeof entryEvents.checkChange>).detail;
-                entryCheckChange(check);
+                const checkElem = (e as ReturnType<typeof entryEvents.checkChange>).detail;
+
+                entryCheckChange(checkElem);
         });
 
         window.addEventListener(entryEvents.visuallySwap.type, (e: Event) => {
-                const object = (e as ReturnType<typeof entryEvents.visuallySwap>).detail;
-                swapEntriesVisually(object);
+                const { field1_id, field2_id } = (e as ReturnType<typeof entryEvents.visuallySwap>).detail;
+
+                swapEntriesVisually({ field1_id, field2_id });
         });
 
         window.addEventListener(entryEvents.swapDOM.type, (e: Event) => {
-                const object = (e as ReturnType<typeof entryEvents.swapDOM>).detail;
+                const { field1_id, field2_id, styleSwap } = (e as ReturnType<typeof entryEvents.swapDOM>).detail;
 
-                swapEntriesDOM(object);
+                swapEntriesDOM({ field1_id, field2_id, styleSwap });
         });
 
         window.addEventListener(entryEvents.removeSelected.type, _ => {
@@ -315,7 +349,7 @@ export function initEntryEvents() {
         window.addEventListener(entryEvents.realtimeNewRows.type, (e: Event) => {
                 const entryRowsArr = (e as ReturnType<typeof entryEvents.realtimeNewRows>).detail;
 
-                const rows = entryRowsArr.map(createEntryRow);
+                const rows = entryRowsArr.map(e => createEntryRow(e.entries));
 
                 HTML.entriesList.append(...rows);
         });

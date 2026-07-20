@@ -6,7 +6,6 @@ import type { Field, FieldOption } from '@/features/board/fields/types';
 import type { Entry } from '@/features/board/entries/types';
 import type { Board } from '@/features/board/workspace/types';
 import type { BoardFetchObject } from '@/features/dashboard/workspace/types';
-import { cache } from './cache';
 import { RealtimeManager } from './realtime';
 import type { EntryLog, HistoryLog } from '@/features/board/history/types';
 import { PermissionId } from '../types/auth';
@@ -16,13 +15,14 @@ export class Supabase {
         public realtime: RealtimeManager;
         private account?: Account;
         private accountPromise?: Promise<Account>;
+        private clientId: string = crypto.randomUUID();
 
         constructor() {
                 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
                 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
                 this.client = createClient(supabaseUrl, supabaseKey);
-                this.realtime = new RealtimeManager(this.client, crypto.randomUUID());
+                this.realtime = new RealtimeManager(this.client, this.clientId);
         }
 
         async googleSignIn(): Promise<object> {
@@ -65,7 +65,11 @@ export class Supabase {
         }
 
         async signOut() {
-                cache.clearAll();
+                this.account = undefined;
+                this.accountPromise = undefined;
+
+                localStorage.clear();
+
                 const { error } = await this.client.auth.signOut();
                 return { error };
         }
@@ -74,7 +78,10 @@ export class Supabase {
 
         onAuthStateChange(callback: (event: string, session: any) => void) {
                 return this.client.auth.onAuthStateChange((event, session) => {
-                        if (event === 'SIGNED_OUT') cache.clearAll();
+                        if (event === 'SIGNED_OUT') {
+                                this.account = undefined;
+                                this.accountPromise = undefined;
+                        }
                         if (event === 'SIGNED_IN' && session?.user) this.initRealTime();
                         callback(event, session);
                 });
@@ -85,19 +92,11 @@ export class Supabase {
                         const { error } = await this.client.rpc('insert_board', {
                                 p_board_id: board.id,
                                 p_name: board.name,
-                                p_color: board.color
+                                p_color: board.color,
+                                p_client_id: this.clientId,
                         });
 
                         if (error) throw error;
-
-                        await cache.set(`board_${board.id}`, board);
-
-                        const boardObj = (await cache.get("boards") ?? { all: [], shared: [], deleted: [], owned: [] }) as BoardFetchObject;
-
-                        boardObj.all.push(board);
-                        boardObj.owned.push(board);
-
-                        await cache.set("boards", boardObj);
                 }
                 catch (err) {
                         console.error(err)
@@ -110,42 +109,15 @@ export class Supabase {
                         p_board_id: id,
                         p_name: newName,
                         p_color: color,
+                        p_client_id: this.clientId,
                 }) as PostgrestResponse<Board>;
                 if (error) {
                         console.error(error);
                         throw error;
                 }
-
-                const cachedBoards = await cache.get<BoardFetchObject>("boards");
-                if (cachedBoards) {
-                        const patchList = (list: Board[]) => {
-                                const idx = list.findIndex(b => b.id === id);
-                                if (idx === -1) return;
-
-                                list[idx].color = color;
-                                list[idx].name = newName;
-                        };
-
-                        patchList(cachedBoards.owned);
-                        patchList(cachedBoards.shared);
-                        patchList(cachedBoards.all);
-                        cache.set("boards", cachedBoards);
-                }
-
-                const cachedBoard = await cache.get<Board>(`board_${id}`);
-                if (cachedBoard) {
-                        cachedBoard.name = newName;
-                        cachedBoard.color = color;
-                        cache.set(`board_${id}`, cachedBoard);
-                }
-
-                this.realtime.broadcastMutation("board", "UPDATE", { id, name: newName, color: color } as Board);
         }
 
         async fetchBoards(): Promise<BoardFetchObject> {
-                /* const cached = await cache.get<BoardFetchObject>("boards");
-                if (cached) return cached; */
-
                 const { data, error } = await this.client.rpc('get_user_boards') as PostgrestResponse<Board>;
 
                 if (error) {
@@ -158,19 +130,12 @@ export class Supabase {
                 const deleted = data.filter(b => b.deleted);
                 const result = { owned, shared, deleted, all: data } as BoardFetchObject;
 
-                cache.set("boards", result);
-                data.forEach(b => cache.set(`board_${b.id}`, b));
                 return result;
         }
 
         async fetchBoard(boardId: string): Promise<Board> {
                 const acc = this.account;
                 if (!acc) throw new Error("Not logged in");
-
-                const cacheKey = `board_${boardId}`;
-                /* const cached = await cache.get<Board>(cacheKey);
-
-                if (cached) return cached; */
 
                 const { data, error } = await this.client.rpc('get_board_by_id', {
                         p_board_id: boardId
@@ -182,19 +147,7 @@ export class Supabase {
                 }
 
                 const result = data as Board;
-                await cache.set(cacheKey, result);
 
-                const boardObj = (await cache.get("boards") ?? { all: [], shared: [], deleted: [], owned: [] }) as BoardFetchObject;
-                boardObj.all.push(result);
-                if (result.permission_id == PermissionId.Owner) {
-                        boardObj.owned.push(result);
-                }
-                else if (!result.deleted) {
-                        boardObj.shared.push(result);
-                }
-                else {
-                        boardObj.deleted.push(result);
-                }
 
                 return result;
         }
@@ -213,67 +166,29 @@ export class Supabase {
         }
 
         async deleteBoard(boardId: string): Promise<void> {
-                const { error } = await this.client
-                        .from('board')
-                        .update({ deleted: true })
-                        .eq('id', boardId);
+                const { error } = await this.client.rpc('update_board', {
+                        p_board_id: boardId,
+                        p_deleted: true,
+                        p_client_id: this.clientId,
+                }) as PostgrestResponse<Board>;
 
                 if (error) {
                         console.warn("Error deleting board:", error);
                         return;
                 }
-
-                const boardObj = await cache.get("boards") as BoardFetchObject;
-                if (!boardObj) return;
-
-                const delBoard = boardObj.all.find(b => b.id === boardId);
-
-                await cache.clear(`board_${boardId}`);
-                if (!delBoard) return;
-
-                delBoard.deleted = true;
-
-                const ownedIndex = boardObj.owned.findIndex(b => b.id === boardId);
-                if (ownedIndex !== -1) {
-                        boardObj.owned.splice(ownedIndex, 1);
-                } else {
-                        const sharedIndex = boardObj.shared.findIndex(b => b.id === boardId);
-                        if (sharedIndex !== -1) boardObj.shared.splice(sharedIndex, 1);
-                }
-
-                boardObj.deleted.push(delBoard);
-
-                this.realtime.broadcastMutation("board", "DELETE", { id: boardId });
-
-                await cache.set("boards", boardObj);
         }
 
         async recoverBoard(boardId: string): Promise<void> {
-                const { error } = await this.client
-                        .from('board')
-                        .update({ deleted: false })
-                        .eq('id', boardId);
+                const { error } = await this.client.rpc('update_board', {
+                        p_board_id: boardId,
+                        p_deleted: false,
+                        p_client_id: this.clientId,
+                }) as PostgrestResponse<Board>;
 
                 if (error) {
                         console.warn("Error deleting board:", error);
                         return;
                 }
-
-                const boardObj = await cache.get("boards") as BoardFetchObject;
-                if (!boardObj) return;
-
-                const delBoard = boardObj.all.find(b => b.id === boardId);
-                if (!delBoard) return;
-
-                delBoard.deleted = false;
-
-                boardObj.owned.push(delBoard);
-
-                const delIndex = boardObj.deleted.findIndex(b => b.id === boardId);
-                boardObj.deleted.splice(delIndex, 1);
-
-                await cache.set(`board_${boardId}`, delBoard);
-                await cache.set("boards", boardObj);
         }
 
         async leaveBoard() {
@@ -291,9 +206,6 @@ export class Supabase {
                         .eq('account_id', acc.id);
 
                 if (error) console.warn("Error leaving the board:", error);
-
-                await cache.clear(`board_${boardId}`);
-                await cache.clear("boards");
         }
 
         async changeCollaboratorAccess(otherAccId: string, newPermissionId: number) {
@@ -303,12 +215,11 @@ export class Supabase {
                 const { error } = await this.client.rpc("change_collaborator_access", {
                         p_board_id: boardId,
                         p_other_acc_id: otherAccId,
-                        p_permission_id: newPermissionId
+                        p_permission_id: newPermissionId,
+                        p_client_id: this.clientId
                 });
 
                 if (error) console.warn("Error changing collaborator permissions", error);
-
-                this.realtime.broadcastMutation("user", "UPDATE-COLLABORATOR", { account_id: otherAccId, permission_id: newPermissionId });
         }
 
         async kickCollaborator(otherAccId: string, boardId: string) {
@@ -318,19 +229,6 @@ export class Supabase {
                 });
 
                 if (error) console.warn("Error leaving the board:", error);
-
-                const boardObj = await cache.get("boards") as BoardFetchObject;
-                if (!boardObj) return;
-
-                const allIndex = boardObj.all.findIndex(b => b.id === boardId);
-                boardObj.deleted.splice(allIndex, 1);
-
-                const sharedIndex = boardObj.shared.findIndex(b => b.id === boardId);
-                boardObj.deleted.splice(sharedIndex, 1);
-
-                await cache.clear(`board_${boardId}`);
-
-                await cache.set("boards", boardObj);
         }
 
         async insertFieldWithEntries(field: Field, entryIds: Array<string>): Promise<{ field: Field, entries: Entry[] }> {
@@ -342,14 +240,11 @@ export class Supabase {
                         p_board_id: field.board_id,
                         p_name: "",
                         p_type: field.type,
+                        p_client_id: this.clientId,
                 });
 
                 if (error) throw error;
 
-                cache.clear(`fields_${field.board_id}`);
-
-                this.realtime.broadcastMutation("field", "INSERT", field);
-                this.realtime.broadcastMutation("entry", "INSERT-FIELD", { field, entryIds });
 
                 if (data.option_id) {
                         const fieldOption = {
@@ -366,25 +261,15 @@ export class Supabase {
         }
 
         async updateField(id: string, newName: string): Promise<void> {
-                const { data, error } = await this.client
-                        .from("field")
-                        .update({
-                                name: newName,
-                                id: id,
-                        })
-                        .eq("id", id)
-                        .select('board_id')
-                        .single();
+                let { error } = await this.client.rpc("update_field_name", {
+                        p_field_id: id,
+                        p_name: newName,
+                        p_client_id: this.clientId,
+                });
 
                 if (error) {
                         console.error(error);
                         throw error;
-                }
-
-                this.realtime.broadcastMutation("field", "UPDATE", { id, name: newName } as Field);
-
-                if (data?.board_id) {
-                        cache.clear(`fields_${data.board_id}`);
                 }
         }
 
@@ -445,8 +330,6 @@ export class Supabase {
                                 return;
                         }
 
-                        console.log(data);
-
                         yield data as Array<Entry>;
 
                         offset += data.length;
@@ -464,12 +347,6 @@ export class Supabase {
         }
 
         async fetchFields(boardId: string, type?: string): Promise<Field[]> {
-                const isBaseQuery = type === undefined;
-                if (isBaseQuery) {
-                        const cached = await cache.get<Field[]>(`fields_${boardId}`);
-                        /*                         if (cached) return cached; */
-                }
-
                 let query = this.client
                         .from('field')
                         .select(`id, name, type, date_modified, account_id, board_id, index`)
@@ -488,25 +365,18 @@ export class Supabase {
                         return [];
                 }
 
-
-                const result = data || [];
-                if (isBaseQuery) {
-                        cache.set(`fields_${boardId}`, result);
-                }
                 return data || [];
         }
 
         async deleteField(fieldId: string): Promise<void> {
-                const { error } = await this.client.rpc("delete_field_with_entries", { p_field_id: fieldId });
+                const { error } = await this.client.rpc("delete_field_with_entries", {
+                        p_field_id: fieldId,
+                        p_client_id: this.clientId,
+                });
                 if (error) {
                         console.warn(`Failed to delete field: ${error.message}`);
                         throw error;
                 }
-
-                this.realtime.broadcastMutation("field", "DELETE", fieldId);
-                this.realtime.broadcastMutation("entry", "DELETE-FIELD", fieldId);
-
-                /*                 cache.clear(`fields`); */
         }
 
         async fetchFieldOptions(fieldIds: Array<string>): Promise<Map<string, Array<FieldOption>>> {
@@ -545,12 +415,10 @@ export class Supabase {
                 const { error } = await this.client.rpc("update_option", {
                         p_option_id: id,
                         p_new_value: value,
+                        p_client_id: this.clientId,
                 });
 
                 if (error) throw new Error(`Failed to update field option ${error.message}`)
-                this.realtime.broadcastMutation("field_option", "UPDATE", { id, value: value } as FieldOption);
-
-                cache.clear(`fields_${boardId}`);
         }
 
         async insertFieldOption(fieldOption: FieldOption): Promise<void> {
@@ -561,15 +429,13 @@ export class Supabase {
                         p_option_id: fieldOption.id,
                         p_field_id: fieldOption.field_id,
                         p_value: fieldOption.value,
+                        p_client_id: this.clientId,
                 });
 
                 if (error) {
                         console.warn(`Failed to insert fieldOption: ${error.message}`);
                         throw error;
                 }
-
-                this.realtime.broadcastMutation("field_option", "INSERT", fieldOption);
-                cache.clear(`fields_${boardId}`);
         }
 
         async deleteFieldOptions({ id, fieldId, value }: { id?: string, fieldId?: string, value?: string }): Promise<void> {
@@ -577,9 +443,8 @@ export class Supabase {
                         p_option_id: id,
                         p_field_id: fieldId,
                         p_value: value,
+                        p_client_id: this.clientId,
                 });
-
-                this.realtime.broadcastMutation("field_option", "DELETE", id);
 
                 if (error) {
                         console.warn(`Failed to delete field option values: ${error.message}`);
@@ -605,6 +470,7 @@ export class Supabase {
                         p_account_id: acc.id,
                         p_entry_ids: ids,
                         p_row_count: rowCount,
+                        p_client_id: this.clientId,
                 };
 
                 const { data: rows, error } = await this.client.rpc("insert_empty_entry_rows", payload);
@@ -613,22 +479,7 @@ export class Supabase {
                         throw error;
                 }
 
-                type rowPayload = {
-                        entries: Array<Entry>
-                        row_index: number,
-                };
-
-                const indices = [];
-                const entryRowsArr: Entry[][] = [];
-
-                for (const row of rows as rowPayload[]) {
-                        indices.push(row.row_index);
-                        entryRowsArr.push(row.entries);
-                }
-
-                this.realtime.broadcastMutation("entry", "INSERT-ROWS", entryRowsArr);
-
-                return indices;
+                return (rows as { entries: Entry[], row_index: number }[]).map(row => row.row_index);
         }
 
         async insertEntryRows(entrySets: Array<Array<Entry>>): Promise<Array<number>> {
@@ -647,6 +498,7 @@ export class Supabase {
                 const payload = {
                         p_board_id: boardId,
                         p_entry_rows: [] as json_entry[][],
+                        p_client_id: this.clientId,
                 };
 
                 for (const entries of entrySets) {
@@ -681,8 +533,6 @@ export class Supabase {
                         entryRowsArr.push(row.entries);
                 }
 
-                this.realtime.broadcastMutation("entry", "INSERT-ROWS", entryRowsArr);
-
                 return indices;
         }
 
@@ -692,40 +542,22 @@ export class Supabase {
                 const { error } = await this.client.rpc("switch_field_index", {
                         p_board_id: boardId,
                         p_field1_id: field1_id,
-                        p_field2_id: field2_id
+                        p_field2_id: field2_id,
+                        p_client_id: this.clientId,
                 });
 
                 if (error) {
                         console.error(error);
                         throw error;
                 }
-
-                cache.clear(`fields_${boardId}`);
-
-                this.realtime.broadcastMutation("field", "UPDATE-SWAP", { field1_id: field1_id, field2_id: field2_id });
-        }
-
-        async updateEntries({ fieldId, oldValue, newValue }: { fieldId: string, oldValue: string, newValue: string }) {
-                const boardId = BoardStore.boardId;
-                if (!boardId) throw new Error("Failed to get the boardId");
-
-                const { error } = await this.client
-                        .from('entry')
-                        .update({ value: newValue })
-                        .eq('value', oldValue)
-                        .eq('board_id', boardId)
-                        .eq('field_id', fieldId);
-
-                if (error) throw error;
-
-                this.realtime.broadcastMutation("entry", "MULTI-UPDATE", { fieldId, oldValue, newValue });
         }
 
         async updateEntry({ id, value, optionId }: { id: string, value?: string, optionId?: string }): Promise<void> {
-                const { error } = await this.client.rpc("update_entry", {
+                const { data, error } = await this.client.rpc("update_entry", {
                         p_entry_id: id,
                         p_value: value,
                         p_option_id: optionId,
+                        p_client_id: this.clientId,
                 });
 
                 if (error) {
@@ -734,7 +566,11 @@ export class Supabase {
                         throw error;
                 }
 
-                this.realtime.broadcastMutation("entry", "UPDATE", { id, value })
+                supabase.triggerAutomation([
+                        value ? AutomationId.TextChange : AutomationId.StatusChange,
+                        AutomationId.AnyFieldChange,
+                ], data);
+
         }
 
         async triggerAutomation(automationIds: Array<AutomationId>, { entry, fieldId, entryId, rowIndex }: {
@@ -799,6 +635,7 @@ export class Supabase {
                 let query = this.client.rpc("delete_entry_rows", {
                         p_board_id: boardId,
                         p_indices: indices,
+                        p_client_id: this.clientId,
                 })
 
                 const { error } = await query;
@@ -806,8 +643,6 @@ export class Supabase {
                         console.warn("Error deleting entries:", error);
                         throw error;
                 }
-
-                this.realtime.broadcastMutation("entry", "DELETE-ROWS", { indices })
         }
 
         async insertFieldAutomation(automation: Automation): Promise<Automation> {
@@ -914,8 +749,6 @@ export class Supabase {
                         console.error(error);
                         throw new Error(error.message);
                 }
-                cache.clear("notifications");
-
                 return data;
         }
 
@@ -932,14 +765,10 @@ export class Supabase {
                         throw new Error(`Failed to process notification response ${error}`);
                 }
 
-                cache.clear("notifications");
                 return data;
         }
 
         async fetchNotifications(): Promise<NotificationFetchObject> {
-                /* const cached = await cache.get<NotificationFetchObject>("notifications");
-                if (cached) return cached; */
-
                 const { data, error } = await this.client
                         .rpc("fetch_notifications")
                         .order("created_at", { ascending: false });
@@ -951,7 +780,6 @@ export class Supabase {
                 const sent = all.filter(n => n.direction === 'sent');
 
                 const result = { received, sent, all } as NotificationFetchObject;
-                /*                 cache.set("notifications", result); */
                 return result;
         }
 
@@ -977,7 +805,7 @@ export class Supabase {
                                 .from('board_history_logs_light')
                                 .select('*')
                                 .eq('board_id', boardId)
-                                .order('created_at', { ascending: true })
+                                .order('created_at', { ascending: false })
                                 .limit(BATCH_SIZE);
 
                         if (lastCreatedAt) {

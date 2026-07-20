@@ -58,7 +58,7 @@ export function initUserManagementEvents() {
 
         HTML.changeRoleDropdown.dialog.addEventListener("click", (e: Event) => {
                 const elem = e.target as HTMLElement;
-                if (elem.className != "dropdown-option") return;
+                if (elem.className != "permission-dropdown-option") return;
 
                 const otherAccId = HTML.changeRoleDropdown.dialog.dataset.accountId;
                 const permissionId = elem.dataset.permissionId;

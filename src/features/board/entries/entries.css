@@ -1,0 +1,325 @@
+.search-div {
+        display: flex;
+        align-items: center;
+        width: 25em;
+        gap: 8px;
+        border-radius: 10px;
+        background: color-mix(in srgb, var(--secondary) 15%, transparent);
+        border: 1px solid color-mix(in srgb, var(--secondary) 25%, transparent);
+        padding: 0px 12px;
+        margin-bottom: 1rem;
+        transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.search-div:focus-within {
+        border-color: var(--secondary);
+        background: color-mix(in srgb, var(--secondary) 25%, transparent);
+}
+
+.search-div i {
+        font-size: 16px;
+        color: var(--bg-highlight);
+        flex-shrink: 0;
+}
+
+#search {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--text-primary, #fff);
+        font-size: 14px;
+        width: 220px;
+        padding: 10px;
+}
+
+#search::placeholder {
+        color: var(--text-secondary, #9a98b5);
+}
+
+.entries {
+        display: flex;
+        flex-direction: column;
+        transform: rotateX(180deg);
+        width: fit-content;
+}
+
+.entries-div {
+        display: flex;
+        width: fit-content;
+}
+
+.entry-rows {
+        height: 390px;
+        padding-right: 10px;
+        overflow-y: auto;
+}
+
+.pinned-entry-rows {
+        margin-top: 1.5rem;
+        max-height: 150px;
+        overflow-y: auto;
+}
+
+.pinned-entry-rows .entry-check-div,
+.pinned-entry-rows .pin-div,
+.pinned-entry-rows .entry {
+        background: color-mix(in srgb, var(--secondary) 45%, var(--bg-dark));
+}
+
+.entries:has(.pinned-entry-rows:empty) .entry-rows {
+        height: 600px;
+}
+
+.entry {
+        display: flex;
+        align-items: center;
+        position: relative;
+        color: var(--white);
+        text-align: center;
+        border-radius: 0;
+        padding: 0;
+        justify-content: center;
+        background-color: var(--bg-light);
+        border-right: 1px solid var(--bg-highlight);
+        border-bottom: 1px solid var(--bg-highlight);
+        flex: 0 0 auto;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        transition: background-color 0.2s ease, border-color 0.2s ease opacity 0.3s;
+        width: var(--col-width, 220px);
+        height: 34px;
+        box-sizing: border-box;
+}
+
+.entry-status {
+        font-size: 13px;
+}
+
+.entry.hidden {
+        opacity: 0;
+}
+
+.entry:not(:has(*)):focus {
+        color: white;
+        outline: none;
+        background-color: var(--bg-highlight);
+        border: 1px solid var(--white);
+}
+
+.entry:not(:has(*)):hover {
+        background-color: var(--bg-highlight);
+}
+
+.pinned-entry-rows .entry:not(:has(*)):hover {
+        background-color: color-mix(in srgb, var(--secondary) 75%, var(--bg-dark));
+        border: 1px solid color-mix(in srgb, var(--bg-highlight) 50%, var(--white));
+}
+
+.pinned-entry-rows .entry:not(:has(*)):focus {
+        background-color: color-mix(in srgb, var(--secondary) 75%, var(--bg-dark));
+        border: 1px solid color-mix(in srgb, var(--bg-highlight) 50%, var(--white));
+}
+
+.btn-entry {
+        min-width: 60%;
+        max-width: 80%;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 10px;
+        outline: none;
+        border: 1px solid rgba(102, 126, 234, 0.4);
+        border-radius: 5px;
+        background: rgba(102, 126, 234, 0.15);
+        color: var(--white);
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.025em;
+        cursor: pointer;
+        overflow: hidden;
+        position: relative;
+        transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-entry::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.10);
+        border-radius: 5px;
+        pointer-events: none;
+}
+
+.btn-entry:hover {
+        background: rgba(102, 126, 234, 0.38);
+        border-color: rgba(102, 126, 234, 0.75);
+        box-shadow: 0 0 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-entry:active {
+        transform: scale(0.97);
+}
+
+.btn-entry span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+}
+
+input[type="date"] {
+        padding-right: 4px;
+}
+
+dialog.status-dropdown-menu {
+        margin: 0;
+        border: none;
+
+        position: fixed;
+        display: none;
+        width: 220px;
+        z-index: 1000;
+
+        outline: none;
+
+        max-height: 300px;
+        overflow-y: auto;
+        scrollbar-width: none;
+        padding: 4px;
+
+        background-color: var(--bg-dark);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+dialog.status-dropdown-menu[open] {
+        display: block;
+}
+
+.status-dropdown-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 7px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+}
+
+.status-dropdown-option>* {
+        pointer-events: none;
+}
+
+.status-dropdown-option:hover {
+        background: color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+.entry-set {
+        display: flex;
+        height: 34px;
+        flex-shrink: 0;
+}
+
+.entry-set .pin-icon {
+        opacity: 0;
+        height: 18px;
+        width: 16px;
+        cursor: pointer;
+        transition: opacity 0.1s;
+}
+
+.pin-div {
+        display: flex;
+        justify-self: center;
+        align-self: center;
+        justify-content: center;
+        background: var(--bg-light);
+        border-bottom: 1px solid var(--bg-highlight);
+        border-right: 1px solid var(--bg-highlight);
+        align-items: center;
+        height: 34px;
+        width: 34px;
+        flex-shrink: 0;
+}
+
+.pin-icon {
+        pointer-events: none;
+}
+
+.entry-set:hover .pin-icon {
+        opacity: 1;
+}
+
+.entry-set.pinned .pin-icon {
+        opacity: 1;
+}
+
+.entry-set.pinned .pin-icon svg {
+        fill: var(--white);
+}
+
+.unloaded-indicator {
+        display: none;
+        background-color: var(--bg-light);
+        border: 1px solid var(--bg-highlight);
+        flex-shrink: 0;
+        border-top: none;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        order: 1000;
+        height: 34px;
+}
+
+.unloaded-indicator i {
+        color: var(--bg-highlight);
+}
+
+.entry-set.unloaded-indicator.shown {
+        display: flex;
+}
+
+.entry-rows:not(:has(.unloaded-indicator.shown)) .entry-set:last-child .entry-check-div {
+        border-radius: 0 0 0 10px;
+}
+
+.entry-rows:not(:has(.unloaded-indicator.shown)) .entry-set:last-child>.entries-div:last-child>.entry:last-child {
+        border-radius: 0 0 10px 0;
+}
+
+.pinned-entry-rows .entry-set:first-child>.entry-check-div {
+        border-top-left-radius: 10px;
+}
+
+.pinned-entry-rows .entry-set:last-child>.entry-check-div {
+        border-bottom-left-radius: 10px;
+}
+
+.pinned-entry-rows .entry-set:first-child>.entries-div:last-child>.entry:last-child {
+        border-top-right-radius: 10px;
+}
+
+.pinned-entry-rows .entry-set:last-child>.entries-div:last-child>.entry:last-child {
+        border-bottom-right-radius: 10px;
+}
+
+.pinned-entry-rows .entry-set .pin-div,
+.pinned-entry-rows .entry-set .entry-check-div,
+.pinned-entry-rows .entry-set .entry {
+        border-top: 1px solid var(--bg-highlight)
+}
+
+.entry-check-div {
+        display: flex;
+        padding: 8px 10px;
+        border-left: 1px solid var(--bg-highlight);
+        border-bottom: 1px solid var(--bg-highlight);
+        background: var(--bg-light);
+        align-items: center;
+        justify-content: center;
+}
+
+#empty-option {
+        opacity: 0.7;
+}

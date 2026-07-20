@@ -1,3 +1,4 @@
+import "./user-management.css"
 import { BoardStore } from "../board-state";
 import { initUserManagementEvents } from "./event";
 import { disableInputs } from "./view";

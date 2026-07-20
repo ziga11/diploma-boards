@@ -1,7 +1,8 @@
+import "./fields.css";
 import { BoardStore } from "../board-state";
 import { initFieldEvents } from "./event";
 import { fetchFields, setFieldOptions as setFieldOptions } from "./logic";
-import { appendFieldDivs, applyPermissionRestrictions } from "./view";
+import { appendFieldDivs, applyPermissionRestrictions, initFieldWidthStyles } from "./view";
 
 export async function initFields(): Promise<number> {
         try {
@@ -13,6 +14,7 @@ export async function initFields(): Promise<number> {
                 BoardStore.setFields(fields);
 
                 applyPermissionRestrictions();
+                initFieldWidthStyles();
 
                 initFieldEvents();
 

@@ -1,3 +1,4 @@
+import "./automations.css";
 import { BoardStore } from "../board-state";
 import { initAutomationEvents } from "./event";
 import { HTML } from "./html";

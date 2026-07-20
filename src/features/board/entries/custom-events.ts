@@ -23,7 +23,7 @@ export const entryEvents = {
         ),
 
         realtimeNewRows: Object.assign(
-                (detail: Array<Array<Entry>>) => new CustomEvent("entry:realtime-new-row", { detail }),
+                (detail: Array<{ entries: Array<Entry>, index: number }>) => new CustomEvent("entry:realtime-new-row", { detail }),
                 { type: "entry:realtime-new-row" as const }
         ),
 
@@ -78,12 +78,12 @@ export const entryEvents = {
         ),
 
         realtimeEntryChange: Object.assign(
-                (detail: { entryId: string, value: string }) => new CustomEvent("entry:change", { detail }),
+                (detail: { entry_id: string, value?: string, option_id?: string }) => new CustomEvent("entry:change", { detail }),
                 { type: "entry:change" as const }
         ),
 
         entryChangeFieldValues: Object.assign(
-                (detail: { fieldId: string, value: string, oldValue?: string }) => new CustomEvent("entry:change-all", { detail }),
+                (detail: { field_id: string, value: string, old_value?: string }) => new CustomEvent("entry:change-all", { detail }),
                 { type: "entry:change-all" as const }
         ),
 

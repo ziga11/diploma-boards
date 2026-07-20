@@ -1,11 +1,13 @@
 import { HTML } from "./html";
 import DOMPurify from 'dompurify';
 import type { Field, FieldOption } from "./types";
-import { dragProps } from "./event";
+import { resizeFieldProps, swapFieldProps } from "./event";
 import { BoardStore } from "../board-state";
 import { setStateClass } from "@/core/utils/dom";
 import { PermissionId } from "@/core/types/auth";
 import { entryEvents } from "../entries/custom-events";
+
+const ruleIndexMap = new Map<string, number>();
 
 export function removeAllFields() {
         HTML.fieldsDiv.querySelectorAll(".field-div").forEach(el => el.remove());
@@ -30,7 +32,10 @@ export function createHTMLField(field: Field): HTMLDivElement {
                 className: "edit-field",
                 innerHTML: `<i class="ti ti-chevron-down"></i>`,
         });
-        div.append(input, editBtn);
+
+        const resizerDiv = Object.assign(document.createElement("div"), { className: "resizer" })
+
+        div.append(input, editBtn, resizerDiv);
 
         return div;
 }
@@ -112,21 +117,21 @@ export function populateFieldEditModal(field: Field): void {
 
 
 export async function fieldDrag(e: MouseEvent) {
-        if (!dragProps.field1 || !dragProps.field1Rect) return;
-        if (e.x >= dragProps.field1Rect.left && e.x <= dragProps.field1Rect.right) return;
+        if (!swapFieldProps.field1 || !swapFieldProps.field1Rect) return;
+        if (e.x >= swapFieldProps.field1Rect.left && e.x <= swapFieldProps.field1Rect.right) return;
 
-        const increase = e.x > dragProps.field1Rect.right;
+        const increase = e.x > swapFieldProps.field1Rect.right;
 
-        const field1 = dragProps.field1;
+        const field1 = swapFieldProps.field1;
         const field2 = (increase ? field1.nextElementSibling : field1.previousElementSibling) as HTMLDivElement;
 
         const fieldSwapObj = { field1, field2 };
 
         swapField(fieldSwapObj);
 
-        dragProps.field1Rect = dragProps.field1!.getBoundingClientRect();
+        swapFieldProps.field1Rect = swapFieldProps.field1!.getBoundingClientRect();
 
-        dragProps.field2 = field2;
+        swapFieldProps.field2 = field2;
 
         window.dispatchEvent(entryEvents.visuallySwap({ field1_id: field1.dataset.fieldId!, field2_id: field2.dataset.fieldId! }));
 }
@@ -143,6 +148,20 @@ export function swapField({ field1, field2 }: { field1: HTMLDivElement, field2: 
 
         field1.dataset.order = `${o2}`;
         field2.dataset.order = `${o1}`;
+}
+
+export async function resizeField(e: MouseEvent) {
+        if (!resizeFieldProps.field || !resizeFieldProps.startRect) return;
+
+        const startWidth = resizeFieldProps.startRect.width;
+        const deltaX = e.clientX - resizeFieldProps.startRect.right;
+        const newWidth = Math.max(50, startWidth + deltaX);
+        resizeFieldProps.newWidth = newWidth;
+
+        const fieldId = resizeFieldProps.field.dataset.fieldId;
+        if (fieldId) {
+                updateLiveFieldWidth(fieldId, newWidth);
+        }
 }
 
 export function appendFieldDivs(fields: Array<Field>) {
@@ -174,5 +193,59 @@ export function applyPermissionRestrictions() {
 
         if (permission >= PermissionId.Editor) {
                 setStateClass([HTML.newFieldBtn], [], "shown")
+        }
+}
+
+function updateLiveFieldWidth(fieldId: string, width: number) {
+        let widthsCss = document.head.querySelector("#dynamic-column-widths") as HTMLStyleElement;
+        if (!widthsCss) {
+                widthsCss = Object.assign(document.createElement("style"), { id: "dynamic-column-widths" });
+                document.head.appendChild(widthsCss);
+        }
+
+        const sheet = widthsCss.sheet as CSSStyleSheet;
+        const ruleSelector = `[data-field-id="${fieldId}"]`;
+
+        if (ruleIndexMap.has(fieldId)) {
+                const index = ruleIndexMap.get(fieldId)!;
+                const rule = sheet.cssRules[index] as CSSStyleRule;
+                rule.style.setProperty("--col-width", `${width}px`);
+        } else {
+                const newIndex = sheet.cssRules.length;
+                sheet.insertRule(`${ruleSelector} { --col-width: ${width}px; }`, newIndex);
+                ruleIndexMap.set(fieldId, newIndex);
+        }
+}
+
+export function addDynamicFieldWidthToStorage(fieldId: string, width: number) {
+        const boardId = BoardStore.boardId;
+
+        let widths = localStorage.getItem(`board_${boardId}_column_widths`);
+        const widthRecords = (!widths ? {} : JSON.parse(widths)) as Record<string, number>;
+
+        widthRecords[fieldId] = width;
+
+        const jsonRecord = JSON.stringify(widthRecords);
+        localStorage.setItem(`board_${boardId}_column_widths`, jsonRecord);
+}
+
+export function initFieldWidthStyles() {
+        const boardId = BoardStore.boardId;
+        const widths = localStorage.getItem(`board_${boardId}_column_widths`);
+        if (!widths) return;
+
+        const widthsCss = Object.assign(document.createElement("style"), { id: "dynamic-column-widths" });
+        document.head.appendChild(widthsCss);
+
+        const widthRecords = JSON.parse(widths) as Record<string, number>;
+
+        const sheet = widthsCss.sheet as CSSStyleSheet;
+
+        for (const [fieldId, width] of Object.entries(widthRecords)) {
+                const ruleSelector = `[data-field-id="${fieldId}"]`;
+
+                const index = sheet.cssRules.length;
+                sheet.insertRule(`${ruleSelector} { --col-width: ${width}px; }`, index);
+                ruleIndexMap.set(fieldId, index);
         }
 }

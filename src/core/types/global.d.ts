@@ -18,4 +18,9 @@ declare global {
                 key_preview: string;
                 created_at: string;
         }
+
+        interface PageModule {
+                html: string;
+                init: (props?: any) => void | Promise<void>;
+        }
 }

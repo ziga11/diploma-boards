@@ -1,3 +1,4 @@
+import "./workspace.css";
 import { supabase } from "@/core/api/supabase";
 import { BoardStore } from "../board-state";
 import { initWorkspaceEvents } from "./events";

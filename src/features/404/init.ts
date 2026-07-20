@@ -1,7 +1,7 @@
 import { navigate } from "@/core/utils/router";
-import "/public/styles/404.css"
+import "./404.css";
 
-export async function init404() {
+export async function init() {
         const backBtn = document.querySelector("#page-404 .btn-back") as HTMLAnchorElement;
 
         backBtn.addEventListener("click", () => {

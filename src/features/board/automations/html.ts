@@ -3,7 +3,6 @@ const activePage = () => document.querySelector(`#page-board`) ?? document;
 export const HTML = {
         get modal() { return activePage().querySelector("#automate") as HTMLDialogElement },
         get body() { return activePage().querySelector("#automate-body") as HTMLDivElement },
-        get closeBtn() { return activePage().querySelector("#automate")?.querySelector("btn-close") as HTMLInputElement },
 
         create: {
                 get btn() { return activePage().querySelector("#create-tab") as HTMLInputElement },
