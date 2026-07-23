@@ -1,7 +1,7 @@
 import { createClient, SupabaseClient, type PostgrestResponse } from '@supabase/supabase-js'
-import { BoardStore } from '@/features/board/board-state';
+import { BoardState } from '@/features/board/board-state';
 import { AutomationId, type Automation } from '@/features/board/automations/types';
-import type { BoardCollaborator, InsertNotification, NotificationFetchObject, ViewNotification } from '@/features/board/user-management/types';
+import type { Collaborator, InvitedCollaborator, NotificationFetchObject, ViewNotification } from '@/features/board/user-management/types';
 import type { Field, FieldOption } from '@/features/board/fields/types';
 import type { Entry } from '@/features/board/entries/types';
 import type { Board } from '@/features/board/workspace/types';
@@ -93,7 +93,6 @@ export class Supabase {
                                 p_board_id: board.id,
                                 p_name: board.name,
                                 p_color: board.color,
-                                p_client_id: this.clientId,
                         });
 
                         if (error) throw error;
@@ -152,20 +151,30 @@ export class Supabase {
                 return result;
         }
 
-        async fetchCollaborators(boardId: string, boardAccLinkIds?: Array<string>): Promise<Array<BoardCollaborator>> {
-                let { data, error } = await this.client.rpc("fetch_collaborators", {
-                        p_board_id: boardId,
-                        p_board_acc_link_ids: boardAccLinkIds,
-                });
+        async fetchCollaborators(boardId: string): Promise<Collaborator[]> {
+                const { data, error } = await this.client.rpc("fetch_collaborators", { p_board_id: boardId });
 
                 if (error) {
                         throw new Error(error.message);
                 }
 
-                return data as Array<BoardCollaborator>;
+                return data;
         }
 
-        async deleteBoard(boardId: string): Promise<void> {
+        async fetchInvitedCollaborators(boardId: string): Promise<InvitedCollaborator[]> {
+                const { data, error } = await this.client.rpc("fetch_invited_collaborators", { p_board_id: boardId });
+
+                if (error) {
+                        throw new Error(error.message);
+                }
+
+                return data;
+        }
+
+        async deleteBoard(): Promise<void> {
+                const boardId = BoardState.boardId;
+                if (!boardId) throw new Error(`Board ID wasn't set`)
+
                 const { error } = await this.client.rpc('update_board', {
                         p_board_id: boardId,
                         p_deleted: true,
@@ -192,12 +201,11 @@ export class Supabase {
         }
 
         async leaveBoard() {
-                const boardId = BoardStore.boardId;
+                const boardId = BoardState.boardId;
                 if (!boardId) throw new Error(`Board ID wasn't set`)
 
                 const acc = this.account;
                 if (!acc) throw new Error("Account not set");
-
 
                 const { error } = await this.client
                         .from('board_account_link')
@@ -209,7 +217,7 @@ export class Supabase {
         }
 
         async changeCollaboratorAccess(otherAccId: string, newPermissionId: number) {
-                const boardId = BoardStore.boardId;
+                const boardId = BoardState.boardId;
                 if (!boardId) throw new Error(`Board ID wasn't set`)
 
                 const { error } = await this.client.rpc("change_collaborator_access", {
@@ -222,18 +230,31 @@ export class Supabase {
                 if (error) console.warn("Error changing collaborator permissions", error);
         }
 
-        async kickCollaborator(otherAccId: string, boardId: string) {
+        async removeInvitation(email: string) {
+                const boardId = BoardState.boardId;
+
+                const { error } = await this.client.rpc("remove_invitation", {
+                        p_board_id: boardId,
+                        p_to_email: email,
+                        p_client_id: this.clientId
+                });
+
+                if (error) console.warn("Error leaving the board:", error);
+        }
+
+        async kickCollaborator(otherAccId: string) {
+                const boardId = BoardState.boardId;
+
                 const { error } = await this.client.rpc("remove_collaborator", {
                         p_board_id: boardId,
-                        p_other_acc_id: otherAccId
+                        p_other_acc_id: otherAccId,
+                        p_client_id: this.clientId
                 });
 
                 if (error) console.warn("Error leaving the board:", error);
         }
 
         async insertFieldWithEntries(field: Field, entryIds: Array<string>): Promise<{ field: Field, entries: Entry[] }> {
-                const optionId = field.type === "button" ? crypto.randomUUID() : null;
-
                 const { data, error } = await this.client.rpc('create_field_with_entries', {
                         p_field_id: field.id,
                         p_entry_ids: entryIds,
@@ -245,16 +266,17 @@ export class Supabase {
 
                 if (error) throw error;
 
-
-                if (data.option_id) {
+                if (field.type === "button") {
                         const fieldOption = {
-                                id: optionId,
+                                id: data.option_id,
                                 account_id: field.account_id,
                                 value: "",
                                 field_id: field.id,
                         } as FieldOption;
 
-                        field.options = [fieldOption];
+                        if (!field.options) field.options = {};
+
+                        field.options[data.option_id] = fieldOption;
                 }
 
                 return { field: data.field, entries: data.entries };
@@ -310,14 +332,14 @@ export class Supabase {
                 let offset = 0;
 
                 while (true) {
-                        lastSearch = BoardStore.searchQuery;
-                        lastSort = `${BoardStore.sortedBy?.fieldId} ${BoardStore.sortedBy?.ascending}`;
+                        lastSearch = BoardState.searchQuery;
+                        lastSort = `${BoardState.sortedBy?.fieldId} ${BoardState.sortedBy?.ascending}`;
 
                         const { data, error } = await this.client.rpc('get_board_page', {
                                 p_board_id: boardId,
                                 p_search: lastSearch.length > 0 ? lastSearch : null,
-                                p_sort_field_id: BoardStore.sortedBy?.fieldId ?? null,
-                                p_ascending: BoardStore.sortedBy?.ascending ?? true,
+                                p_sort_field_id: BoardState.sortedBy?.fieldId ?? null,
+                                p_ascending: BoardState.sortedBy?.ascending ?? true,
                                 p_limit: BATCH_SIZE,
                                 p_offset: offset
                         });
@@ -334,8 +356,8 @@ export class Supabase {
 
                         offset += data.length;
 
-                        const currSearch = BoardStore.searchQuery;
-                        const currSort = `${BoardStore.sortedBy?.fieldId} ${BoardStore.sortedBy?.ascending}`;
+                        const currSearch = BoardState.searchQuery;
+                        const currSort = `${BoardState.sortedBy?.fieldId} ${BoardState.sortedBy?.ascending}`;
 
                         if (currSearch != lastSearch || currSort != lastSort) {
                                 offset = 0;
@@ -346,26 +368,17 @@ export class Supabase {
                 }
         }
 
-        async fetchFields(boardId: string, type?: string): Promise<Field[]> {
-                let query = this.client
-                        .from('field')
-                        .select(`id, name, type, date_modified, account_id, board_id, index`)
-                        .eq('board_id', boardId)
-                        .eq('deleted', false);
+        async fetchFields(boardId: string): Promise<Field[]> {
+                const { data, error } = await this.client.rpc("fetch_fields", {
+                        p_board_id: boardId,
+                });
 
-                if (type) query = query.eq('type', type);
-
-                const { data, error } = await query.order('index', { ascending: true });
                 if (error) {
-                        console.warn("Error fetching fields:", error);
-                        return [];
-                }
-                if (!data) {
-                        console.warn("No existing fields");
-                        return [];
+                        console.warn(`Failed to delete field: ${error.message}`);
+                        throw error;
                 }
 
-                return data || [];
+                return data as Field[];
         }
 
         async deleteField(fieldId: string): Promise<void> {
@@ -409,7 +422,7 @@ export class Supabase {
         }
 
         async updateFieldOption(id: string, value: string) {
-                const boardId = BoardStore.boardId;
+                const boardId = BoardState.boardId;
                 if (!boardId) throw new Error(`Board ID wasn't set`)
 
                 const { error } = await this.client.rpc("update_option", {
@@ -422,7 +435,7 @@ export class Supabase {
         }
 
         async insertFieldOption(fieldOption: FieldOption): Promise<void> {
-                const boardId = BoardStore.boardId;
+                const boardId = BoardState.boardId;
                 if (!boardId) throw new Error(`Board wasn't set`)
 
                 const { error } = await this.client.rpc("insert_option", {
@@ -452,11 +465,11 @@ export class Supabase {
                 }
         }
 
-        async insertEmptyEntryRows(ids: Array<string>, rowCount: number = 1): Promise<Array<number>> {
-                const boardId = BoardStore.boardId;
-                if (!ids.length || !boardId) {
+        async insertEmptyEntryRows(fieldIdEntryIdMap?: Record<string, string>[], rowCount: number = 1): Promise<{ entries: Entry[], row_index: number }[]> {
+                const boardId = BoardState.boardId;
+                if (!boardId) {
                         console.warn("error inserting entries, board_id is null or there's no entries");
-                        throw new Error("Board ID null or no entries");
+                        throw new Error("Board ID null");
                 }
 
                 const acc = this.account;
@@ -468,22 +481,23 @@ export class Supabase {
                 const payload = {
                         p_board_id: boardId,
                         p_account_id: acc.id,
-                        p_entry_ids: ids,
+                        p_entry_field_id_map: fieldIdEntryIdMap,
                         p_row_count: rowCount,
                         p_client_id: this.clientId,
                 };
 
                 const { data: rows, error } = await this.client.rpc("insert_empty_entry_rows", payload);
+
                 if (error) {
                         console.warn(`Failed to insert entries: ${error.message}`);
                         throw error;
                 }
 
-                return (rows as { entries: Entry[], row_index: number }[]).map(row => row.row_index);
+                return (rows as { entries: Entry[], row_index: number }[]);
         }
 
         async insertEntryRows(entrySets: Array<Array<Entry>>): Promise<Array<number>> {
-                const boardId = BoardStore.boardId;
+                const boardId = BoardState.boardId;
                 if (!entrySets.length || !boardId) {
                         console.warn("error inserting entries, board_id is null or there's no entries");
                 }
@@ -579,7 +593,7 @@ export class Supabase {
                 rowIndex?: number,
                 entry?: Entry
         }): Promise<boolean> {
-                const boardId = BoardStore.boardId;
+                const boardId = BoardState.boardId;
 
                 if (!(fieldId && entryId && rowIndex && boardId) && !entry) {
                         return false;
@@ -589,7 +603,7 @@ export class Supabase {
                 for (const automationId of automationIds) {
                         const key = automationId <= AutomationId.ButtonPress ? fieldId ?? entry!.field_id! : `${automationId}`;
 
-                        const as = (BoardStore.automations.get(key) ?? []) as Array<Automation>;
+                        const as = (BoardState.automations.get(key) ?? []) as Array<Automation>;
                         for (const a of as) {
                                 if (a.automation_id === automationId) {
                                         automations.push(a);
@@ -731,25 +745,23 @@ export class Supabase {
                 return data as Array<ApiKey>;
         }
 
-        async insertNotification(n: InsertNotification): Promise<ViewNotification> {
+        async inviteCollaborator({ id, to_email, permission_id }: { id: string, to_email: string, permission_id: number }): Promise<InvitedCollaborator> {
+                const boardId = BoardState.boardId;
+                if (!boardId) throw new Error("board id not set");
 
-                let { data, error } = await this.client.rpc("insert_notification", {
-                        p_id: n.id ?? null,
-                        p_from_acc_id: n.from_acc_id,
-                        p_to_acc_id: n.to_acc_id ?? null,
-                        p_to_acc_email: n.to_acc_email ?? null,
-                        p_message: n.message,
-                        p_board_id: n.board_id ?? null,
-                        p_permission_id: n.permission_id ?? null,
-                        p_state: n.state ?? null,
-                        p_type: n.type
+                let { data, error } = await this.client.rpc("invite_collaborator", {
+                        p_id: id,
+                        p_board_id: boardId,
+                        p_to_account_email: to_email,
+                        p_permission_id: permission_id,
                 });
 
                 if (error) {
                         console.error(error);
                         throw new Error(error.message);
                 }
-                return data;
+
+                return data
         }
 
         async notificationResponse(id: string, notificationId: string, state: "accepted" | "declined" | "dismissed"): Promise<string> {
@@ -757,6 +769,7 @@ export class Supabase {
                         p_id: id,
                         p_notification_id: notificationId,
                         p_state: state,
+                        p_client_id: this.clientId
                 });
 
                 if (error) {
@@ -794,7 +807,7 @@ export class Supabase {
         }
 
         async *fetchHistory(): AsyncGenerator<Array<HistoryLog>> {
-                const boardId = BoardStore.boardId;
+                const boardId = BoardState.boardId;
                 if (!boardId) throw new Error(`Board ID wasn't set`);
 
                 const BATCH_SIZE = 250;
@@ -825,7 +838,7 @@ export class Supabase {
         }
 
         async *fetchHistoryLogEntries(logId: string): AsyncGenerator<Array<EntryLog>> {
-                const boardId = BoardStore.boardId;
+                const boardId = BoardState.boardId;
                 if (!boardId) throw new Error(`Board ID wasn't set`);
 
                 const BATCH_SIZE = 250;
@@ -847,7 +860,7 @@ export class Supabase {
         }
 
         async fetchEntryCount(): Promise<number> {
-                const boardId = BoardStore.boardId;
+                const boardId = BoardState.boardId;
                 if (!boardId) throw new Error("board id null");
 
                 const { count, error } = await this.client
@@ -861,7 +874,7 @@ export class Supabase {
         }
 
         async initBoardRealtime() {
-                const boardId = BoardStore.boardId;
+                const boardId = BoardState.boardId;
                 if (!boardId) return;
 
                 this.realtime.switchActiveBoard(boardId);

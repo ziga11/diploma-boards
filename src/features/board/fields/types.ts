@@ -6,7 +6,7 @@ export interface Field {
         name?: string;
         type?: string;
         date_modified?: Date;
-        options?: Array<FieldOption>;
+        options?: Record<string, FieldOption>;
 }
 
 export interface FieldOption {

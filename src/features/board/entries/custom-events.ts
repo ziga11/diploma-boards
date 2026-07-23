@@ -97,7 +97,7 @@ export const entryEvents = {
                 { type: "entry:copy-row" as const }
         ),
 
-        disposeAll: Object.assign(
+        clearEntries: Object.assign(
                 () => new CustomEvent("entry:dispose-all"),
                 { type: "entry:dispose-all" as const }
         ),
@@ -110,5 +110,10 @@ export const entryEvents = {
         togglePin: Object.assign(
                 (detail: HTMLDivElement) => new CustomEvent("entry:pin", { detail }),
                 { type: "entry:pin" as const }
+        ),
+
+        applyPermissionRestrictions: Object.assign(
+                () => new CustomEvent("entry:set-disabled-state"),
+                { type: "entry:set-disabled-state" as const }
         ),
 }

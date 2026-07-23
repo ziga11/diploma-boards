@@ -1,17 +1,18 @@
 import type { Automation } from "./automations/types";
 import type { Entry } from "./entries/types";
 import type { Field } from "./fields/types";
-import type { BoardCollaborator } from "./user-management/types";
+import type { Collaborator, InvitedCollaborator } from "./user-management/types";
 import type { Board } from "./workspace/types";
 
 interface BoardState {
         searchQuery: string,
-        entryCount: { rendered: number, all: number },
+        entryRowCount: { rendered: number, all: number },
         isInitialized: boolean;
         activeBoard: Board | null;
         sortedBy: { fieldId?: string, ascending?: boolean },
         fieldIdAutomationMap: Map<string, Array<Automation>>,
-        accIdCollaboratorMap: Map<string, BoardCollaborator>,
+        accIdCollaboratorMap: Map<string, Collaborator>,
+        invitedCollaborators: Array<InvitedCollaborator>,
         fieldsMap: Map<string, Field>;
         selectedFieldId: number | null;
         fetchEntryGenerator: undefined | AsyncGenerator<Array<Entry>>;
@@ -19,18 +20,19 @@ interface BoardState {
 
 const state: BoardState = {
         searchQuery: "",
-        entryCount: { rendered: 0, all: 0 },
+        entryRowCount: { rendered: 0, all: 0 },
         isInitialized: false,
         activeBoard: null,
         fieldIdAutomationMap: new Map(),
         accIdCollaboratorMap: new Map(),
+        invitedCollaborators: [],
         fieldsMap: new Map(),
         selectedFieldId: null,
         sortedBy: { fieldId: undefined, ascending: undefined },
         fetchEntryGenerator: undefined
 };
 
-export const BoardStore = {
+export const BoardState = {
         get isInitialized() {
                 return state.isInitialized;
         },
@@ -50,7 +52,7 @@ export const BoardStore = {
                 return state.fieldsMap;
         },
         get rowCount() {
-                return state.entryCount;
+                return state.entryRowCount;
         },
         get automations() {
                 return state.fieldIdAutomationMap;
@@ -58,11 +60,11 @@ export const BoardStore = {
         get isDeleted() {
                 return state.activeBoard?.deleted;
         },
-        get selectedFieldId() {
-                return state.selectedFieldId;
-        },
         get collaborators() {
                 return state.accIdCollaboratorMap;
+        },
+        get invitedCollaborators() {
+                return state.invitedCollaborators;
         },
         get sortedBy() {
                 return state.sortedBy;
@@ -93,26 +95,26 @@ export const BoardStore = {
 
         setRowCount({ rendered, all }: { rendered?: number, all?: number }) {
                 if (rendered) {
-                        state.entryCount.rendered = rendered;
+                        state.entryRowCount.rendered = rendered;
                 }
 
                 if (all) {
-                        state.entryCount.all = all;
+                        state.entryRowCount.all = all;
                 }
         },
 
         incrementRowCount() {
-                const rendered = state.entryCount.rendered;
-                const all = state.entryCount.all;
+                const rendered = state.entryRowCount.rendered;
+                const all = state.entryRowCount.all;
 
-                state.entryCount = { rendered: rendered + 1, all: all + 1 };
+                state.entryRowCount = { rendered: rendered + 1, all: all + 1 };
         },
 
         decrementRowCount() {
-                const rendered = state.entryCount.rendered;
-                const all = state.entryCount.all;
+                const rendered = state.entryRowCount.rendered;
+                const all = state.entryRowCount.all;
 
-                state.entryCount = { rendered: rendered - 1, all: all - 1 };
+                state.entryRowCount = { rendered: rendered - 1, all: all - 1 };
         },
 
         setInitialized() {
@@ -153,12 +155,16 @@ export const BoardStore = {
                 state.fieldsMap = new Map(fields.map(f => [f.id!, f]));
         },
 
-        setCollaborators(collaborators: Array<BoardCollaborator>) {
+        setCollaborators(collaborators: Array<Collaborator>) {
                 state.accIdCollaboratorMap = new Map(collaborators.map(c => [c.account_id!, c]));
         },
 
-        addCollaborator(c: BoardCollaborator) {
+        addCollaborator(c: Collaborator) {
                 state.accIdCollaboratorMap.set(c.account_id, c);
+        },
+
+        removeCollaborator(accId: string) {
+                state.accIdCollaboratorMap.delete(accId);
         },
 
         updateCollaboratorPermission(accId: string, permissionId: number) {
@@ -167,11 +173,36 @@ export const BoardStore = {
                 c.permission_id = permissionId;
         },
 
-        removeCollaborator(accId: string) {
-                state.accIdCollaboratorMap.delete(accId);
+        setInvitedCollaborators(invCollaborators: Array<InvitedCollaborator>) {
+                state.invitedCollaborators = invCollaborators;
+        },
+
+        addInvitedCollaborator(c: InvitedCollaborator) {
+                state.invitedCollaborators.push(c);
+        },
+
+        removeInvitedCollaborator(email: string) {
+                const index = state.invitedCollaborators.findIndex(e => e.to_email = email);
+                state.invitedCollaborators.splice(index, 1);
         },
 
         getField(id: string) {
                 return state.fieldsMap.get(id);
+        },
+
+        setField(field: Field) {
+                if (!field.id) return;
+                return state.fieldsMap.set(field.id, field);
+        },
+
+        clear() {
+                state.fieldsMap.clear();
+                state.fieldIdAutomationMap.clear();
+                state.accIdCollaboratorMap.clear();
+                state.activeBoard = null;
+                state.fetchEntryGenerator = undefined;
+                state.searchQuery = "";
+                state.entryRowCount = { all: 0, rendered: 0 };
+                state.sortedBy = { fieldId: undefined, ascending: undefined }
         }
 }

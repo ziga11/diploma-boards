@@ -1,6 +1,6 @@
 import { supabase } from "@/core/api/supabase";
 import { navigate } from "@/core/utils/router";
-import { BoardStore } from "./board-state";
+import { BoardState } from "./board-state";
 import { initFields } from "./fields/init";
 import { initEntries } from "./entries/init";
 import { initWorkspace } from "./workspace/init";
@@ -17,16 +17,17 @@ export async function init(props: Record<string, any>) {
                 return;
         }
 
-        const boardId = props["board_id"];
+        BoardState.clear();
 
+        const boardId = props["board_id"];
 
         try {
                 const board = await supabase.fetchBoard(boardId);
-                BoardStore.setActiveBoard(board);
+                BoardState.setActiveBoard(board);
                 const sortDescending = localStorage.getItem(`${boardId}-sort-ascending`) === "f";
                 const sortFieldId = localStorage.getItem(`${boardId}-sort-field-id`) ?? undefined;
 
-                BoardStore.setSortedBy(sortFieldId, !sortDescending);
+                BoardState.setSortedBy(sortFieldId, !sortDescending);
 
                 const fieldLen = await initFields();
 
@@ -39,7 +40,8 @@ export async function init(props: Record<string, any>) {
                 console.error(err);
         }
 
-        supabase.fetchCollaborators(boardId).then(BoardStore.setCollaborators);
+        supabase.fetchCollaborators(boardId).then(BoardState.setCollaborators);
+        supabase.fetchInvitedCollaborators(boardId).then(BoardState.setInvitedCollaborators);
 
         initBottomToolbar();
         initUserManagement();
@@ -47,5 +49,5 @@ export async function init(props: Record<string, any>) {
         initAutomations();
         initHistory();
 
-        BoardStore.setInitialized();
+        BoardState.setInitialized();
 }

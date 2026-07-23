@@ -165,9 +165,41 @@
         display: flex;
         align-items: center;
         gap: 14px;
-        margin-bottom: 1.5rem;
         padding-bottom: 1.5rem;
         border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.menu-switch {
+        display: flex;
+        padding: 0 1em;
+        gap: 1em;
+}
+
+#invited-users,
+#added-users {
+        flex: 1;
+        justify-content: center;
+        background: color-mix(in srgb, var(--secondary) 15%, transparent);
+        border: 1px solid var(--secondary);
+}
+
+#added-users:not(.active):hover,
+#added-users.active {
+        transform: none;
+        border: 1px solid var(--secondary);
+        background: color-mix(in srgb, var(--secondary) 45%, transparent);
+}
+
+#invited-users {
+        background: color-mix(in srgb, var(--yellow) 15%, transparent);
+        border: 1px solid color-mix(in srgb, var(--yellow) 45%, transparent);
+}
+
+#invited-users:not(.active):hover,
+#invited-users.active {
+        transform: none;
+        border: 1px solid var(--yellow);
+        background: color-mix(in srgb, var(--yellow) 45%, transparent);
 }
 
 .add-user-icon {
@@ -259,6 +291,39 @@
         color: var(--bg-highlight);
 }
 
+.user-container {
+        margin-top: 1.5rem;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
+}
+
+.invited-users-container,
+.added-users-container {
+        grid-area: 1 / 1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+        max-height: 300px;
+        overflow-y: auto;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+#manage-users-section {
+
+        &:has(#invited-users.active) .invited-users-container,
+        &:has(#added-users.active) .added-users-container {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+        }
+}
+
 .permission-cards {
         display: flex;
         flex-direction: column;
@@ -275,6 +340,11 @@
         padding: 10px 14px;
         cursor: pointer;
         transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.permission-card.disabled {
+        opacity: 0.65;
+        pointer-events: none;
 }
 
 .permission-card:hover {
@@ -333,7 +403,6 @@
         align-items: center;
         gap: 12px;
         padding: 10px 14px;
-        margin-bottom: 1rem;
         border-radius: 10px;
         border: 1px solid var(--bg-highlight);
         background: var(--bg-dark);
@@ -428,6 +497,32 @@
 .collab-permission--editor,
 .collab-permission--member {
         background: rgba(255, 255, 255, 0.05);
+}
+
+.collab-permission--pending {
+        background: color-mix(in srgb, var(--yellow) 25%, transparent);
+}
+
+.collab-permission--pending>* {
+        color: var(--yellow);
+}
+
+.collaborator-div--pending {
+        border-left: 3px solid var(--yellow);
+        opacity: 0.85;
+}
+
+.collab-avatar--invite {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: color-mix(in srgb, var(--yellow) 20%, transparent);
+        color: var(--yellow);
+        font-size: 16px;
+        flex-shrink: 0;
 }
 
 .collab-date {

@@ -4,14 +4,17 @@ import { initEntryEvents } from "./event";
 import { fetchPagedEntries } from "./logic";
 import { setEntryRows } from "./view";
 import type { Entry } from "./types";
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 import { supabase } from "@/core/api/supabase";
+import { entryEvents } from "./custom-events";
 
 
 export async function initEntries(fieldCount: number) {
         const generator = fetchPagedEntries(fieldCount);
 
-        BoardStore.setEntryFetchGenerator(generator)
+        window.dispatchEvent(entryEvents.clearEntries());
+
+        BoardState.setEntryFetchGenerator(generator)
 
         new InfiniteScrollLoader<Entry>({
                 fetcher: () => generator,
@@ -22,7 +25,7 @@ export async function initEntries(fieldCount: number) {
 
         const entryCount = [fieldCount, allEntryCount].includes(0) ? 0 : allEntryCount / fieldCount;
 
-        BoardStore.setRowCount({ all: entryCount });
+        BoardState.setRowCount({ all: entryCount });
 
         initEntryEvents();
 }

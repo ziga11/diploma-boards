@@ -1,9 +1,9 @@
 import DOMPurify from 'dompurify';
 import { setStateClass } from "@/core/utils/dom";
 import { HTML } from "./html";
-import type { BoardCollaborator } from "./types";
+import type { Collaborator, InvitedCollaborator } from "./types";
 import { PermissionId } from "@/core/types/auth";
-import { BoardStore } from '../board-state';
+import { BoardState } from '../board-state';
 import { supabase } from '@/core/api/supabase';
 
 export function setDiv({ addUser }: { addUser: boolean }) {
@@ -15,22 +15,8 @@ export function setDiv({ addUser }: { addUser: boolean }) {
         HTML.manageUsers.btn.checked = !addUser;
 }
 
-export function disableInputs(permission: PermissionId | null) {
-        if (permission == PermissionId.Owner) return;
-
-        const inps = HTML.addUsers.div.querySelectorAll("input") as NodeListOf<HTMLInputElement>;
-
-        if (permission == PermissionId.Admin) {
-                const adminInput = inps.item(inps.length - 1);
-                adminInput.disabled = true;
-        }
-        else {
-                inps.forEach(inp => inp.disabled = true);
-        }
-}
-
 export function triggerRoleChangeDropdown(element: HTMLElement) {
-        const accPermission = BoardStore.permissionId;
+        const accPermission = BoardState.permissionId;
         const collabPermission = element.dataset.permission;
         if (!accPermission || accPermission < PermissionId.Admin || Number(collabPermission) >= accPermission) return;
 
@@ -61,7 +47,7 @@ export function triggerRoleChangeDropdown(element: HTMLElement) {
         HTML.changeRoleDropdown.dialog.showModal();
 }
 
-export async function createCollaboratorDiv(c: BoardCollaborator): Promise<HTMLDivElement> {
+export async function createCollaboratorDiv(c: Collaborator): Promise<HTMLDivElement> {
         const div = Object.assign(document.createElement("div"), { className: "collaborator-div" });
         div.dataset.id = c.account_id;
 
@@ -72,7 +58,7 @@ export async function createCollaboratorDiv(c: BoardCollaborator): Promise<HTMLD
 
         const isMe = c.account_id == acc.id;
 
-        const userPerm = BoardStore.permissionId;
+        const userPerm = BoardState.permissionId;
         const canChangePerm = userPerm == PermissionId.Owner || (userPerm == PermissionId.Admin && c.permission_id < PermissionId.Admin);
 
         div.innerHTML = DOMPurify.sanitize(`
@@ -82,17 +68,48 @@ export async function createCollaboratorDiv(c: BoardCollaborator): Promise<HTMLD
                     <span class="collab-email">${c.email}</span>
                 </div>
                 <div class="collab-meta">
-                    <span class="collab-permission collab-permission--${role.toLowerCase()}" data-permission="${c.permission_id}">
-                        <p>${role}</p>
-                        ${!isMe && canChangePerm ? `<i class="ti ti-chevron-down"></i>` : ""}
+                    <span class="collab-permission ${c.is_invited ? "collab-permission--pending" : `collab-permission--${role.toLowerCase()}`}" data-permission="${c.permission_id}">
+                        <p>${c.is_invited ? `Invited (${role})` : role}</p>
+                        ${!isMe && canChangePerm && !c.is_invited ? `<i class="ti ti-chevron-down"></i>` : ""}
                     </span>
                     <span class="collab-date">${new Date(c.added_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 </div>
                 ${!isMe && canChangePerm ? `
-                <button class="collab-remove" aria-label="Remove collaborator" ${[PermissionId.Owner, PermissionId.Admin].includes(BoardStore.permissionId!) ? "" : "disabled"}>
+                <button class="collab-remove" data-is-invited="${c.is_invited}" aria-label="Remove collaborator" ${[PermissionId.Owner, PermissionId.Admin].includes(BoardState.permissionId!) ? "" : "disabled"}>
                     <i class="ti ti-trash"></i>
                 </button>`: ""}
             `, { ADD_ATTR: ["referrerpolicy"] });
 
+        return div;
+}
+
+export function createInviteDiv(inv: InvitedCollaborator): HTMLDivElement {
+        const div = Object.assign(document.createElement("div"), { className: "collaborator-div collaborator-div--pending" });
+        div.dataset.toEmail = inv.to_email;
+
+        const roleName = PermissionId[inv.permission_id];
+        div.innerHTML = DOMPurify.sanitize(`
+        <div class="collab-avatar collab-avatar--invite">
+            <i class="ti ti-mail"></i>
+        </div>
+        <div class="collab-info">
+            <span class="collab-name">${inv.to_email}</span>
+            <span class="collab-email">Invited by ${inv.invited_by.name}</span>
+        </div>
+        <div class="collab-meta">
+            <div class="collab-pending-badges">
+                <span class="collab-permission collab-permission--pending">
+                    <p>Invited</p>
+                </span>
+                <span class="collab-permission collab-permission--${roleName.toLowerCase()}">
+                    <p>${roleName}</p>
+                </span>
+            </div>
+            <span class="collab-date">${new Date(inv.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+        </div>
+        <button class="collab-remove" aria-label="Cancel invite">
+            <i class="ti ti-trash"></i>
+        </button>
+    `);
         return div;
 }

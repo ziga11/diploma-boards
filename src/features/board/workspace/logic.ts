@@ -1,7 +1,7 @@
 import { supabase } from "@/core/api/supabase";
 import { HTML } from "./html";
 import type { Board } from "./types";
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 
 export function initScrollObserver() {
         const updateFade = () => {
@@ -17,7 +17,7 @@ export function initScrollObserver() {
 
         updateFade();
 
-        if (BoardStore.isInitialized) return;
+        if (BoardState.isInitialized) return;
 
         HTML.container.addEventListener('scroll', updateFade, { passive: true });
         window.addEventListener('resize', updateFade);
@@ -28,28 +28,25 @@ export function fetchBoard(boardId: string): Promise<Board> {
 }
 
 export async function updateBoard(newName: string, color: string) {
-        const boardId = BoardStore.boardId;
+        const boardId = BoardState.boardId;
         if (!boardId) throw new Error("Board ID not set");
 
-        BoardStore.setBoardTitle(newName);
-        BoardStore.setBoardColor(color);
+        BoardState.setBoardTitle(newName);
+        BoardState.setBoardColor(color);
 
         return supabase.updateBoard(boardId, newName, color);
 }
 
 export async function deleteBoard() {
-        const boardId = BoardStore.boardId;
-        if (!boardId) throw new Error("Board ID not set");
-
         const acc = await supabase.getAccount();
         if (!acc) throw new Error("Not logged in");
 
-        await supabase.deleteBoard(boardId)
+        await supabase.deleteBoard()
 
-        const collaborators = BoardStore.collaborators.values();
+        const collaborators = BoardState.collaborators.values();
         for (const collaborator of collaborators) {
                 if (collaborator.account_id == acc.id) continue;
-                supabase.kickCollaborator(collaborator.account_id, boardId);
+                supabase.kickCollaborator(collaborator.account_id);
         }
 
 }

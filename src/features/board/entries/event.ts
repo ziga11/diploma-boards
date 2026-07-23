@@ -2,11 +2,12 @@ import { closeDialog, setStateClass, showToast } from "@/core/utils/dom";
 import { HTML } from "./html";
 import { changeAllEntryChecks, changeFieldEntries, createEntryCopiesFromEntrySet, createEntryRow, createFieldEntries, entryCheckChange, setEntryRows, setupStatusDropdown, swapEntriesDOM, swapEntriesVisually, updateFieldEntries } from "./view";
 import { updateEntry, deleteRows, triggerAutomation, insertEntryRows, insertEmptyEntryRows, } from "./logic";
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 import { entryEvents } from "./custom-events";
 import { AutomationId } from "../automations/types";
 import { changeDeepestValue } from "./view-utils";
 import type { Entry } from "./types";
+import { PermissionId } from "@/core/types/auth";
 
 let debounceTimer: number;
 
@@ -14,7 +15,7 @@ let prevEntryVal: string | undefined;
 let entryElems: undefined | NodeListOf<HTMLElement>;
 
 export function initEntryEvents() {
-        if (BoardStore.isInitialized) return;
+        if (BoardState.isInitialized) return;
 
         HTML.entriesContainer.addEventListener("click", async (e: MouseEvent) => {
                 const elem = e.target as HTMLElement;
@@ -112,9 +113,9 @@ export function initEntryEvents() {
 
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(async () => {
-                        BoardStore.setSearchQuery(value)
+                        BoardState.setSearchQuery(value)
 
-                        const result = await BoardStore.entryFetchGenerator!.next();
+                        const result = await BoardState.entryFetchGenerator!.next();
 
                         if (result.done) return;
                         const entries = result.value ?? [];
@@ -134,6 +135,14 @@ export function initEntryEvents() {
                 setupStatusDropdown(elem);
         });
 
+        window.addEventListener(entryEvents.applyPermissionRestrictions.type, () => {
+                const isMember = PermissionId.Member == BoardState.permissionId;
+                if (!isMember) return;
+
+                const toDisable = HTML.entriesContainer.querySelectorAll(`.entry-check, .entries-div`) as NodeListOf<HTMLElement>
+                toDisable.forEach(e => e.classList.add("disabled"));
+        })
+
         window.addEventListener(entryEvents.entryCheckChangeAll.type, (e: Event) => {
                 const checked = (e as ReturnType<typeof entryEvents.entryCheckChangeAll>).detail;
 
@@ -148,10 +157,10 @@ export function initEntryEvents() {
                 const fieldId = elems[0].dataset.fieldId;
 
                 if (!elems || !fieldId) return;
-                const field = BoardStore.getField(fieldId)!;
+                const field = BoardState.getField(fieldId)!;
 
                 if (["status", "button"].includes(field.type!)) {
-                        value = field?.options?.find(fo => fo.id == optionId)?.value;
+                        value = field.options![optionId!].value;
                 }
 
                 for (const elem of elems) {
@@ -207,10 +216,10 @@ export function initEntryEvents() {
                         .then(_ => {
                                 entrySets.forEach(e => e.remove());
 
-                                const renderedRows = BoardStore.rowCount.rendered - indices.length;
-                                const allRows = BoardStore.rowCount.all - indices.length;
+                                const renderedRows = BoardState.rowCount.rendered - indices.length;
+                                const allRows = BoardState.rowCount.all - indices.length;
 
-                                BoardStore.setRowCount({ rendered: renderedRows, all: allRows });
+                                BoardState.setRowCount({ rendered: renderedRows, all: allRows });
                         })
                         .catch(err => {
                                 entrySets.forEach(e => e.style.display = "flex");
@@ -222,7 +231,7 @@ export function initEntryEvents() {
                 const { fieldId, indices } = (e as ReturnType<typeof entryEvents.realtimeRemoveEntries>).detail;
 
                 if (fieldId != undefined) {
-                        const fieldSize = BoardStore.fields.size;
+                        const fieldSize = BoardState.fields.size;
 
                         if (fieldSize == 1) {
                                 const entrySets = HTML.entriesContainer.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
@@ -239,10 +248,10 @@ export function initEntryEvents() {
                                 entrySets[index].remove();
                         }
 
-                        const renderedRows = BoardStore.rowCount.rendered - indices.length;
-                        const allRows = BoardStore.rowCount.all - indices.length;
+                        const renderedRows = BoardState.rowCount.rendered - indices.length;
+                        const allRows = BoardState.rowCount.all - indices.length;
 
-                        BoardStore.setRowCount({ rendered: renderedRows, all: allRows })
+                        BoardState.setRowCount({ rendered: renderedRows, all: allRows })
                 }
         });
 
@@ -313,35 +322,48 @@ export function initEntryEvents() {
         });
 
         window.addEventListener(entryEvents.newRow.type, () => {
-                if (BoardStore.fields.size == 0) {
+                if (BoardState.fields.size == 0) {
                         showToast(`Cannot make a new row, no existing fields`, "error")
                         return;
                 }
 
-                BoardStore.incrementRowCount()
+                BoardState.incrementRowCount()
 
-                const fields = Array.from(BoardStore.fields.values()).sort((a, b) => a.index! - b.index!);
+                const fields = Array.from(BoardState.fields.values()).sort((a, b) => a.index! - b.index!);
                 const entries = fields.map(field => {
-                        let val = field.type == "button" && field.options ? field.options[0].value : "";
-
                         return {
                                 id: crypto.randomUUID(),
                                 field_id: field.id,
-                                value: val,
+                                value: "",
                                 type: field.type,
                                 date_modified: new Date(),
                         } as Entry;
                 });
 
+                const fieldEntryIdMap = {} as Record<string, string>;
+                for (const entry of entries) { fieldEntryIdMap[entry.field_id!] = entry.id!; }
+
                 const row = createEntryRow(entries);
 
                 HTML.entriesList.appendChild(row);
 
-                insertEmptyEntryRows(entries.map(e => e.id!))
-                        .then(indices => row.dataset.index = `${indices[0]}`)
+                insertEmptyEntryRows([fieldEntryIdMap])
+                        .then((data) => {
+                                row.dataset.index = `${data[0].row_index}`
+                                console.log(data);
+
+
+                                data[0].entries.forEach(e => {
+                                        if (e.option_id) {
+                                                const elem = row.querySelector(`[data-entry-id="${e.id!}"]`) as HTMLElement;
+
+                                                elem.dataset.optionId = e.option_id;
+                                        }
+                                });
+                        })
                         .catch(err => {
                                 row.remove();
-                                BoardStore.decrementRowCount();
+                                BoardState.decrementRowCount();
                                 showToast(`Failed to create entry row ${err}`, "error");
                         });
         });
@@ -380,10 +402,10 @@ export function initEntryEvents() {
                         .catch(() => {
                                 rows.forEach(row => row.remove());
 
-                                const rendered = BoardStore.rowCount.rendered;
-                                const all = BoardStore.rowCount.all;
+                                const rendered = BoardState.rowCount.rendered;
+                                const all = BoardState.rowCount.all;
 
-                                BoardStore.setRowCount({ rendered, all });
+                                BoardState.setRowCount({ rendered, all });
                         });
         });
 
@@ -413,7 +435,7 @@ export function initEntryEvents() {
         });
 
         window.addEventListener(entryEvents.sortChange.type, async () => {
-                const result = await BoardStore.entryFetchGenerator!.next();
+                const result = await BoardState.entryFetchGenerator!.next();
 
                 if (result.done) return;
                 const entries = result.value ?? [];
@@ -421,8 +443,8 @@ export function initEntryEvents() {
                 setEntryRows(entries, false);
         });
 
-        window.addEventListener(entryEvents.disposeAll.type, () => {
-                if (!BoardStore.isInitialized) return;
+        window.addEventListener(entryEvents.clearEntries.type, () => {
+                if (!BoardState.isInitialized) return;
                 HTML.entriesList.innerHTML = "";
                 HTML.pinnedEntriesList.innerHTML = "";
         });

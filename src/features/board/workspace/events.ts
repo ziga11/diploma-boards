@@ -3,22 +3,23 @@ import { workspaceEvents } from "./custom-events";
 import { HTML } from "./html";
 import { deleteBoard, leaveBoard, updateBoard } from "./logic";
 import { dashboardEvents } from "@/features/dashboard/workspace/custom-events";
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 import { closeDialog, setStateClass, showToast } from "@/core/utils/dom";
 import { hexChange, updateColor } from "./view";
 import { topToolbarEvents } from "../top-toolbar/custom-events";
 
 export function initWorkspaceEvents() {
-        if (BoardStore.isInitialized) return;
+        if (BoardState.isInitialized) return;
 
         HTML.delete.confirm.addEventListener("click", () => {
-                const id = BoardStore.boardId;
+                const id = BoardState.boardId;
                 if (!id) return;
 
 
                 HTML.delete.modal.close();
                 navigate("/dashboard");
                 window.dispatchEvent(dashboardEvents.moveBoard({ id, group: "deleted" }))
+
                 deleteBoard()
                         .catch(err => {
                                 window.dispatchEvent(dashboardEvents.moveBoard({ id, group: "owned" }))
@@ -27,7 +28,7 @@ export function initWorkspaceEvents() {
         });
 
         HTML.leave.confirm.addEventListener("click", () => {
-                const id = BoardStore.boardId;
+                const id = BoardState.boardId;
                 if (!id) return;
 
                 HTML.leave.modal.close();
@@ -51,7 +52,7 @@ export function initWorkspaceEvents() {
                 else if (elem == HTML.editBoard.updateBoard) {
                         const name = HTML.editBoard.nameInput.value;
                         const color = HTML.editBoard.colorPicker.value;
-                        const activeBoard = BoardStore.activeBoard;
+                        const activeBoard = BoardState.activeBoard;
 
                         if (name == activeBoard?.name && color.toUpperCase() == activeBoard.color?.toUpperCase()) {
                                 return;
@@ -69,11 +70,11 @@ export function initWorkspaceEvents() {
         window.addEventListener(workspaceEvents.showLeaveModal.type, () => HTML.leave.modal.showModal());
 
         window.addEventListener(workspaceEvents.showEditBoardModal.type, () => {
-                const boardColor = BoardStore.activeBoard!.color!;
+                const boardColor = BoardState.activeBoard!.color!;
                 HTML.editBoard.colorPicker.value = boardColor;
                 HTML.editBoard.hexInput.value = boardColor;
 
-                HTML.editBoard.nameInput.value = BoardStore.activeBoard!.name!;
+                HTML.editBoard.nameInput.value = BoardState.activeBoard!.name!;
 
                 HTML.editBoard.presetColors.forEach(color => {
                         color.classList.toggle("active", color.dataset.color?.toLowerCase() == boardColor.toLowerCase())

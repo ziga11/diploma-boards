@@ -4,10 +4,10 @@ import { setToolbarVisibility } from "./view";
 import { entryEvents } from "../entries/custom-events";
 import { bottomToolbarEvents } from "./custom-events";
 import { fieldEvents } from "../fields/custom-events";
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 
 export function initBottomToolbarEvents() {
-        if (BoardStore.isInitialized) return;
+        if (BoardState.isInitialized) return;
 
         HTML.deselectSelected.addEventListener("click", () => {
                 const selectedEntries = document.querySelectorAll(".entry-check:checked") as NodeListOf<HTMLInputElement>;

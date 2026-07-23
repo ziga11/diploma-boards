@@ -4,7 +4,8 @@ export interface EndPoint {
         summary: string,
         params: EndPointParam[],
         body: EndPointParam[],
-        response: string,
+        response?: string,
+        responses?: string[],
 }
 
 export interface EndPointParam {

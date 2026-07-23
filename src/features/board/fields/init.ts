@@ -1,17 +1,19 @@
 import "./fields.css";
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 import { initFieldEvents } from "./event";
-import { fetchFields, setFieldOptions as setFieldOptions } from "./logic";
+import { fetchFields } from "./logic";
 import { appendFieldDivs, applyPermissionRestrictions, initFieldWidthStyles } from "./view";
+import { fieldEvents } from "./custom-events";
 
 export async function initFields(): Promise<number> {
         try {
+                window.dispatchEvent(fieldEvents.clearFields());
+
                 const fields = await fetchFields();
 
-                setFieldOptions(fields);
                 appendFieldDivs(fields);
 
-                BoardStore.setFields(fields);
+                BoardState.setFields(fields);
 
                 applyPermissionRestrictions();
                 initFieldWidthStyles();

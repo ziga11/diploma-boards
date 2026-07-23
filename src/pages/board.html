@@ -430,7 +430,7 @@
                                     <p class="permission-desc">View, edit and automations</p>
                                 </div>
                             </label>
-                            <label class="permission-card">
+                            <label class="permission-card" data-permission-type="Admin">
                                 <input type="radio" name="add-user-permission" value="4" />
                                 <div>
                                     <p class="permission-name">Admin</p>
@@ -461,7 +461,14 @@
                             their role</p>
                     </div>
                 </div>
-                <div class="user-container"></div>
+                <div class="menu-switch">
+                    <button type="button" id="added-users" class="btn-default active">Added</button>
+                    <button type="button" id="invited-users" class="btn-default">Invited</button>
+                </div>
+                <div class="user-container">
+                    <div class="added-users-container"></div>
+                    <div class="invited-users-container"></div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="modal-close-btn">Close</button>

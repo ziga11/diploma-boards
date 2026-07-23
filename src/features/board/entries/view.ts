@@ -1,6 +1,6 @@
 import { PermissionId } from "@/core/types/auth";
-import { BoardStore } from "../board-state";
-import type { Field } from "../fields/types";
+import { BoardState } from "../board-state";
+import type { Field, FieldOption } from "../fields/types";
 import { HTML } from "./html";
 import type { Entry } from "./types";
 import { changeDeepestValue, createButtonEntry, createStatusEntry, createTextEntry, setDropdownOptions } from "./view-utils";
@@ -38,7 +38,7 @@ export function entryCheckChange(check: HTMLInputElement) {
         const checkCount = HTML.entriesList.querySelectorAll(".entry-check:checked").length;
 
         const visibleToolbar = checkCount > 0;
-        const fieldChecked = BoardStore.rowCount.rendered == checkCount;
+        const fieldChecked = BoardState.rowCount.rendered == checkCount;
 
         window.dispatchEvent(fieldEvents.checkChange(fieldChecked));
         window.dispatchEvent(bottomToolbarEvents.visible({ visible: visibleToolbar, checkedCount: checkCount }));
@@ -72,33 +72,52 @@ export function swapEntriesVisually({ field1_id, field2_id }: { field1_id: strin
         }
 }
 
-export function swapEntriesDOM({ field1_id, field2_id, styleSwap }: { field1_id: string, field2_id: string, styleSwap: boolean }) {
-        const entries1 = HTML.entriesContainer.querySelectorAll(`.entry[data-field-id="${field1_id}"]`) as NodeListOf<HTMLDivElement>;
-        const entries2 = HTML.entriesContainer.querySelectorAll(`.entry[data-field-id="${field2_id}"]`) as NodeListOf<HTMLDivElement>;
+export function swapEntriesDOM({ field1_id, field2_id, styleSwap }: { field1_id: string; field2_id: string; styleSwap: boolean }) {
+        const entries1 = HTML.entriesContainer.querySelectorAll<HTMLDivElement>(`.entry[data-field-id="${field1_id}"]`);
+        const entries2 = HTML.entriesContainer.querySelectorAll<HTMLDivElement>(`.entry[data-field-id="${field2_id}"]`);
 
-        if (!entries2 || !entries1 || entries1.length == 0) return;
+        if (!entries1.length || !entries2.length) return;
 
-        const [o1, o2] = [Number(entries1.item(0).dataset.order), Number(entries2.item(0).dataset.order)];
+        const o1 = Number(entries1[0].dataset.order);
+        const o2 = Number(entries2[0].dataset.order);
 
-        /* if !styleSwap the entries's order was already swapped meaning the <> must be the opposite */
-        const increase = styleSwap ? o1 > o2 : o1 < o2;
+        for (let i = 0; i < entries1.length; i++) {
+                const e1 = entries1[i];
+                const e2 = entries2[i];
 
-        for (let i = 0; i < entries2.length; i++) {
-                const e1 = entries1[i] as HTMLElement;
-                const e2 = entries2[i] as HTMLElement;
+                if (!e1 || !e2) continue;
 
-                if (increase)
-                        e1.after(e2);
-                else {
-                        e1.before(e2);
+                const parent = e1.parentElement;
+                if (!parent) continue;
+
+                const children = Array.from(parent.children);
+                const e1Index = children.indexOf(e1);
+                const e2Index = children.indexOf(e2);
+
+                if (e1Index < e2Index) {
+                        e2.after(e1);
+                } else {
+                        e2.before(e1);
                 }
 
                 if (styleSwap) {
-                        e1.dataset.order = `${o2}`;
-                        e2.dataset.order = `${o1}`;
+                        const rowEntries = entries1[i].closest(".entries-div") as HTMLDivElement;
+                        const increase = o2 > o1;
+                        const startIndex = increase ? o1 + 1 : o1 - 1;
 
-                        e1.style.order = `${o2!}`;
-                        e2.style.order = `${o1!}`;
+                        /* idk why Math.min and max approach here didnt work so ill keep this clusterfuck */
+                        for (let j = startIndex; increase ? j <= o2 : j >= o2; increase ? j++ : j--) {
+                                const entry = rowEntries.children.item(j) as HTMLElement;
+
+                                const currOrder = Number(entry.dataset.order);
+                                const newOrder = currOrder + (increase ? -1 : 1);
+                                entry.dataset.order = `${newOrder}`;
+                                entry.style.order = `${newOrder}`;
+                        }
+
+
+                        e1.dataset.order = `${o2}`;
+                        e1.style.order = `${o2}`;
                 }
         }
 }
@@ -108,35 +127,31 @@ export function createEntryRow(entries: Array<Entry>): HTMLDivElement {
         entrySet.dataset.index = `${entries[0].index}`;
 
         const checkboxDiv = Object.assign(document.createElement("div"), { className: "entry-check-div" });
-
         const checkbox = Object.assign(document.createElement("input"), {
                 type: "checkbox",
                 className: "entry-check",
-                disabled: BoardStore.permissionId == PermissionId.Member
+                disabled: BoardState.permissionId == PermissionId.Member
         });
-        Object.assign(checkbox.dataset, { "boardId": `${BoardStore.boardId}`, });
+        checkbox.dataset.boardId = BoardState.boardId!;
+
         checkboxDiv.appendChild(checkbox);
 
         const pinDiv = Object.assign(document.createElement("div"), { className: "pin-div" });
-
         const pin = Object.assign(document.createElement("span"), {
                 className: "pin-icon",
-                innerHTML: `
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-star">
+                innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-star">
                         <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                         <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" />
                 </svg>
                 `});
-
         pinDiv.appendChild(pin);
 
         const entryDivs = [];
-
         for (let i = 0; i < entries.length; i++) {
-                const field = BoardStore.getField(entries[i].field_id!);
+                const field = BoardState.getField(entries[i].field_id!);
                 entries[i].type = entries[i].type ?? field?.type;
 
-                const divEntry = genEntry(entries[i]);
+                const divEntry = genEntry(entries[i], field?.options);
                 divEntry.dataset.dbValue = entries[i].value ?? "";
                 divEntry.dataset.order = `${field?.index}`;
                 divEntry.style.order = `${field?.index}`;
@@ -144,10 +159,8 @@ export function createEntryRow(entries: Array<Entry>): HTMLDivElement {
                 entryDivs.push(divEntry);
         }
 
-        const entriesDiv = Object.assign(document.createElement("div"), {
-                className: "entries-div"
-        });
-
+        const entriesDiv = Object.assign(document.createElement("div"), { className: "entries-div" });
+        entriesDiv.classList.toggle("disabled", BoardState.permissionId == PermissionId.Member);
         entriesDiv.append(...entryDivs);
 
         entrySet.append(checkboxDiv, pinDiv, entriesDiv);
@@ -156,7 +169,7 @@ export function createEntryRow(entries: Array<Entry>): HTMLDivElement {
 }
 
 export function setEntryRows(entries: Array<Entry>, append: boolean = true) {
-        const fieldCount = BoardStore.fields.size;
+        const fieldCount = BoardState.fields.size;
 
         const rows = [] as Array<HTMLDivElement>;
 
@@ -173,7 +186,7 @@ export function setEntryRows(entries: Array<Entry>, append: boolean = true) {
         }
 
         const newRows = entries.length > 0 ? entries.length / fieldCount : 0;
-        BoardStore.setRowCount({ rendered: append ? BoardStore.rowCount.rendered + newRows : newRows });
+        BoardState.setRowCount({ rendered: append ? BoardState.rowCount.rendered + newRows : newRows });
 }
 
 export async function createEntryCopiesFromEntrySet(entrySet: HTMLDivElement): Promise<Array<Entry>> {
@@ -182,10 +195,10 @@ export async function createEntryCopiesFromEntrySet(entrySet: HTMLDivElement): P
         const acc = await supabase.getAccount();
         if (!acc) throw new Error("Failed to get the account");
 
-        const boardId = BoardStore.boardId;
+        const boardId = BoardState.boardId;
         if (!boardId) throw new Error("Failed to get the boardId");
 
-        BoardStore.incrementRowCount();
+        BoardState.incrementRowCount();
         const entryElems = entrySet.querySelectorAll(".entry") as NodeListOf<HTMLDivElement>;
 
         for (const entryElem of entryElems) {
@@ -250,10 +263,10 @@ export function setupStatusDropdown(entryElem: HTMLDivElement) {
         const fieldId = entryElem.dataset.fieldId;
         if (!fieldId) return;
 
-        const field = BoardStore.getField(fieldId)!;
+        const field = BoardState.getField(fieldId)!;
         const options = field.options!;
 
-        setDropdownOptions(options)
+        setDropdownOptions(Object.values(options))
 }
 
 export function hideMenu(e: MouseEvent): boolean {
@@ -266,11 +279,11 @@ export function hideMenu(e: MouseEvent): boolean {
         );
 }
 
-export function genEntry(entry: Entry): HTMLElement {
+export function genEntry(entry: Entry, options?: Record<string, FieldOption>): HTMLElement {
         let element: HTMLElement;
 
-        if (entry.type === "status") element = createStatusEntry(entry);
-        else if (entry.type === "button") element = createButtonEntry(entry);
+        if (entry.type === "status") element = createStatusEntry(entry, options);
+        else if (entry.type === "button") element = createButtonEntry(entry, options);
         else element = createTextEntry(entry);
 
         Object.assign(element.dataset, {
@@ -279,8 +292,9 @@ export function genEntry(entry: Entry): HTMLElement {
                 entryId: `${entry.id}`,
         });
 
-        if (entry.option_id)
+        if (entry.option_id) {
                 element.dataset.optionId = entry.option_id
+        }
 
         return element;
 }

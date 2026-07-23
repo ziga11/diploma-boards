@@ -1,6 +1,6 @@
 import type { HistoryLog } from "./types";
 import { HTML } from "./html";
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 import { setStateClass } from "@/core/utils/dom";
 import DOMPurify from 'dompurify';
 
@@ -82,7 +82,7 @@ export function renderPayload(payload: Record<string, unknown>, action: string):
         if (!entries.length) return '<span class="history-payload-empty">No tracked changes</span>';
 
         return entries.map(([key, value]) => {
-                const field = typeof value === 'string' ? BoardStore.getField(value) : undefined;
+                const field = typeof value === 'string' ? BoardState.getField(value) : undefined;
                 return `
                 <div class="history-payload-row">
                     <span class="history-payload-key">${capitalize(resolveKeyLabel(key))}</span>
@@ -108,7 +108,7 @@ function formatPayloadValue(key: string, value: unknown, action: string): string
         }
 
         if (key === 'field_id' && typeof value === 'string') {
-                const field = BoardStore.getField(value);
+                const field = BoardState.getField(value);
                 return field?.name ? field.name : `<span class="history-payload-empty">Empty</span>`;
         }
 
@@ -156,22 +156,22 @@ function targetFieldName(column: string, id: string): string {
                 case "entry": {
                         const entryElem = HTML.entries.querySelector(`[data-entry-id="${id}"]`) as HTMLElement | null;
                         const fieldId = entryElem?.dataset.fieldId;
-                        return fieldId ? (BoardStore.getField(fieldId)?.name ?? "") : "";
+                        return fieldId ? (BoardState.getField(fieldId)?.name ?? "") : "";
                 }
                 case "field":
-                        return BoardStore.getField(id)?.name ?? "";
+                        return BoardState.getField(id)?.name ?? "";
                 case "field options": {
-                        for (const field of BoardStore.fields.values()) {
-                                if (field.options?.some(fh => fh.id === id)) {
+                        for (const field of BoardState.fields.values()) {
+                                if (field.options && field.options[id] != undefined) {
                                         return field.name ?? "";
                                 }
                         }
                         return "";
                 }
                 case "automation": {
-                        for (const [fieldId, automations] of BoardStore.automations.entries()) {
+                        for (const [fieldId, automations] of BoardState.automations.entries()) {
                                 if (automations.some(a => a.id === id)) {
-                                        return BoardStore.getField(fieldId)?.name ?? "";
+                                        return BoardState.getField(fieldId)?.name ?? "";
                                 }
                         }
                         return "";

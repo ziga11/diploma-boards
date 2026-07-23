@@ -2,7 +2,7 @@ import { HTML } from "./html";
 import DOMPurify from 'dompurify';
 import type { Field, FieldOption } from "./types";
 import { resizeFieldProps, swapFieldProps } from "./event";
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 import { setStateClass } from "@/core/utils/dom";
 import { PermissionId } from "@/core/types/auth";
 import { entryEvents } from "../entries/custom-events";
@@ -95,13 +95,13 @@ export function populateFieldEditModal(field: Field): void {
 
         if (field.type === "status") {
                 HTML.editModal.status.list.innerHTML = "";
-                for (const option of field.options ?? []) {
+                for (const option of Object.values(field.options ?? {})) {
                         HTML.editModal.status.list.appendChild(createStatusOption(option));
                 }
                 HTML.editModal.status.section.classList.remove("d-none");
         }
         else if (field.type == "button") {
-                const option = field?.options?.at(0);
+                const option = Object.values(field.options!)[0];
                 HTML.editModal.button.section.classList.remove("d-none");
 
                 const input = HTML.editModal.button.input
@@ -124,6 +124,8 @@ export async function fieldDrag(e: MouseEvent) {
 
         const field1 = swapFieldProps.field1;
         const field2 = (increase ? field1.nextElementSibling : field1.previousElementSibling) as HTMLDivElement;
+
+        if (field2.className != "field-div") return;
 
         const fieldSwapObj = { field1, field2 };
 
@@ -188,19 +190,17 @@ export function appendFieldDivs(fields: Array<Field>) {
 }
 
 export function applyPermissionRestrictions() {
-        const permission = BoardStore.permissionId;
+        const permission = BoardState.permissionId;
         if (!permission) throw new Error(`Permission not set`);
 
         const isMember = permission == PermissionId.Member;
 
-        HTML.fieldCheck.disabled = isMember;
-        HTML.editModal.input.disabled = isMember;
-        HTML.editModal.deleteBtn.disabled = isMember;
-        HTML.editModal.button.input.disabled = isMember;
-        HTML.editModal.status.addBtn.disabled = isMember;
-        HTML.editModal.status.addInput.disabled = isMember;
-
-        if (permission >= PermissionId.Editor) {
+        if (isMember) {
+                const editField = HTML.fieldDropdown.querySelector(`#edit-field`) as HTMLButtonElement;
+                editField.style.display = "none";
+                HTML.fieldCheck.disabled = true;
+        }
+        else if (permission >= PermissionId.Editor) {
                 setStateClass([HTML.newFieldBtn], [], "shown")
         }
 }
@@ -227,7 +227,7 @@ function updateLiveFieldWidth(fieldId: string, width: number) {
 }
 
 export function addDynamicFieldWidthToStorage(fieldId: string, width: number) {
-        const boardId = BoardStore.boardId;
+        const boardId = BoardState.boardId;
 
         let widths = localStorage.getItem(`board_${boardId}_column_widths`);
         const widthRecords = (!widths ? {} : JSON.parse(widths)) as Record<string, number>;
@@ -239,7 +239,7 @@ export function addDynamicFieldWidthToStorage(fieldId: string, width: number) {
 }
 
 export function initFieldWidthStyles() {
-        const boardId = BoardStore.boardId;
+        const boardId = BoardState.boardId;
         const widths = localStorage.getItem(`board_${boardId}_column_widths`);
         if (!widths) return;
 

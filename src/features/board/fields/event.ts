@@ -1,11 +1,12 @@
 import { closeDialog, setStateClass, showToast } from "@/core/utils/dom";
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 import { HTML } from "./html";
 import { deleteField, insertFieldAndEntries, insertFieldOption, removeFieldOption, switchIndex, updateFieldName, updateFieldOption } from "./logic";
 import { addDynamicFieldWidthToStorage, addHTMLField, applyPermissionRestrictions, createStatusOption, fieldDrag, populateFieldEditModal, resizeField, swapField, toggleNewFieldMenu } from "./view";
 import type { Field, FieldOption } from "./types";
 import { entryEvents, } from "../entries/custom-events";
 import { fieldEvents } from "./custom-events";
+import { PermissionId } from "@/core/types/auth";
 
 interface DragInterface {
         field1?: HTMLDivElement,
@@ -26,7 +27,7 @@ export let swapFieldProps = {} as DragInterface
 export let resizeFieldProps = {} as ResizeInterface
 
 export function initFieldEvents() {
-        if (BoardStore.isInitialized) return;
+        if (BoardState.isInitialized) return;
 
         HTML.newFieldBtn.addEventListener("click", (e: MouseEvent) => {
                 e.stopPropagation();
@@ -40,7 +41,7 @@ export function initFieldEvents() {
 
                 const field = { id: crypto.randomUUID(), type: fieldType, index: 10000 } as Field
 
-                const entryIds = Array.from({ length: BoardStore.rowCount.all }, () => crypto.randomUUID());
+                const entryIds = Array.from({ length: BoardState.rowCount.all }, () => crypto.randomUUID());
 
                 window.dispatchEvent(entryEvents.newFieldEntries({ field, entryIds }));
 
@@ -51,9 +52,9 @@ export function initFieldEvents() {
                 insertFieldAndEntries(fieldType!, field.id!, entryIds)
                         .then(data => {
                                 const newField = data.field;
-                                newField.options = newField.options ?? [];
+                                newField.options = newField.options ?? {};
 
-                                BoardStore.fields.set(newField.id!, newField);
+                                BoardState.fields.set(newField.id!, newField);
 
                                 fieldElem.dataset.order = `${data.field.index}`;
 
@@ -229,8 +230,8 @@ export function initFieldEvents() {
                         ascending?.classList.remove("active");
                         descending?.classList.remove("active");
 
-                        if (BoardStore.sortedBy.fieldId == fieldId) {
-                                const option = BoardStore.sortedBy.ascending ? ascending : descending;
+                        if (BoardState.sortedBy.fieldId == fieldId) {
+                                const option = BoardState.sortedBy.ascending ? ascending : descending;
 
                                 option?.classList.add("active");
                         }
@@ -251,7 +252,7 @@ export function initFieldEvents() {
                 if (!fieldId) return;
 
                 if (elem.id === "edit-field") {
-                        const field = BoardStore.getField(fieldId!) as Field;
+                        const field = BoardState.getField(fieldId!) as Field;
                         populateFieldEditModal(field);
 
                         closeDialog(HTML.fieldDropdown);
@@ -260,16 +261,16 @@ export function initFieldEvents() {
                 else {
                         const ascending = elem.id === "sort-ascending-btn";
 
-                        const boardId = BoardStore.boardId!;
+                        const boardId = BoardState.boardId!;
 
-                        const currSort = BoardStore.sortedBy;
+                        const currSort = BoardState.sortedBy;
                         if (currSort?.fieldId == fieldId && currSort.ascending == ascending) {
-                                BoardStore.setSortedBy(undefined, undefined);
+                                BoardState.setSortedBy(undefined, undefined);
                                 localStorage.removeItem(`${boardId}-sort-field-id`);
                                 localStorage.setItem(`${boardId}-sort-ascending`, "t");
                         }
                         else {
-                                BoardStore.setSortedBy(fieldId, ascending);
+                                BoardState.setSortedBy(fieldId, ascending);
 
                                 if (fieldId) {
                                         localStorage.setItem(`${boardId}-sort-field-id`, fieldId);
@@ -321,7 +322,7 @@ export function initFieldEvents() {
                 const field1 = HTML.fieldsDiv.querySelector(`.field-div[data-field-id="${fieldId}"]`) as HTMLDivElement;
                 field1.remove();
 
-                BoardStore.fields.delete(fieldId);
+                BoardState.fields.delete(fieldId);
         });
 
         window.addEventListener(fieldEvents.realtimeSwapField.type, (e: Event) => {
@@ -342,7 +343,7 @@ export function initFieldEvents() {
         window.addEventListener(fieldEvents.fieldNameUpdate.type, (e: Event) => {
                 const { id, name } = (e as ReturnType<typeof fieldEvents.fieldNameUpdate>).detail;
 
-                const f = BoardStore.getField(id!) as Field;
+                const f = BoardState.getField(id!) as Field;
                 f.name = name!;
 
                 const fieldDiv = HTML.fieldsDiv.querySelector(`.field-div[data-field-id="${id}"]`) as HTMLDivElement;
@@ -357,9 +358,7 @@ export function initFieldEvents() {
         window.addEventListener(fieldEvents.addField.type, (e: Event) => {
                 const field = (e as ReturnType<typeof fieldEvents.addField>).detail;
 
-                field.options = [];
-
-                BoardStore.fields.set(field.id!, field);
+                BoardState.setField(field);
 
                 addHTMLField(field);
         });
@@ -367,16 +366,16 @@ export function initFieldEvents() {
         window.addEventListener(fieldEvents.addFieldOption.type, (e: Event) => {
                 const { id, fieldId, value, accountId } = (e as ReturnType<typeof fieldEvents.addFieldOption>).detail;
 
-                const field = BoardStore.getField(fieldId);
+                const field = BoardState.getField(fieldId);
                 if (!field) return;
 
                 const option = { id, field_id: fieldId, value, account_id: accountId };
 
                 if (!field.options) {
-                        field.options = [];
+                        field.options = {};
                 }
 
-                field.options!.push(option);
+                field.options[id] = option;
 
                 if (!HTML.editModal.dialog.open || HTML.editModal.idSpan.innerText != fieldId)
                         return;
@@ -391,13 +390,12 @@ export function initFieldEvents() {
         window.addEventListener(fieldEvents.updateFieldOption.type, (e: Event) => {
                 const { id, fieldId, oldValue, value, accountId } = (e as ReturnType<typeof fieldEvents.updateFieldOption>).detail;
 
-                const field = BoardStore.getField(fieldId);
+                const field = BoardState.getField(fieldId);
                 if (!field) return;
 
                 const option = { id, field_id: fieldId, value, account_id: accountId } as FieldOption;
 
-                const index = field.options!.findIndex(fh => fh.id == id)!;
-                field.options![index] = option;
+                field.options![id] = option
 
                 window.dispatchEvent(entryEvents.entryChangeFieldValues({ field_id: fieldId, value, old_value: oldValue }));
 
@@ -420,10 +418,10 @@ export function initFieldEvents() {
         window.addEventListener(fieldEvents.removeFieldOption.type, (e: Event) => {
                 const { fieldId, id, inputValue } = (e as ReturnType<typeof fieldEvents.removeFieldOption>).detail;
 
-                const field = BoardStore.getField(fieldId);
+                const field = BoardState.getField(fieldId);
                 if (!field) return;
 
-                field.options = field.options?.filter(fh => fh.id != id);
+                delete field.options![id];
 
                 if (!HTML.editModal.dialog.open || HTML.editModal.idSpan.innerText != fieldId) {
                         return;
@@ -443,16 +441,16 @@ export function initFieldEvents() {
                 modalOption.style.display = visible ? "flex" : "none";
         });
 
-        window.addEventListener(fieldEvents.disposeAll.type, () => {
-                if (!BoardStore.isInitialized) return;
+        window.addEventListener(fieldEvents.clearFields.type, () => {
+                if (!BoardState.isInitialized) return;
                 HTML.fieldsDiv.querySelectorAll(".field-div").forEach(el => el.remove());
         });
 
         document.addEventListener("mousedown", (e: MouseEvent) => {
                 const elem = e.target as HTMLDivElement;
-                console.log(elem);
-
                 if (elem.classList[0] == "field-div") {
+                        const permission = BoardState.permissionId;
+                        if (permission == PermissionId.Member) return;
                         swapFieldProps = {
                                 leeway: 0,
                                 field1: elem,
@@ -481,6 +479,8 @@ export function initFieldEvents() {
                 document.removeEventListener("mousemove", fieldDrag);
 
                 if (swapFieldProps.isDragging) {
+                        const permission = BoardState.permissionId;
+                        if (permission == PermissionId.Member) return;
 
                         const fieldId1 = swapFieldProps.field1?.dataset.fieldId;
                         const fieldId2 = swapFieldProps.field2?.dataset.fieldId;

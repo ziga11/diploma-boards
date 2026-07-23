@@ -1,12 +1,12 @@
 import { supabase } from "@/core/api/supabase";
 import type { FieldOption } from "./types";
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 import type { Field } from "./types";
 import type { Entry } from "../entries/types";
 
 export async function insertFieldAndEntries(type: string, fieldId: string, entryIds: Array<string>): Promise<{ field: Field, entries: Array<Entry> }> {
         const acc = await supabase.getAccount();
-        const boardId = BoardStore.boardId;
+        const boardId = BoardState.boardId;
 
         if (!boardId || !acc) throw new Error("Bug occourred, account or boardId not set");
 
@@ -20,20 +20,10 @@ export async function insertFieldAndEntries(type: string, fieldId: string, entry
 }
 
 export async function fetchFields() {
-        const boardId = BoardStore.boardId;
+        const boardId = BoardState.boardId;
         if (!boardId) throw new Error(`Cannot fetch fields, boardId not set`);
 
         return supabase.fetchFields(boardId);
-}
-
-export async function setFieldOptions(fields: Array<Field>) {
-        const fieldOptionsMap = await supabase.fetchFieldOptions(fields!.map(e => e.id!));
-
-        for (const field of fields) {
-                const fieldOptions = fieldOptionsMap.get(field.id!) as Array<FieldOption>;
-
-                field.options = fieldOptions ?? [];
-        }
 }
 
 export async function deleteField(fieldId: string) {
@@ -54,7 +44,7 @@ export async function insertFieldOption(id: string, fieldId: string, value: stri
 }
 
 export async function switchIndex(fieldId1: string, fieldId2: string) {
-        const boardId = BoardStore.boardId;
+        const boardId = BoardState.boardId;
 
         if (!boardId) throw new Error("BoardId not set");
 

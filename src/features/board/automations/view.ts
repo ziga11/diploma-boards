@@ -3,7 +3,7 @@ import { HTML } from "./html";
 import { automationState } from "./state";
 import type { Automation } from "./types";
 import { AutomationId } from "./types";
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 import { createAutomation, createFieldOption, } from "./view-utils";
 
 const fieldLinker: Partial<Record<AutomationId, string>> = {
@@ -81,7 +81,7 @@ export function fillFields() {
 
         if (!fieldDependent) return;
 
-        for (const field of Array.from(BoardStore.fields.values())) {
+        for (const field of Array.from(BoardState.fields.values())) {
                 if (!fieldDependent || type == field.type!) {
                         options.push(createFieldOption(field));
                 }

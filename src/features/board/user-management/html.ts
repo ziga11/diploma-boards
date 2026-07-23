@@ -12,6 +12,13 @@ export const HTML = {
         manageUsers: {
                 get div() { return activePage().querySelector("#manage-users-section") as HTMLDivElement },
                 get userContainer() { return activePage().querySelector("#manage-users-section")?.querySelector(".user-container") as HTMLDivElement },
+
+                get title() { return activePage().querySelector("#manage-users-section")?.querySelector(".add-user-title") as HTMLParagraphElement },
+                get subtitle() { return activePage().querySelector("#manage-users-section")?.querySelector(".add-user-subtitle") as HTMLParagraphElement },
+
+                get addedUsersContainer() { return activePage().querySelector("#manage-users-section")?.querySelector(".added-users-container") as HTMLDivElement },
+                get invitedUsersContainer() { return activePage().querySelector("#manage-users-section")?.querySelector(".invited-users-container") as HTMLDivElement },
+
                 get btn() { return activePage().querySelector("#manage-users-section-btn") as HTMLInputElement },
         },
 

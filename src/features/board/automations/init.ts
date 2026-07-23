@@ -1,5 +1,5 @@
 import "./automations.css";
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 import { initAutomationEvents } from "./event";
 import { HTML } from "./html";
 import { fetchAutomations } from "./logic";
@@ -13,5 +13,5 @@ export async function initAutomations() {
 
         HTML.modify.existingAutomations.append(...automationsArr);
 
-        BoardStore.setAutomations(automations);
+        BoardState.setAutomations(automations);
 }

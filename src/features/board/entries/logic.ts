@@ -1,10 +1,10 @@
 import { supabase } from "@/core/api/supabase";
 import type { Entry } from "./types";
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 import { AutomationId } from "../automations/types";
 
 export function fetchPagedEntries(fieldCount: number) {
-        const boardId = BoardStore.boardId;
+        const boardId = BoardState.boardId;
         if (!boardId) throw new Error(`Failed to fetch entries, board id not set`);
 
         return supabase.fetchPagedEntries(boardId, fieldCount);
@@ -20,11 +20,11 @@ export function extractEntryValue(entryHTML: HTMLInputElement | HTMLDivElement):
         return (entryHTML instanceof HTMLDivElement) ? entryHTML.innerText : entryHTML.value;
 }
 
-export async function insertEmptyEntryRows(ids: Array<string>): Promise<Array<number>> {
+export async function insertEmptyEntryRows(ids: Record<string, string>[]): Promise<{ entries: Entry[], row_index: number }[]> {
         return await supabase.insertEmptyEntryRows(ids);
 }
 
-export async function insertEntryRows(entryRows: Array<Array<Entry>>): Promise<Array<number>> {
+export async function insertEntryRows(entryRows: Entry[][]): Promise<Array<number>> {
         return await supabase.insertEntryRows(entryRows);
 }
 
@@ -47,7 +47,7 @@ export async function deleteRows(indices: Array<number>) {
         const acc = await supabase.getAccount();
         if (!acc) throw new Error("Failed to get the account");
 
-        const boardId = BoardStore.boardId;
+        const boardId = BoardState.boardId;
         if (!boardId) throw new Error("Failed to get the boardId");
 
         return supabase.deleteEntryRows(boardId, indices);

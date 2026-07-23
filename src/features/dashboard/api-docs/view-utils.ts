@@ -62,7 +62,7 @@ export async function renderEndpoints(resource: string) {
                 <div class="api-divider"></div>
                 <div>
                     <div class="api-section-label">Response</div>
-                    <div class="api-response-box">${ep.response}</div>
+                    ${ep.responses ? ep.responses.forEach(resp => `<div class="api-response-box">${resp}</div>`) : `<div class="api-response-box">${ep.response}</div>`}
                 </div>
             </div>
         </div>

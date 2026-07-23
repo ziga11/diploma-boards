@@ -1,9 +1,9 @@
 import type { RealtimeChannel, RealtimePostgresDeletePayload, RealtimePostgresInsertPayload, SupabaseClient } from "@supabase/supabase-js";
-import { BoardStore } from "@/features/board/board-state";
+import { BoardState } from "@/features/board/board-state";
 import { entryEvents } from "@/features/board/entries/custom-events";
 import { fieldEvents } from "@/features/board/fields/custom-events";
 import type { FieldOption } from "@/features/board/fields/types";
-import type { BoardCollaborator, InsertNotification } from "@/features/board/user-management/types";
+import type { InsertNotification } from "@/features/board/user-management/types";
 import type { Board } from "@/features/dashboard/add-board/types";
 import { notificationEvents } from "@/features/dashboard/notifications/custom-events";
 import { dashboardEvents } from "@/features/dashboard/workspace/custom-events";
@@ -49,7 +49,7 @@ export class RealtimeManager {
                                 event: 'INSERT',
                                 schema: 'public',
                                 table: 'notification',
-                                filter: `to_acc_id=eq.${acc.id}`
+                                filter: `to_account_id=eq.${acc.id}`
                         }, async (payload: RealtimePostgresInsertPayload<InsertNotification>) => {
                                 handleNotificationInserted(payload.new);
                         })
@@ -57,7 +57,7 @@ export class RealtimeManager {
                                 event: 'DELETE',
                                 schema: 'public',
                                 table: 'notification',
-                                filter: `to_acc_id=eq.${acc.id}`
+                                filter: `to_account_id=eq.${acc.id}`
                         }, async (payload: RealtimePostgresDeletePayload<InsertNotification>) => {
                                 handleNotificationDeleted(payload.old.id!);
                         })
@@ -148,24 +148,36 @@ async function handleBoardRealtime(eventType: string, data: Board) {
         }
 }
 
-async function handleBoardCollaboratorRealtime(eventType: string, data: BoardCollaborator, acc: Account) {
+async function handleBoardCollaboratorRealtime(eventType: string, data: any, acc: Account) {
         switch (eventType) {
-                case 'INVITE-COLLABORATOR':
-                        BoardStore.addCollaborator(data);
+                case 'INSERT-INVITATION':
+                        BoardState.addInvitedCollaborator(data);
+
+                        window.dispatchEvent(userManagementEvents.addInvitedCollaborator(data));
+                        break;
+                case 'COLLABORATION-INVITATION-ACCEPTED':
+                        BoardState.addCollaborator(data);
+
                         window.dispatchEvent(userManagementEvents.addCollaborator(data));
                         break;
                 case 'UPDATE-COLLABORATOR':
+                        BoardState.updateCollaboratorPermission(data.account_id, data.permission_id);
 
-                        BoardStore.updateCollaboratorPermission(data.account_id, data.permission_id);
                         if (acc.id != data.account_id) return
-                        BoardStore.setPermissionId(data.permission_id);
+                        BoardState.setPermissionId(data.permission_id);
 
                         window.dispatchEvent(topToolbarEvents.applyPermissionRestrictions());
                         window.dispatchEvent(fieldEvents.applyPermissionRestrictions());
+                        window.dispatchEvent(entryEvents.applyPermissionRestrictions());
 
                         break;
+                case 'REMOVE-INVITATION':
+                        BoardState.removeInvitedCollaborator(data.to_email);
+
+                        window.dispatchEvent(userManagementEvents.removeInvitedCollaborator(data));
+                        break;
                 case 'REMOVE-COLLABORATOR':
-                        BoardStore.removeCollaborator(data.account_id);
+                        BoardState.removeCollaborator(data.account_id);
 
                         window.dispatchEvent(userManagementEvents.removeCollaborator(data.account_id));
                         if (acc.id == data.account_id) {
@@ -195,11 +207,12 @@ async function handleFieldRealtime(eventType: string, data: any) {
                         window.dispatchEvent(fieldEvents.fieldNameUpdate(data));
                         break;
                 case 'UPDATE-SWAP':
+                        console.log("UPDATE SWAPPPP", data);
+
                         window.dispatchEvent(fieldEvents.realtimeSwapField(data));
 
                         data.styleSwap = true;
                         window.dispatchEvent(entryEvents.swapDOM(data));
-
                         break;
                 case 'DELETE':
                         window.dispatchEvent(fieldEvents.removeField(data.id))
@@ -225,6 +238,7 @@ async function handleEntryRealtime(eventType: string, data: any) {
         switch (eventType) {
                 case 'INSERT-ROWS':
                         const rows = data as Array<{ entries: Array<Entry>, index: number }>;
+
                         window.dispatchEvent(entryEvents.realtimeNewRows(rows))
                         break;
                 case "INSERT-FIELD":

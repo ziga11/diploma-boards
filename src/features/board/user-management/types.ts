@@ -3,7 +3,6 @@ import type { PermissionId } from "@/core/types/auth";
 export interface InsertNotification {
         id?: string;
         from_acc_id: string;
-        to_acc_id?: string;
         to_acc_email?: string;
         message: string;
         state: 'pending';
@@ -30,14 +29,21 @@ export interface NotificationFetchObject {
         all: Array<ViewNotification>;
 }
 
-export interface BoardCollaborator {
-        id: string;
+export interface Collaborator {
         account_id: string;
         name: string,
         avatar_url: string,
         email: string,
         permission_id: PermissionId;
         added_at: Date;
+        is_invited: boolean;
+}
+
+export interface InvitedCollaborator {
+        invited_by: Account,
+        permission_id: PermissionId,
+        to_email: string,
+        created_at: Date
 }
 
 export interface BoardAccLink {

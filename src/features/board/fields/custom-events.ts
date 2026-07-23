@@ -11,7 +11,7 @@ export const fieldEvents = {
                 { type: "field:swap" as const }
         ),
 
-        disposeAll: Object.assign(
+        clearFields: Object.assign(
                 () => new CustomEvent("field:dispose-all"),
                 { type: "field:dispose-all" as const }
         ),

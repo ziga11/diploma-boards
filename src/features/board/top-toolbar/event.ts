@@ -1,11 +1,10 @@
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 import { entryEvents } from "../entries/custom-events";
 import { HTML } from "./html";
 import { navigate } from "@/core/utils/router";
 import { automationEvents } from "../automations/custom-events";
 import { workspaceEvents } from "../workspace/custom-events";
 import { userManagementEvents } from "../user-management/custom-events";
-import { fieldEvents } from "../fields/custom-events";
 import { recoverBoard } from "./logic";
 import { historyEvents } from "../history/custom-events";
 import { dashboardEvents } from "@/features/dashboard/workspace/custom-events";
@@ -13,13 +12,13 @@ import { applyPermissionRestrictions } from "./view";
 import { topToolbarEvents } from "./custom-events";
 
 export function initTopToolbarEvents() {
-        if (BoardStore.isInitialized) return;
+        if (BoardState.isInitialized) return;
 
         HTML.btns.recover.addEventListener("click", () => {
                 recoverBoard()
                         .then(_ => applyPermissionRestrictions());
 
-                const id = BoardStore.boardId;
+                const id = BoardState.boardId;
                 if (!id) return;
 
 
@@ -36,9 +35,6 @@ export function initTopToolbarEvents() {
         });
 
         HTML.backButton.addEventListener("click", () => {
-                window.dispatchEvent(fieldEvents.disposeAll());
-                window.dispatchEvent(entryEvents.disposeAll());
-
                 navigate("/dashboard");
         });
 

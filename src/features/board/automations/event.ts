@@ -3,16 +3,16 @@ import { deleteAutomation, insertAutomation } from "./logic";
 import { automationState, clearState } from "./state";
 import { addAutomations, fillFields, previousDiv, hideAutomation, setDiv, removeAutomation, showAutomation } from "./view";
 import { showToast } from "@/core/utils/dom";
-import { BoardStore } from "../board-state";
+import { BoardState } from "../board-state";
 import { automationEvents } from "./custom-events";
 import { AutomationId, type Automation } from "./types";
 import { supabase } from "@/core/api/supabase";
 
 export function initAutomationEvents() {
-        if (BoardStore.isInitialized) return;
+        if (BoardState.isInitialized) return;
 
         [HTML.create.btn, HTML.modify.createAutomationCta].forEach(btn => {
-                const hasFields = BoardStore.fields.size > 0;
+                const hasFields = BoardState.fields.size > 0;
 
                 btn.addEventListener("click", () => setDiv(hasFields ? HTML.create.type.div : HTML.create.noFields));
         });
@@ -52,7 +52,7 @@ export function initAutomationEvents() {
                 let errText = "";
 
                 const acc = await supabase.getAccount();
-                const boardId = BoardStore.boardId;
+                const boardId = BoardState.boardId;
 
                 if (!acc) { errText = "Failed to get the account"; }
                 else if (!boardId) { errText = "Failed to get the boardId"; }
@@ -124,7 +124,7 @@ export function initAutomationEvents() {
         });
 
         window.addEventListener(automationEvents.showModal.type, () => {
-                const hasFields = BoardStore.fields.size > 0;
+                const hasFields = BoardState.fields.size > 0;
                 setDiv(hasFields ? HTML.create.type.div : HTML.create.noFields);
                 HTML.modal.showModal();
         });

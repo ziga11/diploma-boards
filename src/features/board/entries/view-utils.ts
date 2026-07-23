@@ -3,27 +3,29 @@ import { HTML } from "./html";
 import { firstDeepestNode } from "./logic";
 import type { Entry } from "./types";
 
-export function createStatusEntry(entry: Entry): HTMLDivElement {
+export function createStatusEntry(entry: Entry, options?: Record<string, FieldOption>): HTMLDivElement {
         const div = Object.assign(document.createElement("div"), {
                 className: "entry-status entry",
-                title: entry.value ?? "",
-                innerText: entry.value ?? ""
+                title: entry.option_id ? options![entry.option_id].value : "",
+                innerText: (entry.option_id ? options![entry.option_id].value : "")
         });
 
         return div;
 }
 
-export function createButtonEntry(entry: Entry): HTMLDivElement {
+export function createButtonEntry(entry: Entry, options?: Record<string, FieldOption>): HTMLDivElement {
         const div = Object.assign(document.createElement("div"), { className: "entry" });
+
+        const val = entry.option_id ? options![entry.option_id!].value : "";
+
         const btn = Object.assign(document.createElement("button"), {
                 type: "button",
                 className: "btn-entry",
-                title: entry?.value,
         });
 
-        const span = Object.assign(document.createElement("span"), { innerText: entry?.value ?? "", });
-
+        const span = Object.assign(document.createElement("span"), { innerText: val });
         btn.appendChild(span);
+
         div.appendChild(btn);
         return div;
 }

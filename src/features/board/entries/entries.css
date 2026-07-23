@@ -48,6 +48,11 @@
         width: fit-content;
 }
 
+.entries-div.disabled {
+        opacity: 0.9;
+        pointer-events: none;
+}
+
 .entry-rows {
         height: 390px;
         padding-right: 10px;
