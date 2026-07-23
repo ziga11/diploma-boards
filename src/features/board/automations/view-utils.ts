@@ -32,12 +32,10 @@ function getFieldIcon(type: string): string {
 
 function automationIcon(automationId: AutomationId): string {
         const icons: Record<string, string> = {
-                [AutomationId.TextChange]: `<i class="ti ti-text-scan-2"></i>`,
+                [AutomationId.EntryChange]: `<i class="ti ti-text-scan-2"></i>`,
                 [AutomationId.ButtonPress]: `<i class="ti ti-click"></i>`,
-                [AutomationId.StatusChange]: `<i class="ti ti-list-details"></i>`,
-                [AutomationId.ItemCreated]: `<i class="ti ti-rectangular-prism-plus"></i>`,
-                [AutomationId.ItemDeleted]: `<i class="ti ti-rectangular-prism-off"></i>`,
-                [AutomationId.AnyFieldChange]: `<i class="ti ti-replace"></i>`,
+                [AutomationId.RowCreated]: `<i class="ti ti-rectangular-prism-plus"></i>`,
+                [AutomationId.RowRemoved]: `<i class="ti ti-rectangular-prism-off"></i>`,
         };
         return icons[automationId]!;
 }
@@ -56,14 +54,17 @@ export function createAutomation(automation: Automation): HTMLDivElement {
         const div = Object.assign(document.createElement('div'), { className: "created-board-automation", });
         div.dataset.id = `${automation.id}`;
 
+        const type = AutomationId[automation.automation_id]
+                .replace(/(?<=[a-z])(?=[A-Z])/g, ' ');
+
         div.innerHTML = DOMPurify.sanitize(`
                 <div class="automation-entry-icon">
                     ${automationIcon(automation.automation_id)}
                 </div>
                 <div class="automation-entry-info">
-                    <span class="automation-entry-type">${AutomationId[automation.automation_id]}</span>
+                    <span class="automation-entry-type">${type}</span>
                     <span class="automation-entry-url"  title="${automation.url_call}">${truncateUrl(automation.url_call)}</span>
-                    <span class="automation-field-id" title=${automation.field_id}>${automation.field_id}...</span>
+                    <span class="automation-field-id" title="${automation.field_id ?? 'Not Field Based'}">${automation.field_id ?? 'Not Field Based'}</span>
                 </div>
                 <button class="automation-entry-delete" aria-label="Delete automation">
                     <i class="ti ti-x"></i>

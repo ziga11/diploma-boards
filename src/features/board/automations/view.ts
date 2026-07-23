@@ -6,12 +6,6 @@ import { AutomationId } from "./types";
 import { BoardState } from "../board-state";
 import { createAutomation, createFieldOption, } from "./view-utils";
 
-const fieldLinker: Partial<Record<AutomationId, string>> = {
-        [AutomationId.TextChange]: "text",
-        [AutomationId.StatusChange]: "status",
-        [AutomationId.ButtonPress]: "button",
-};
-
 export function previousDiv() {
         const active = automationState.activeDiv;
         if (!active) return;
@@ -74,15 +68,15 @@ export function showAutomation(elem: HTMLDivElement) {
 export function fillFields() {
         if (!automationState.automationId) return;
 
-        let options = [];
-        const type = fieldLinker[automationState.automationId];
-
-        const fieldDependent = automationState.automationId <= AutomationId.ButtonPress;
-
-        if (!fieldDependent) return;
+        const options = [];
 
         for (const field of Array.from(BoardState.fields.values())) {
-                if (!fieldDependent || type == field.type!) {
+                if (automationState.automationId === AutomationId.ButtonPress) {
+                        if (field.type == "button") {
+                                options.push(createFieldOption(field));
+                        }
+                }
+                else {
                         options.push(createFieldOption(field));
                 }
         }

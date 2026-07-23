@@ -92,16 +92,16 @@
 
 .automation-options-container {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
+        grid-template-columns: repeat(2, 1fr);
+        row-gap: 1rem;
         justify-items: center;
 }
 
 .automation-option {
         display: grid;
         position: relative;
-        width: 135px;
-        height: 155px;
+        width: 160px;
+        height: 160px;
         text-align: center;
         justify-content: center;
         align-content: center;
@@ -183,8 +183,9 @@
 .automation-fields-wrap {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 1em;
         padding-top: 1.5rem;
+        max-width: 840px;
 }
 
 .field-automation-selection:has(.automation-fields-wrap:empty) .automation-no-existing-fields {

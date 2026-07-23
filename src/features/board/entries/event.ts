@@ -1,10 +1,9 @@
 import { closeDialog, setStateClass, showToast } from "@/core/utils/dom";
 import { HTML } from "./html";
 import { changeAllEntryChecks, changeFieldEntries, createEntryCopiesFromEntrySet, createEntryRow, createFieldEntries, entryCheckChange, setEntryRows, setupStatusDropdown, swapEntriesDOM, swapEntriesVisually, updateFieldEntries } from "./view";
-import { updateEntry, deleteRows, triggerAutomation, insertEntryRows, insertEmptyEntryRows, } from "./logic";
+import { updateEntry, deleteRows, insertEntryRows, insertEmptyEntryRows, btnPress, } from "./logic";
 import { BoardState } from "../board-state";
 import { entryEvents } from "./custom-events";
-import { AutomationId } from "../automations/types";
 import { changeDeepestValue } from "./view-utils";
 import type { Entry } from "./types";
 import { PermissionId } from "@/core/types/auth";
@@ -294,12 +293,9 @@ export function initEntryEvents() {
                 const btnDiv = (e as ReturnType<typeof entryEvents.btnTriggered>).detail;
 
                 const entryId = btnDiv.dataset.entryId;
-                const fieldId = btnDiv.dataset.fieldId;
+                if (!entryId) return;
 
-                const entrySet = btnDiv.parentElement as HTMLDivElement;
-                const rowIndex = Number(entrySet.dataset.index);
-
-                triggerAutomation([AutomationId.ButtonPress], { entryId, fieldId, rowIndex })
+                btnPress(entryId)
         });
 
         window.addEventListener(entryEvents.newFieldEntries.type, (e: Event) => {

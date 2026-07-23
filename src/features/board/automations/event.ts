@@ -118,7 +118,7 @@ export function initAutomationEvents() {
 
                 deleteAutomation(id)
                         .then(a => {
-                                if ([AutomationId.TextChange, AutomationId.StatusChange, AutomationId.ButtonPress].includes(a.automation_id)) {
+                                if ([AutomationId.EntryChange, AutomationId.ButtonPress].includes(a.automation_id)) {
                                         BoardState.removeFieldAutomation(a.field_id!, a.id!);
                                 }
                                 else {

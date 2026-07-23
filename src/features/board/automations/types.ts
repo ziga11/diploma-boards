@@ -11,10 +11,8 @@ export interface Automation {
 
 
 export enum AutomationId {
-        TextChange = 1,
-        StatusChange,
+        EntryChange = 1,
         ButtonPress,
-        ItemCreated,
-        ItemDeleted,
-        AnyFieldChange,
+        RowCreated,
+        RowRemoved,
 }

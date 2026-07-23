@@ -1,7 +1,6 @@
 import { supabase } from "@/core/api/supabase";
 import type { Entry } from "./types";
 import { BoardState } from "../board-state";
-import { AutomationId } from "../automations/types";
 
 export function fetchPagedEntries(fieldCount: number) {
         const boardId = BoardState.boardId;
@@ -53,8 +52,6 @@ export async function deleteRows(indices: Array<number>) {
         return supabase.deleteEntryRows(boardId, indices);
 }
 
-export async function triggerAutomation(automationIds: AutomationId[], { entry, fieldId, entryId, rowIndex }: {
-        entryId?: string, boardId?: string, fieldId?: string, rowIndex?: number, entry?: Entry
-}) {
-        return supabase.triggerAutomation(automationIds, { entry, fieldId, entryId, rowIndex });
+export async function btnPress(entryId: string) {
+        return supabase.btnPressAutomation(entryId);
 }

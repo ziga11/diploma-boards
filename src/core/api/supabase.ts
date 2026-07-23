@@ -567,7 +567,7 @@ export class Supabase {
         }
 
         async updateEntry({ id, value, optionId }: { id: string, value?: string, optionId?: string }): Promise<void> {
-                const { data, error } = await this.client.rpc("update_entry", {
+                const { error } = await this.client.rpc("update_entry", {
                         p_entry_id: id,
                         p_value: value,
                         p_option_id: optionId,
@@ -579,82 +579,23 @@ export class Supabase {
 
                         throw error;
                 }
-
-                supabase.triggerAutomation([
-                        value ? AutomationId.TextChange : AutomationId.StatusChange,
-                        AutomationId.AnyFieldChange,
-                ], { entry: data });
         }
 
-        async triggerAutomation(automationIds: Array<AutomationId>, { entry, fieldId, entryId, rowIndex }: {
-                entryId?: string,
-                fieldId?: string,
-                rowIndex?: number,
-                entry?: Entry
-        }): Promise<boolean> {
+        async btnPressAutomation(entryId: string) {
                 const boardId = BoardState.boardId;
+                if (!boardId) throw new Error("Board ID not set");
 
-                const hasExplicitParams = fieldId != null && entryId != null && rowIndex != null && boardId != null;
-                if (!hasExplicitParams && !entry) {
-                        return false;
+                const { error } = await this.client.rpc("trigger_automation", {
+                        p_board_id: boardId,
+                        p_automation_id: AutomationId.ButtonPress,
+                        p_target_id: entryId,
+                });
+
+                if (error) {
+                        console.error(error);
+
+                        throw error;
                 }
-
-                const resolvedFieldId = fieldId ?? entry?.field_id;
-                const resolvedRowIndex = rowIndex ?? entry?.index;
-
-                if (!boardId || resolvedRowIndex == null) {
-                        return false;
-                }
-
-                const automations: Array<Automation> = [];
-                for (const automationId of automationIds) {
-                        if (automationId <= AutomationId.ButtonPress) {
-                                if (resolvedFieldId != null) {
-                                        const a = BoardState.getFieldAutomation(automationId, resolvedFieldId);
-                                        if (a) automations.push(a);
-                                }
-                        } else {
-                                const as = BoardState.getTypeAutomations(automationId);
-                                if (as) {
-                                        automations.push(...as);
-                                }
-                        }
-                }
-
-                if (automations.length === 0) return false;
-
-                const entries = await this.fetchEntries(boardId, { index: resolvedRowIndex });
-                const fields = Array.from(BoardState.fields.values());
-
-                const objArr: Record<string, { field: Field; entry: Entry }> = {};
-                for (let i = 0; i < fields.length; i++) {
-                        if (fields[i]?.id != null) {
-                                objArr[`${fields[i].id}`] = {
-                                        field: fields[i],
-                                        entry: entries[i],
-                                };
-                        }
-                }
-
-                for (const automation of automations) {
-                        const resp = await fetch(automation.url_call, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                        type: automation.type,
-                                        board_id: boardId,
-                                        row_count: fields.length,
-                                        rows: objArr,
-                                })
-                        });
-
-                        if (!resp.ok) {
-                                const text = await resp.text();
-                                throw new Error(`HTTP Error ${resp.status}: ${text}`);
-                        }
-                }
-
-                return true;
         }
 
         async deleteEntryRows(boardId: string, indices: Array<number>): Promise<void> {
