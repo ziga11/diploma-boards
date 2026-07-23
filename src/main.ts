@@ -7,11 +7,7 @@ window.addEventListener("popstate", () => navigate(window.location.pathname));
 document.addEventListener("click", (e: MouseEvent) => {
         const elem = e.target as HTMLElement;
         if (elem instanceof HTMLDialogElement) closeDialog(elem);
-})
-
-const page = window.location.href.replace(".html", "");
-await navigate(page);
-supabase.initRealTime();
+});
 
 document.addEventListener("click", (e) => {
         const btn = (e.target as HTMLElement).closest("dialog .btn-close, dialog .modal-close-btn");
@@ -19,4 +15,17 @@ document.addEventListener("click", (e) => {
         closeDialog(btn.closest("dialog") as HTMLDialogElement);
 });
 
-initToastLayerManagement();
+async function initApp() {
+        try {
+                initToastLayerManagement();
+
+                const page = window.location.href.replace(".html", "");
+                await navigate(page);
+
+                supabase.initRealTime();
+        } catch (err) {
+                console.error("Failed to initialize main.ts:", err);
+        }
+}
+
+initApp();
