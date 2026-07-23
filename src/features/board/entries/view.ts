@@ -130,7 +130,6 @@ export function createEntryRow(entries: Array<Entry>): HTMLDivElement {
         const checkbox = Object.assign(document.createElement("input"), {
                 type: "checkbox",
                 className: "entry-check",
-                disabled: BoardState.permissionId == PermissionId.Member
         });
         checkbox.dataset.boardId = BoardState.boardId!;
 
@@ -161,6 +160,7 @@ export function createEntryRow(entries: Array<Entry>): HTMLDivElement {
 
         const entriesDiv = Object.assign(document.createElement("div"), { className: "entries-div" });
         entriesDiv.classList.toggle("disabled", BoardState.permissionId == PermissionId.Member);
+        checkboxDiv.classList.toggle("disabled", BoardState.permissionId == PermissionId.Member);
         entriesDiv.append(...entryDivs);
 
         entrySet.append(checkboxDiv, pinDiv, entriesDiv);

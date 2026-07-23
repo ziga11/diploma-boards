@@ -938,16 +938,20 @@
         font-size: 12px;
 }
 
-.api-response-box {
+.api-json-block {
+        margin: 12px 0;
+        padding: 6px 12px;
+        background-color: #1e1e1e;
+        border-radius: 6px;
         background: #1a1c35;
-        border-radius: 8px;
-        padding: 12px 14px;
-        font-family: 'Courier New', monospace;
-        font-size: 12px;
-        color: #2ed573;
         white-space: pre;
         overflow-x: auto;
-        border: 0.5px solid rgba(255, 255, 255, 0.06);
+}
+
+.api-json-block code {
+        color: #2ed573;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
 }
 
 .api-divider {

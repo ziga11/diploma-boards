@@ -7,8 +7,7 @@ export async function insertAutomation(automation: Automation): Promise<Automati
 }
 
 export async function deleteAutomation(id: string) {
-        const automation = await supabase.deleteFieldAutomation(id);
-        BoardState.automations.delete(automation.field_id!);
+        return await supabase.deleteFieldAutomation(id);
 }
 
 export async function fetchAutomations(): Promise<Array<Automation>> {

@@ -3,7 +3,6 @@ import DOMPurify from 'dompurify';
 import type { Field, FieldOption } from "./types";
 import { resizeFieldProps, swapFieldProps } from "./event";
 import { BoardState } from "../board-state";
-import { setStateClass } from "@/core/utils/dom";
 import { PermissionId } from "@/core/types/auth";
 import { entryEvents } from "../entries/custom-events";
 
@@ -195,14 +194,11 @@ export function applyPermissionRestrictions() {
 
         const isMember = permission == PermissionId.Member;
 
-        if (isMember) {
-                const editField = HTML.fieldDropdown.querySelector(`#edit-field`) as HTMLButtonElement;
-                editField.style.display = "none";
-                HTML.fieldCheck.disabled = true;
-        }
-        else if (permission >= PermissionId.Editor) {
-                setStateClass([HTML.newFieldBtn], [], "shown")
-        }
+        const editField = HTML.fieldDropdown.querySelector(`#edit-field`) as HTMLButtonElement;
+        editField.style.display = isMember ? "none" : "flex";
+        HTML.fieldCheck.disabled = isMember;
+
+        HTML.newFieldBtn.classList.toggle("shown", permission >= PermissionId.Editor);
 }
 
 function updateLiveFieldWidth(fieldId: string, width: number) {

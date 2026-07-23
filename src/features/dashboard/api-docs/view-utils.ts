@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { HTML } from "./html";
 import type { EndPoint, EndPointParam } from "./types";
 
@@ -44,6 +45,38 @@ function renderBody(body: EndPointParam[]) {
             </div>`;
 }
 
+function formatJsonString(jsonStr: string, indentSize: number = 2): string {
+        if (!jsonStr) return '';
+
+        const regex = /"([^"\\]|\\.)*"|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null|[{}[\]:,]/g;
+
+        let indentLevel = 0;
+        let formatted = '';
+        let match: RegExpExecArray | null;
+
+        while ((match = regex.exec(jsonStr)) !== null) {
+                const token = match[0];
+
+                if (token === '{' || token === '[') {
+                        indentLevel++;
+                        formatted += token + '\n' + ' '.repeat(indentLevel * indentSize);
+                } else if (token === '}' || token === ']') {
+                        indentLevel = Math.max(0, indentLevel - 1);
+                        formatted += '\n' + ' '.repeat(indentLevel * indentSize) + token;
+                } else if (token === ',') {
+                        formatted += ',\n' + ' '.repeat(indentLevel * indentSize);
+                } else if (token === ':') {
+                        formatted += ': ';
+                } else {
+                        formatted += token;
+                }
+        }
+
+        const safeHtml = DOMPurify.sanitize(formatted);
+
+        return `<pre class="api-json-block"><code>${safeHtml}</code></pre>`;
+}
+
 export async function renderEndpoints(resource: string) {
         const docs = await getDocs();
         const container = HTML.endPoints;
@@ -62,11 +95,11 @@ export async function renderEndpoints(resource: string) {
                 <div class="api-divider"></div>
                 <div>
                     <div class="api-section-label">Response</div>
-                    ${ep.responses ? ep.responses.forEach(resp => `<div class="api-response-box">${resp}</div>`) : `<div class="api-response-box">${ep.response}</div>`}
+                    ${ep.responses ? ep.responses.map(resp => formatJsonString(resp)).join("") : `<div class="api-response-box">${ep.response}</div>`}
                 </div>
             </div>
         </div>
-    `).join('');
+        `).join('');
 
         container.querySelectorAll<HTMLDivElement>(".api-endpoint-header").forEach(header => {
                 header.addEventListener("click", () => {

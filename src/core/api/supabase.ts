@@ -583,8 +583,7 @@ export class Supabase {
                 supabase.triggerAutomation([
                         value ? AutomationId.TextChange : AutomationId.StatusChange,
                         AutomationId.AnyFieldChange,
-                ], data);
-
+                ], { entry: data });
         }
 
         async triggerAutomation(automationIds: Array<AutomationId>, { entry, fieldId, entryId, rowIndex }: {
@@ -595,34 +594,46 @@ export class Supabase {
         }): Promise<boolean> {
                 const boardId = BoardState.boardId;
 
-                if (!(fieldId && entryId && rowIndex && boardId) && !entry) {
+                const hasExplicitParams = fieldId != null && entryId != null && rowIndex != null && boardId != null;
+                if (!hasExplicitParams && !entry) {
+                        return false;
+                }
+
+                const resolvedFieldId = fieldId ?? entry?.field_id;
+                const resolvedRowIndex = rowIndex ?? entry?.index;
+
+                if (!boardId || resolvedRowIndex == null) {
                         return false;
                 }
 
                 const automations: Array<Automation> = [];
                 for (const automationId of automationIds) {
-                        const key = automationId <= AutomationId.ButtonPress ? fieldId ?? entry!.field_id! : `${automationId}`;
-
-                        const as = (BoardState.automations.get(key) ?? []) as Array<Automation>;
-                        for (const a of as) {
-                                if (a.automation_id === automationId) {
-                                        automations.push(a);
-                                        break;
+                        if (automationId <= AutomationId.ButtonPress) {
+                                if (resolvedFieldId != null) {
+                                        const a = BoardState.getFieldAutomation(automationId, resolvedFieldId);
+                                        if (a) automations.push(a);
+                                }
+                        } else {
+                                const as = BoardState.getTypeAutomations(automationId);
+                                if (as) {
+                                        automations.push(...as);
                                 }
                         }
                 }
 
-                if (!automations || automations.length == 0) return false;
+                if (automations.length === 0) return false;
 
-                const entries = await this.fetchEntries(boardId!, { index: rowIndex ?? entry!.index });
-                const fields = await this.fetchFields(boardId!);
+                const entries = await this.fetchEntries(boardId, { index: resolvedRowIndex });
+                const fields = Array.from(BoardState.fields.values());
 
                 const objArr: Record<string, { field: Field; entry: Entry }> = {};
                 for (let i = 0; i < fields.length; i++) {
-                        objArr[`${fields[i].id!}`] = {
-                                field: fields[i],
-                                entry: entries[i],
-                        };
+                        if (fields[i]?.id != null) {
+                                objArr[`${fields[i].id}`] = {
+                                        field: fields[i],
+                                        entry: entries[i],
+                                };
+                        }
                 }
 
                 for (const automation of automations) {
@@ -636,6 +647,7 @@ export class Supabase {
                                         rows: objArr,
                                 })
                         });
+
                         if (!resp.ok) {
                                 const text = await resp.text();
                                 throw new Error(`HTTP Error ${resp.status}: ${text}`);
@@ -686,7 +698,7 @@ export class Supabase {
                         throw error;
                 }
 
-                this.realtime.broadcastMutation("automation", "DELETE", { id })
+                this.realtime.broadcastMutation("automation", "DELETE", data)
 
                 return data as Automation;
         }

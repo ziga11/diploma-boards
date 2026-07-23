@@ -11,7 +11,7 @@ export async function initAutomations() {
         const automations = await fetchAutomations();
         const automationsArr = automations.map(automation => createAutomation(automation));
 
-        HTML.modify.existingAutomations.append(...automationsArr);
+        HTML.modify.existingAutomations.replaceChildren(...automationsArr);
 
         BoardState.setAutomations(automations);
 }

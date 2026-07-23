@@ -17,7 +17,9 @@ export function setDiv({ addUser }: { addUser: boolean }) {
 
 export function triggerRoleChangeDropdown(element: HTMLElement) {
         const accPermission = BoardState.permissionId;
-        const collabPermission = element.dataset.permission;
+        const collabPermission = element.dataset.permissionId;
+        console.log(collabPermission);
+
         if (!accPermission || accPermission < PermissionId.Admin || Number(collabPermission) >= accPermission) return;
 
         if (accPermission == PermissionId.Admin) {
@@ -28,7 +30,8 @@ export function triggerRoleChangeDropdown(element: HTMLElement) {
         const options = HTML.changeRoleDropdown.dialog.querySelectorAll("[data-permission-id]") as NodeListOf<HTMLDivElement>;
 
         for (const option of options) {
-                if (option.dataset.permission == collabPermission) {
+
+                if (option.dataset.permissionId == collabPermission) {
                         option.classList.add("active");
                 }
                 else {
@@ -68,14 +71,14 @@ export async function createCollaboratorDiv(c: Collaborator): Promise<HTMLDivEle
                     <span class="collab-email">${c.email}</span>
                 </div>
                 <div class="collab-meta">
-                    <span class="collab-permission ${c.is_invited ? "collab-permission--pending" : `collab-permission--${role.toLowerCase()}`}" data-permission="${c.permission_id}">
-                        <p>${c.is_invited ? `Invited (${role})` : role}</p>
-                        ${!isMe && canChangePerm && !c.is_invited ? `<i class="ti ti-chevron-down"></i>` : ""}
+                    <span class="collab-permission collab-permission--${role.toLowerCase()}" data-permission-id="${c.permission_id}">
+                        <p>${role}</p>
+                        ${!isMe && canChangePerm ? `<i class="ti ti-chevron-down"></i>` : ""}
                     </span>
                     <span class="collab-date">${new Date(c.added_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 </div>
                 ${!isMe && canChangePerm ? `
-                <button class="collab-remove" data-is-invited="${c.is_invited}" aria-label="Remove collaborator" ${[PermissionId.Owner, PermissionId.Admin].includes(BoardState.permissionId!) ? "" : "disabled"}>
+                <button class="collab-remove" aria-label="Remove collaborator" ${[PermissionId.Owner, PermissionId.Admin].includes(BoardState.permissionId!) ? "" : "disabled"}>
                     <i class="ti ti-trash"></i>
                 </button>`: ""}
             `, { ADD_ATTR: ["referrerpolicy"] });

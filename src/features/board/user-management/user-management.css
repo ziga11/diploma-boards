@@ -57,6 +57,12 @@
         background: color-mix(in srgb, var(--secondary) 45%, transparent);
 }
 
+.permission-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5em;
+}
+
 .permission-dropdown-option {
         display: flex;
         align-items: center;

@@ -36,7 +36,6 @@ export interface Collaborator {
         email: string,
         permission_id: PermissionId;
         added_at: Date;
-        is_invited: boolean;
 }
 
 export interface InvitedCollaborator {

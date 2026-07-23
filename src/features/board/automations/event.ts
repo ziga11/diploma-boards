@@ -82,6 +82,8 @@ export function initAutomationEvents() {
                         .then(automation => {
                                 automationHTML.dataset.id = `${automation.id}`;
 
+                                BoardState.addAutomation(automation);
+
                                 setDiv(HTML.modify.existingAutomations);
                                 HTML.create.url.input.value = "";
                                 clearState();
@@ -115,7 +117,16 @@ export function initAutomationEvents() {
                 const div = hideAutomation(id);
 
                 deleteAutomation(id)
-                        .then(_ => removeAutomation(div))
+                        .then(a => {
+                                if ([AutomationId.TextChange, AutomationId.StatusChange, AutomationId.ButtonPress].includes(a.automation_id)) {
+                                        BoardState.removeFieldAutomation(a.field_id!, a.id!);
+                                }
+                                else {
+                                        BoardState.removeTypeAutomation(a.automation_id, a.id!);
+                                }
+
+                                removeAutomation(div);
+                        })
                         .catch(err => {
                                 showToast(`Failed to remove automation ${err}`, "error");
                                 showAutomation(div);
@@ -132,6 +143,7 @@ export function initAutomationEvents() {
         window.addEventListener(automationEvents.addAutomation.type, (e: Event) => {
                 const automation = (e as ReturnType<typeof automationEvents.addAutomation>).detail;
 
+                BoardState.addAutomation(automation);
                 addAutomations(automation);
         });
 

@@ -1,4 +1,4 @@
-import type { Automation } from "./automations/types";
+import { AutomationId, type Automation } from "./automations/types";
 import type { Entry } from "./entries/types";
 import type { Field } from "./fields/types";
 import type { Collaborator, InvitedCollaborator } from "./user-management/types";
@@ -11,6 +11,7 @@ interface BoardState {
         activeBoard: Board | null;
         sortedBy: { fieldId?: string, ascending?: boolean },
         fieldIdAutomationMap: Map<string, Array<Automation>>,
+        typeAutomationMap: Map<AutomationId, Array<Automation>>,
         accIdCollaboratorMap: Map<string, Collaborator>,
         invitedCollaborators: Array<InvitedCollaborator>,
         fieldsMap: Map<string, Field>;
@@ -24,6 +25,7 @@ const state: BoardState = {
         isInitialized: false,
         activeBoard: null,
         fieldIdAutomationMap: new Map(),
+        typeAutomationMap: new Map(),
         accIdCollaboratorMap: new Map(),
         invitedCollaborators: [],
         fieldsMap: new Map(),
@@ -142,13 +144,54 @@ export const BoardState = {
 
         setAutomations(automations: Array<Automation>) {
                 for (const a of automations) {
+                        if (a.field_id) {
+                                if (!state.fieldIdAutomationMap.has(a.field_id!)) {
+                                        state.fieldIdAutomationMap.set(a.field_id!, []);
+                                }
+                                state.fieldIdAutomationMap.get(a.field_id)!.push(a);
+                        }
+                        else {
+                                if (!state.typeAutomationMap.has(a.automation_id!)) {
+                                        state.typeAutomationMap.set(a.automation_id!, []);
+                                }
+
+                                state.typeAutomationMap.get(a.automation_id!)!.push(a);
+                        }
+                }
+        },
+
+        addAutomation(a: Automation) {
+                if (a.field_id) {
                         if (!state.fieldIdAutomationMap.has(a.field_id!)) {
                                 state.fieldIdAutomationMap.set(a.field_id!, []);
                         }
-
-                        const key = a.field_id ?? `${a.automation_id}`;
-                        state.fieldIdAutomationMap.get(key)!.push(a);
+                        state.fieldIdAutomationMap.get(a.field_id)!.push(a);
                 }
+                else {
+                        if (!state.typeAutomationMap.has(a.automation_id)) {
+                                state.typeAutomationMap.set(a.automation_id!, []);
+                        }
+
+                        state.typeAutomationMap.get(a.automation_id!)!.push(a);
+                }
+        },
+
+        removeFieldAutomation(fId: string, id: string) {
+                const fieldAutomations = state.fieldIdAutomationMap.get(fId);
+
+                const ind = fieldAutomations?.findIndex(e => e.id == id);
+                if (!ind) return;
+
+                fieldAutomations!.splice(ind, 1);
+        },
+
+        removeTypeAutomation(automationId: AutomationId, id: string) {
+                const typeAutomations = state.typeAutomationMap.get(automationId);
+
+                const ind = typeAutomations?.findIndex(e => e.id == id);
+                if (!ind) return;
+
+                typeAutomations!.splice(ind, 1);
         },
 
         setFields(fields: Array<Field>) {
@@ -193,6 +236,14 @@ export const BoardState = {
         setField(field: Field) {
                 if (!field.id) return;
                 return state.fieldsMap.set(field.id, field);
+        },
+
+        getFieldAutomation(automationId: AutomationId, fieldId: string) {
+                return state.fieldIdAutomationMap.get(fieldId)?.find(e => e.automation_id == automationId);
+        },
+
+        getTypeAutomations(automationId: AutomationId) {
+                return state.typeAutomationMap.get(automationId);
         },
 
         clear() {

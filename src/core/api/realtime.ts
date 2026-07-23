@@ -10,7 +10,7 @@ import { dashboardEvents } from "@/features/dashboard/workspace/custom-events";
 import { userManagementEvents } from "@/features/board/user-management/custom-events";
 import { workspaceEvents } from "@/features/board/workspace/custom-events";
 import { automationEvents } from "@/features/board/automations/custom-events";
-import type { Automation } from "@/features/board/automations/types";
+import { AutomationId, type Automation } from "@/features/board/automations/types";
 import { supabase } from "./supabase";
 import type { Entry } from "@/features/board/entries/types";
 import { topToolbarEvents } from "@/features/board/top-toolbar/custom-events";
@@ -151,6 +151,8 @@ async function handleBoardRealtime(eventType: string, data: Board) {
 async function handleBoardCollaboratorRealtime(eventType: string, data: any, acc: Account) {
         switch (eventType) {
                 case 'INSERT-INVITATION':
+                        console.log("aaaaaaaa");
+
                         BoardState.addInvitedCollaborator(data);
 
                         window.dispatchEvent(userManagementEvents.addInvitedCollaborator(data));
@@ -162,6 +164,8 @@ async function handleBoardCollaboratorRealtime(eventType: string, data: any, acc
                         break;
                 case 'UPDATE-COLLABORATOR':
                         BoardState.updateCollaboratorPermission(data.account_id, data.permission_id);
+
+                        console.log(data);
 
                         if (acc.id != data.account_id) return
                         BoardState.setPermissionId(data.permission_id);
@@ -193,6 +197,13 @@ async function handleAutomationRealtime(eventType: string, data: Automation) {
                         window.dispatchEvent(automationEvents.addAutomation(data));
                         break;
                 case 'DELETE':
+                        if (data.automation_id <= AutomationId.ButtonPress) {
+                                BoardState.removeFieldAutomation(data.field_id!, data.id!)
+                        }
+                        else {
+                                BoardState.removeTypeAutomation(data.automation_id, data.id!);
+                        }
+
                         window.dispatchEvent(automationEvents.removeAutomation(data.id!));
                         break;
         }

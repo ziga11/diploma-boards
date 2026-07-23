@@ -9,7 +9,7 @@ import { changeDeepestValue } from "./view-utils";
 import type { Entry } from "./types";
 import { PermissionId } from "@/core/types/auth";
 
-let debounceTimer: number;
+let debounceTimer: any;
 
 let prevEntryVal: string | undefined;
 let entryElems: undefined | NodeListOf<HTMLElement>;
@@ -137,10 +137,13 @@ export function initEntryEvents() {
 
         window.addEventListener(entryEvents.applyPermissionRestrictions.type, () => {
                 const isMember = PermissionId.Member == BoardState.permissionId;
-                if (!isMember) return;
 
-                const toDisable = HTML.entriesContainer.querySelectorAll(`.entry-check, .entries-div`) as NodeListOf<HTMLElement>
-                toDisable.forEach(e => e.classList.add("disabled"));
+                if (isMember) {
+                        entryEvents.entryCheckChangeAll(false);
+                }
+
+                const toDisable = HTML.entriesContainer.querySelectorAll(`.entry-check-div, .entries-div`) as NodeListOf<HTMLElement>
+                toDisable.forEach(e => e.classList.toggle("disabled", isMember));
         })
 
         window.addEventListener(entryEvents.entryCheckChangeAll.type, (e: Event) => {
@@ -243,10 +246,10 @@ export function initEntryEvents() {
                         }
                 }
                 else if (indices != undefined) {
-                        const entrySets = HTML.entriesList.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
-                        for (const index of indices) {
-                                entrySets[index].remove();
-                        }
+                        const selector = indices.map(i => `.entry-set[data-index="${i}"]`).join(", ");
+
+                        const entrySets = HTML.entriesList.querySelectorAll(selector) as NodeListOf<HTMLDivElement>;
+                        entrySets.forEach(es => es.remove());
 
                         const renderedRows = BoardState.rowCount.rendered - indices.length;
                         const allRows = BoardState.rowCount.all - indices.length;
@@ -350,8 +353,6 @@ export function initEntryEvents() {
                 insertEmptyEntryRows([fieldEntryIdMap])
                         .then((data) => {
                                 row.dataset.index = `${data[0].row_index}`
-                                console.log(data);
-
 
                                 data[0].entries.forEach(e => {
                                         if (e.option_id) {

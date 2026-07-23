@@ -325,6 +325,15 @@ dialog.status-dropdown-menu[open] {
         justify-content: center;
 }
 
+.entry-check-div.disabled {
+        pointer-events: none;
+}
+
+.entry-check-div.disabled .entry-check:not(:checked) {
+        opacity: 0.5;
+        accent-color: var(--bg-highlight);
+}
+
 #empty-option {
         opacity: 0.7;
 }
