@@ -36,7 +36,7 @@ The Board System allows the user to create entries of different types, for now i
 
 ### Demo
 <div align="center">
-  <video src="https://github.com/user-attachments/assets/14452bcd-fa5e-450e-a2c7-96af4bd9145e" width="100%" controls muted>
+  <video src="https://github.com/user-attachments/assets/2e9a85c7-458d-404a-942d-f286a6a92399" width="100%" controls muted>
   </video>
 </div>
 
