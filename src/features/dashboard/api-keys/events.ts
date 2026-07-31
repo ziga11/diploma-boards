@@ -3,7 +3,7 @@ import { HTML } from "./html";
 import { deleteAPIKey, insertAPIKey } from "./logic";
 import { createAPIKeyElem, updateApiKeyElem } from "./view";
 import { apikeyCache } from "./cache";
-import { apiDocsEvents } from "../api-docs/custom-events";
+import { apiDocsEvents } from "@/features/dashboard/api-docs/custom-events";
 import { apiKeyEvents } from "./custom-events";
 
 export function initAPIKeyEvents() {

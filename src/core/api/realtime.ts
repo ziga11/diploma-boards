@@ -1,5 +1,4 @@
 import type { RealtimeChannel, RealtimePostgresDeletePayload, RealtimePostgresInsertPayload, SupabaseClient } from "@supabase/supabase-js";
-import { BoardState } from "@/features/board/board-state";
 import { entryEvents } from "@/features/board/entries/custom-events";
 import { fieldEvents } from "@/features/board/fields/custom-events";
 import type { FieldOption } from "@/features/board/fields/types";
@@ -10,10 +9,15 @@ import { dashboardEvents } from "@/features/dashboard/workspace/custom-events";
 import { userManagementEvents } from "@/features/board/user-management/custom-events";
 import { workspaceEvents } from "@/features/board/workspace/custom-events";
 import { automationEvents } from "@/features/board/automations/custom-events";
-import { AutomationId, type Automation } from "@/features/board/automations/types";
+import { type Automation } from "@/features/board/automations/types";
 import { supabase } from "./supabase";
 import type { Entry } from "@/features/board/entries/types";
 import { topToolbarEvents } from "@/features/board/top-toolbar/custom-events";
+import { MasterRegistry } from "@/features/board/master-registry";
+import { usersToken } from "@/features/board/user-management/registry";
+import { workspaceToken } from "@/features/board/workspace/registry";
+import { automationsToken } from "@/features/board/automations/registry";
+import { PermissionId } from "@/core/types/auth";
 
 export class RealtimeManager {
         private client: SupabaseClient;
@@ -151,37 +155,36 @@ async function handleBoardRealtime(eventType: string, data: Board) {
 async function handleBoardCollaboratorRealtime(eventType: string, data: any, acc: Account) {
         switch (eventType) {
                 case 'INSERT-INVITATION':
-                        console.log("aaaaaaaa");
-
-                        BoardState.addInvitedCollaborator(data);
+                        MasterRegistry.get(usersToken).addInvitedCollaborator(data);
 
                         window.dispatchEvent(userManagementEvents.addInvitedCollaborator(data));
                         break;
                 case 'COLLABORATION-INVITATION-ACCEPTED':
-                        BoardState.addCollaborator(data);
+                        MasterRegistry.get(usersToken).addCollaborator(data);
 
                         window.dispatchEvent(userManagementEvents.addCollaborator(data));
                         break;
                 case 'UPDATE-COLLABORATOR':
-                        BoardState.updateCollaboratorPermission(data.account_id, data.permission_id);
-
-                        console.log(data);
-
+                        MasterRegistry.get(usersToken).updateCollaboratorPermission(data.account_id, data.permission_id);
                         if (acc.id != data.account_id) return
-                        BoardState.setPermissionId(data.permission_id);
+
+                        MasterRegistry.get(workspaceToken).setPermissionId(data.permission_id);
 
                         window.dispatchEvent(topToolbarEvents.applyPermissionRestrictions());
-                        window.dispatchEvent(fieldEvents.applyPermissionRestrictions());
-                        window.dispatchEvent(entryEvents.applyPermissionRestrictions());
+
+                        const isMember = data.permission_id == PermissionId.Member;
+
+                        window.dispatchEvent(fieldEvents.applyPermissionRestrictions({ isMember }));
+                        window.dispatchEvent(entryEvents.applyPermissionRestrictions({ isMember }));
 
                         break;
                 case 'REMOVE-INVITATION':
-                        BoardState.removeInvitedCollaborator(data.to_email);
+                        MasterRegistry.get(usersToken).removeInvitedCollaborator(data.account_id);
 
                         window.dispatchEvent(userManagementEvents.removeInvitedCollaborator(data));
                         break;
                 case 'REMOVE-COLLABORATOR':
-                        BoardState.removeCollaborator(data.account_id);
+                        MasterRegistry.get(usersToken).removeCollaborator(data.account_id);
 
                         window.dispatchEvent(userManagementEvents.removeCollaborator(data.account_id));
                         if (acc.id == data.account_id) {
@@ -197,12 +200,7 @@ async function handleAutomationRealtime(eventType: string, data: Automation) {
                         window.dispatchEvent(automationEvents.addAutomation(data));
                         break;
                 case 'DELETE':
-                        if (data.automation_id <= AutomationId.ButtonPress) {
-                                BoardState.removeFieldAutomation(data.field_id!, data.id!)
-                        }
-                        else {
-                                BoardState.removeTypeAutomation(data.automation_id, data.id!);
-                        }
+                        MasterRegistry.get(automationsToken).removeAutomationById(data.id!);
 
                         window.dispatchEvent(automationEvents.removeAutomation(data.id!));
                         break;
@@ -253,7 +251,7 @@ async function handleEntryRealtime(eventType: string, data: any) {
                         window.dispatchEvent(entryEvents.realtimeNewRows(rows))
                         break;
                 case "INSERT-FIELD":
-                        window.dispatchEvent(entryEvents.newFieldEntries({ field: data.field, entryIds: data.entry_ids }));
+                        window.dispatchEvent(entryEvents.createFieldEntries({ field: data.field, entryIds: data.entry_ids }));
                         break;
                 case 'UPDATE':
                         window.dispatchEvent(entryEvents.realtimeEntryChange({ entry_id: data.id, value: data.value, option_id: data.option_id }));
@@ -262,10 +260,10 @@ async function handleEntryRealtime(eventType: string, data: any) {
                         window.dispatchEvent(entryEvents.entryChangeFieldValues({ field_id: data.fieldId, old_value: data.oldValue, value: data.newValue }));
                         break;
                 case 'DELETE-ROWS':
-                        window.dispatchEvent(entryEvents.realtimeRemoveEntries({ indices: data.indices }));
+                        window.dispatchEvent(entryEvents.removeEntriesUi({ indices: data.indices }));
                         break;
                 case 'DELETE-FIELD':
-                        window.dispatchEvent(entryEvents.realtimeRemoveEntries({ fieldId: data.field_id }));
+                        window.dispatchEvent(entryEvents.removeEntriesUi({ fieldId: data.field_id }));
                         break;
                 case 'DELETE-FIELD-OPTION':
                         window.dispatchEvent(entryEvents.entryChangeFieldValues({ field_id: data.field_id!, value: "", old_value: data.value }))

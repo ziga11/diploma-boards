@@ -7,5 +7,10 @@ export const topToolbarEvents = {
         setBorderColorAndName: Object.assign(
                 (detail: { color: string, name: string }) => new CustomEvent("top-toolbar:set-border-and-name", { detail }),
                 { type: "top-toolbar:set-border-and-name" }
-        )
+        ),
+
+        clearButtons: Object.assign(
+                () => new CustomEvent("top-toolbar:clear-buttons"),
+                { type: "top-toolbar:clear-buttons" }
+        ),
 }

@@ -249,6 +249,7 @@
 
 .add-user-field {
         display: flex;
+        margin-top: 10px;
         flex-direction: column;
         gap: 6px;
 }

@@ -37,7 +37,7 @@ export const fieldEvents = {
         ),
 
         applyPermissionRestrictions: Object.assign(
-                () => new CustomEvent("field:apply-permission-restrictions"),
+                (detail: { isMember: boolean }) => new CustomEvent("field:apply-permission-restrictions", { detail }),
                 { type: "field:apply-permission-restrictions" }
         ),
 
@@ -53,11 +53,6 @@ export const fieldEvents = {
 
         removeFieldOption: Object.assign(
                 (detail: { id: string, fieldId: string, inputValue?: string }) => new CustomEvent("field-option:remove", { detail }),
-                { type: "field-option:remove" as const }
-        ),
-
-        setFieldOptionVisibility: Object.assign(
-                (detail: { id: string, fieldId: string, visible: boolean }) => new CustomEvent("field-option:remove", { detail }),
                 { type: "field-option:remove" as const }
         ),
 }

@@ -5,12 +5,13 @@ export const HTML = {
         get body() { return activePage().querySelector("#automate-body") as HTMLDivElement },
 
         create: {
+                get div() { return activePage().querySelector(".create-automations-container") as HTMLInputElement },
                 get btn() { return activePage().querySelector("#create-tab") as HTMLInputElement },
                 get noFields() { return activePage().querySelector("#automate")?.querySelector(".no-fields") as HTMLDivElement },
 
                 get type() {
                         return {
-                                get div() { return activePage().querySelector(".create-automations") as HTMLDivElement },
+                                get div() { return activePage().querySelector(".automation-type-selection") as HTMLDivElement },
                                 get options() { return activePage().querySelectorAll(".automation-option") as NodeListOf<HTMLDivElement> },
                         };
                 },
@@ -30,13 +31,16 @@ export const HTML = {
                                 get triggerType() { return activePage().querySelector("#url-call-subtitle") as HTMLButtonElement },
                         }
                 },
-
-                get order() { return [this.type.div, this.field.div, this.url.div] },
         },
         modify: {
-                get noAutomations() { return activePage().querySelector("#automate")?.querySelector(".no-automations") as HTMLDivElement },
+                get div() { return activePage().querySelector(".modify-automations-container") as HTMLInputElement },
+                get noAutomations() {
+                        return {
+                                get div() { return activePage().querySelector("#automate")?.querySelector(".no-automations") as HTMLDivElement },
+                                get createAutomationCta() { return activePage().querySelector("#automate")?.querySelector(".create-automation-cta") as HTMLInputElement },
+                        }
+                },
                 get existingAutomations() { return activePage().querySelector(".existing-automations") as HTMLDivElement },
                 get btn() { return activePage().querySelector("#modify-tab") as HTMLInputElement },
-                get createAutomationCta() { return activePage().querySelector("#automate")?.querySelector(".create-automation-cta") as HTMLInputElement },
         }
 };

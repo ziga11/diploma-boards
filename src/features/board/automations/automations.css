@@ -77,16 +77,16 @@
 
 /* | Automation type selection | */
 
-.create-automations {
+.automation-type-selection {
         display: none;
         max-width: 800px;
 }
 
-.create-automations .url-call-header>div {
+.automation-type-selection .url-call-header>div {
         margin-left: 40px;
 }
 
-.create-automations.shown {
+.automation-type-selection.shown {
         display: block;
 }
 
@@ -205,6 +205,10 @@
         transition: border-color 0.2s ease, background 0.2s ease;
 }
 
+.automation-field-div>* {
+        pointer-events: none;
+}
+
 .automation-field-div:hover {
         border-color: var(--primary);
         background: color-mix(in srgb, var(--secondary) 20%, transparent);
@@ -226,6 +230,10 @@
         display: flex;
         flex-direction: column;
         gap: 2px;
+}
+
+.automation-field-info>* {
+        pointer-events: none;
 }
 
 .automation-field-name {
@@ -250,6 +258,7 @@
         padding: 2px 6px;
         opacity: 0.7;
         flex-shrink: 0;
+        max-width: 100px;
 
         white-space: nowrap;
         overflow: hidden;

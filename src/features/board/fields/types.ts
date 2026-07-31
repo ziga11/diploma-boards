@@ -16,3 +16,16 @@ export interface FieldOption {
         value: string;
 }
 
+export interface FieldModuleInterface {
+        getFieldById(fieldId: string): Field | null;
+        getFieldOptions(fieldId: string): Record<string, FieldOption>;
+        getOptionById(id: string): FieldOption | null;
+
+        getAllFields(): ReadonlyArray<Field>;
+        getSortedFields(): ReadonlyArray<Field>;
+
+        getFieldCount(): number;
+        hasFields(): boolean;
+
+        getSortedByInfo(): { fieldId: string, ascending: boolean } | null
+}

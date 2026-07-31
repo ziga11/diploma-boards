@@ -1,4 +1,4 @@
-import type { PermissionId } from "@/core/types/auth";
+import { PermissionId } from "@/core/types/auth";
 
 export interface InsertNotification {
         id?: string;
@@ -51,4 +51,15 @@ export interface BoardAccLink {
         board_id: string;
         account_id: string;
         permission_id: number;
+}
+
+export interface UsersModuleInterface {
+        getCollaborators(): ReadonlyArray<Collaborator>;
+        addCollaborator(collaborator: Collaborator): void;
+        updateCollaboratorPermission(accountId: string, permissionId: PermissionId): void;
+        removeCollaborator(accountId: string): void;
+
+        getInvitedCollaborators(): ReadonlyArray<InvitedCollaborator>;
+        addInvitedCollaborator(collaborator: InvitedCollaborator): void;
+        removeInvitedCollaborator(email: string): void;
 }

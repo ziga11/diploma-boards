@@ -16,6 +16,9 @@ export const HTML = {
                 get title() { return activePage().querySelector("#manage-users-section")?.querySelector(".add-user-title") as HTMLParagraphElement },
                 get subtitle() { return activePage().querySelector("#manage-users-section")?.querySelector(".add-user-subtitle") as HTMLParagraphElement },
 
+                get addedUsersBtn() { return activePage().querySelector("#manage-users-section")?.querySelector("#added-users") as HTMLDivElement },
+                get invitedUsersBtn() { return activePage().querySelector("#manage-users-section")?.querySelector("#invited-users") as HTMLDivElement },
+
                 get addedUsersContainer() { return activePage().querySelector("#manage-users-section")?.querySelector(".added-users-container") as HTMLDivElement },
                 get invitedUsersContainer() { return activePage().querySelector("#manage-users-section")?.querySelector(".invited-users-container") as HTMLDivElement },
 

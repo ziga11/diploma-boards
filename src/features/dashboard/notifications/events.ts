@@ -1,7 +1,7 @@
 import { showToast } from "@/core/utils/dom";
 import { HTML } from "./html";
 import { fetchBoard, setNotificationState } from "./logic";
-import { dashboardEvents } from "../workspace/custom-events";
+import { dashboardEvents } from "@/features/dashboard/workspace/custom-events";
 import { notificationEvents } from "./custom-events";
 import { notificationElem } from "./view";
 

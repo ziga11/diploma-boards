@@ -2,9 +2,9 @@ import { HTML } from "./html";
 import { hexChange, updateColor } from "./view";
 import { insertBoard } from "./logic";
 import { closeDialog, showToast } from "@/core/utils/dom";
-import { dashboardEvents } from "../workspace/custom-events";
+import { dashboardEvents } from "@/features/dashboard/workspace/custom-events";
 import { addBoardEvents } from "./custom-events";
-import type { Board } from "../workspace/types";
+import type { Board } from "@/features/dashboard/workspace/types";
 import { PermissionId } from "@/core/types/auth";
 
 export function initAddBoardEvents() {

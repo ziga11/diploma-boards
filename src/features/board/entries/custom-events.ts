@@ -1,10 +1,15 @@
-import type { Field } from "../fields/types";
+import type { Field } from "@/features/board/fields/types";
 import type { Entry } from "./types";
 
 export const entryEvents = {
-        statusClicked: Object.assign(
-                (detail: HTMLDivElement) => new CustomEvent("entry:status-clicked", { detail }),
-                { type: "entry:status-clicked" as const }
+        createFieldEntries: Object.assign(
+                (detail: { field: Field, entryIds: Array<string> }) => new CustomEvent("entry:new-field", { detail }),
+                { type: "entry:new-field" as const }
+        ),
+
+        removeFieldEntries: Object.assign(
+                (detail: { fieldId: string }) => new CustomEvent("entry:remove-field", { detail }),
+                { type: "entry:remove-field" as const }
         ),
 
         btnTriggered: Object.assign(
@@ -27,12 +32,7 @@ export const entryEvents = {
                 { type: "entry:realtime-new-row" as const }
         ),
 
-        newFieldEntries: Object.assign(
-                (detail: { field: Field, entryIds: Array<string> }) => new CustomEvent("entry:new-field", { detail }),
-                { type: "entry:new-field" as const }
-        ),
-
-        setFieldEntriesIndices: Object.assign(
+        setFieldIndexToEntries: Object.assign(
                 (detail: { fieldId: string, index: number }) => new CustomEvent("entry:set-field-indices", { detail }),
                 { type: "entry:set-field-indices" as const }
         ),
@@ -42,14 +42,19 @@ export const entryEvents = {
                 { type: "entry:update-field-entries" as const }
         ),
 
-        realtimeRemoveEntries: Object.assign(
+        removeEntriesUi: Object.assign(
                 (detail: { fieldId?: string, indices?: Array<number> }) => new CustomEvent("entry:delete-field", { detail }),
                 { type: "entry:delete-field" as const }
         ),
 
-        setEntryVisibility: Object.assign(
-                (detail: { fieldId?: string, index?: number, visible: boolean }) => new CustomEvent("entry:hide-field", { detail }),
-                { type: "entry:hide-field" as const }
+        setFieldEntriesVisibility: Object.assign(
+                (detail: { fieldId: string, visible: boolean }) => new CustomEvent("entry:field-entries-visibility", { detail }),
+                { type: "entry:field-entries-visibility" as const }
+        ),
+
+        setRowsVisibility: Object.assign(
+                (detail: { indices: number[], visible: boolean }) => new CustomEvent("entry:hide-row", { detail }),
+                { type: "entry:hide-row" as const }
         ),
 
         showFieldEntries: Object.assign(
@@ -57,9 +62,14 @@ export const entryEvents = {
                 { type: "entry:show-field" as const }
         ),
 
-        removeSelected: Object.assign(
-                () => new CustomEvent("entry:delete-selected"),
-                { type: "entry:delete-selected" as const }
+        removeRowsByIndices: Object.assign(
+                (detail: { indices: number[] }) => new CustomEvent("entry:delete-rows-by-indices", { detail }),
+                { type: "entry:delete-rows-by-indices" as const }
+        ),
+
+        removeSelectedRows: Object.assign(
+                () => new CustomEvent("entry:delete-selected-rows"),
+                { type: "entry:delete-selected-rows" as const }
         ),
 
         swapDOM: Object.assign(
@@ -92,14 +102,9 @@ export const entryEvents = {
                 { type: "entry-check:change-all" as const }
         ),
 
-        copyRow: Object.assign(
-                (detail: NodeListOf<HTMLDivElement>) => new CustomEvent("entry:copy-row", { detail }),
+        copySelectedRows: Object.assign(
+                () => new CustomEvent("entry:copy-row"),
                 { type: "entry:copy-row" as const }
-        ),
-
-        clearEntries: Object.assign(
-                () => new CustomEvent("entry:dispose-all"),
-                { type: "entry:dispose-all" as const }
         ),
 
         sortChange: Object.assign(
@@ -113,7 +118,12 @@ export const entryEvents = {
         ),
 
         applyPermissionRestrictions: Object.assign(
-                () => new CustomEvent("entry:set-disabled-state"),
+                (detail: { isMember: boolean }) => new CustomEvent("entry:set-disabled-state", { detail }),
                 { type: "entry:set-disabled-state" as const }
+        ),
+
+        clearEntries: Object.assign(
+                () => new CustomEvent("entry:clear-all",),
+                { type: "entry:clear-all" as const }
         ),
 }

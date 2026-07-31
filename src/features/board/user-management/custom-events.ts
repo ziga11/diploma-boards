@@ -15,7 +15,7 @@ export const userManagementEvents = {
         ),
 
         removeInvitedCollaborator: Object.assign(
-                (detail: InvitedCollaborator) => new CustomEvent("user-management:remove-invited-collaborator", { detail }),
+                (detail: { email: string }) => new CustomEvent("user-management:remove-invited-collaborator", { detail }),
                 { type: "user-management:remove-invited-collaborator" }
         ),
 

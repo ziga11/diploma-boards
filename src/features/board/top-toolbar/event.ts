@@ -1,46 +1,34 @@
-import { BoardState } from "../board-state";
-import { entryEvents } from "../entries/custom-events";
+import { entryEvents } from "@/features/board/entries/custom-events";
 import { HTML } from "./html";
 import { navigate } from "@/core/utils/router";
-import { automationEvents } from "../automations/custom-events";
-import { workspaceEvents } from "../workspace/custom-events";
-import { userManagementEvents } from "../user-management/custom-events";
+import { automationEvents } from "@/features/board/automations/custom-events";
+import { workspaceEvents } from "@/features/board/workspace/custom-events";
+import { userManagementEvents } from "@/features/board/user-management/custom-events";
 import { recoverBoard } from "./logic";
-import { historyEvents } from "../history/custom-events";
-import { dashboardEvents } from "@/features/dashboard/workspace/custom-events";
-import { applyPermissionRestrictions } from "./view";
+import { historyEvents } from "@/features/board/history/custom-events";
 import { topToolbarEvents } from "./custom-events";
+import { hideAllButtons, setBoardSettings } from "./ui";
+
+let isInitialized = false;
 
 export function initTopToolbarEvents() {
-        if (BoardState.isInitialized) return;
+        if (isInitialized) return;
+        isInitialized = true;
 
-        HTML.btns.recover.addEventListener("click", () => {
-                recoverBoard()
-                        .then(_ => applyPermissionRestrictions());
-
-                const id = BoardState.boardId;
-                if (!id) return;
-
-
-                window.dispatchEvent(workspaceEvents.recoverBoard());
-                window.dispatchEvent(dashboardEvents.moveBoard({ id, group: "owned" }));
-        });
+        HTML.btns.recover.addEventListener("click", () => recoverBoard());
 
         HTML.btns.newEntry.addEventListener("click", () => window.dispatchEvent(entryEvents.newRow()));
 
         HTML.btns.addUser.addEventListener("click", () => window.dispatchEvent(userManagementEvents.showModal()));
 
-        HTML.title.div.addEventListener("click", () => {
-                window.dispatchEvent(workspaceEvents.showEditBoardModal());
+        HTML.title.div.addEventListener("click", () => window.dispatchEvent(workspaceEvents.showEditBoardModal()));
+
+        HTML.backButton.addEventListener("click", async () => {
+                await navigate("/dashboard");
+                window.dispatchEvent(workspaceEvents.clearAll());
         });
 
-        HTML.backButton.addEventListener("click", () => {
-                navigate("/dashboard");
-        });
-
-        HTML.btns.history.addEventListener("click", () => {
-                window.dispatchEvent(historyEvents.showModal());
-        });
+        HTML.btns.history.addEventListener("click", () => window.dispatchEvent(historyEvents.showModal()));
 
         HTML.btns.leaveBoardModal.addEventListener("click", () => window.dispatchEvent(workspaceEvents.showLeaveModal()));
 
@@ -50,12 +38,8 @@ export function initTopToolbarEvents() {
 
         window.addEventListener(topToolbarEvents.setBorderColorAndName.type, (e: Event) => {
                 const { color, name } = (e as ReturnType<typeof topToolbarEvents.setBorderColorAndName>).detail;
-                HTML.toolbarDiv.style.borderLeftColor = color;
-                HTML.title.text.innerText = name;
-                HTML.title.text.dataset.dbValue = name;
+                setBoardSettings(name, color);
         });
 
-        window.addEventListener(topToolbarEvents.applyPermissionRestrictions.type, () => {
-                applyPermissionRestrictions();
-        });
+        window.addEventListener(topToolbarEvents.clearButtons.type, () => hideAllButtons());
 }

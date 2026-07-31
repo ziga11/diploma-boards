@@ -1,7 +1,14 @@
 const activePage = () => document.querySelector(`#page-board`) ?? document;
 
 export const HTML = {
-        get fieldDropdown() { return activePage().querySelector(".field-dropdown") as HTMLDialogElement },
+        get fieldDropdown() {
+                return {
+                        get div() { return activePage().querySelector(".field-dropdown") as HTMLDialogElement },
+                        get ascending() { return this.div.querySelector("#sort-ascending-btn") as HTMLButtonElement },
+                        get descending() { return this.div.querySelector("#sort-descending-btn") as HTMLButtonElement },
+                        get edit() { return this.div.querySelector("#edit-field") as HTMLButtonElement }
+                }
+        },
 
         editModal: {
                 get dialog() { return activePage().querySelector("#field-edit-modal") as HTMLDialogElement },

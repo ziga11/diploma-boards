@@ -1,19 +1,18 @@
 import { setStateClass } from "@/core/utils/dom";
 import { HTML } from "./html";
 import { setToolbarVisibility } from "./view";
-import { entryEvents } from "../entries/custom-events";
+import { entryEvents } from "@/features/board/entries/custom-events";
+import { fieldEvents } from "@/features/board/fields/custom-events";
 import { bottomToolbarEvents } from "./custom-events";
-import { fieldEvents } from "../fields/custom-events";
-import { BoardState } from "../board-state";
+
+let isInitialized = false;
 
 export function initBottomToolbarEvents() {
-        if (BoardState.isInitialized) return;
+        if (isInitialized) return;
 
+        isInitialized = true;
         HTML.deselectSelected.addEventListener("click", () => {
-                const selectedEntries = document.querySelectorAll(".entry-check:checked") as NodeListOf<HTMLInputElement>;
-                for (const entry of selectedEntries) {
-                        entry.checked = false;
-                }
+                window.dispatchEvent(entryEvents.entryCheckChangeAll(false))
 
                 window.dispatchEvent(fieldEvents.checkChange(false));
                 setStateClass([], [HTML.outerDiv], "shown");
@@ -23,13 +22,11 @@ export function initBottomToolbarEvents() {
                 setToolbarVisibility(false);
 
                 window.dispatchEvent(fieldEvents.checkChange(false));
-                window.dispatchEvent(entryEvents.removeSelected());
+                window.dispatchEvent(entryEvents.removeSelectedRows());
         });
 
         HTML.duplicateSelected.addEventListener("click", async () => {
-                const entrySets = document.querySelectorAll(".entry-set:has(.entry-check:checked)") as NodeListOf<HTMLDivElement>;
-
-                window.dispatchEvent(entryEvents.copyRow(entrySets));
+                window.dispatchEvent(entryEvents.copySelectedRows());
                 HTML.deselectSelected.click();
         });
 

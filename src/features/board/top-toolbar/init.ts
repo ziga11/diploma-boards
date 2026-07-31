@@ -1,19 +1,19 @@
 import "./top-toolbar.css";
-import { BoardState } from "../board-state";
 import { initTopToolbarEvents } from "./event";
 import { HTML } from "./html";
-import { applyPermissionRestrictions } from "./view";
+import { MasterRegistry } from "@/features/board/master-registry";
+import { workspaceToken } from "@/features/board/workspace/registry";
+import { applyPermissionRestrictions } from "./logic";
 
 export function initTopToolbar() {
-        const boardTitle = BoardState.boardTitle;
-
-        if (!boardTitle) throw new Error("Board title wasnt set");
+        const board = MasterRegistry.get(workspaceToken).getBoard();
+        if (!board) throw new Error("Board wasnt set");
 
         applyPermissionRestrictions();
 
         initTopToolbarEvents();
 
-        HTML.toolbarDiv.style.borderLeftColor = BoardState.activeBoard!.color!;
-        HTML.title.text.dataset.dbValue = boardTitle;
-        HTML.title.text.innerText = boardTitle;
+        HTML.toolbarDiv.style.borderLeftColor = board.color!;
+        HTML.title.text.dataset.dbValue = board.name!;
+        HTML.title.text.innerText = board.name!;
 }

@@ -5,8 +5,8 @@ export const HTML = {
         get filters() { return activePage().querySelector("#history-modal .filter-bar") as HTMLDialogElement },
         get list() { return activePage().querySelector("#history-modal .history-list") as HTMLDialogElement },
 
-        get filterAction() { return activePage().querySelector(`#history-modal .filter-group[data-filter="action"]`) as HTMLDialogElement },
-        get filterColumn() { return activePage().querySelector(`#history-modal .filter-group[data-filter="column"]`) as HTMLDialogElement },
+        get filterAction() { return activePage().querySelector(`#history-modal .filter-group[data-filter="action"]`) as HTMLDivElement },
+        get filterColumn() { return activePage().querySelector(`#history-modal .filter-group[data-filter="column"]`) as HTMLDivElement },
 
         get payloadModal() { return activePage().querySelector(`#history-modal .payload-container`) as HTMLDialogElement },
 

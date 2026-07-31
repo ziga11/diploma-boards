@@ -5,9 +5,9 @@ import { createBoard } from "./view";
 import type { Board } from "./types";
 import { dashboardEvents } from "./custom-events";
 import { navigate } from "@/core/utils/router";
-import { apiKeyEvents } from "../api-keys/custom-events";
-import { addBoardEvents } from "../add-board/custom-events";
-import { notificationEvents } from "../notifications/custom-events";
+import { apiKeyEvents } from "@/features/dashboard/api-keys/custom-events";
+import { addBoardEvents } from "@/features/dashboard/add-board/custom-events";
+import { notificationEvents } from "@/features/dashboard/notifications/custom-events";
 
 export function initWorkspaceEvents() {
         HTML.boardList.div.addEventListener("click", (e: MouseEvent) => {

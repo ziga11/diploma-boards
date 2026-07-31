@@ -1,6 +1,7 @@
 import DOMPurify from 'dompurify';
-import type { Field } from "../fields/types";
-import { AutomationId, type Automation } from "./types";
+import { AutomationType, type Automation } from "../types";
+import type { Field } from '@/features/board/fields/types';
+import { HTML } from '../html';
 
 export function createFieldOption(field: Field): HTMLDivElement {
         const automationDiv = Object.assign(document.createElement('div'), {
@@ -15,7 +16,7 @@ export function createFieldOption(field: Field): HTMLDivElement {
         <div class="automation-field-info">
             <b class="automation-field-name">${field.name}</b>
             <span class="automation-field-type">${field.type}</span>
-            <span class="automation-field-id" title="${field.id}">#${field.id?.slice(0, 6)}...</span>
+            <span class="automation-field-id">#${field.id?.slice(0, 6)}...</span>
         </div>`);
 
         return automationDiv;
@@ -30,12 +31,12 @@ function getFieldIcon(type: string): string {
         return icons[type] ?? icons.text;
 }
 
-function automationIcon(automationId: AutomationId): string {
+function automationIcon(automationId: AutomationType): string {
         const icons: Record<string, string> = {
-                [AutomationId.EntryChange]: `<i class="ti ti-text-scan-2"></i>`,
-                [AutomationId.ButtonPress]: `<i class="ti ti-click"></i>`,
-                [AutomationId.RowCreated]: `<i class="ti ti-rectangular-prism-plus"></i>`,
-                [AutomationId.RowRemoved]: `<i class="ti ti-rectangular-prism-off"></i>`,
+                [AutomationType.EntryChange]: `<i class="ti ti-text-scan-2"></i>`,
+                [AutomationType.ButtonPress]: `<i class="ti ti-click"></i>`,
+                [AutomationType.RowCreated]: `<i class="ti ti-rectangular-prism-plus"></i>`,
+                [AutomationType.RowRemoved]: `<i class="ti ti-rectangular-prism-off"></i>`,
         };
         return icons[automationId]!;
 }
@@ -54,7 +55,7 @@ export function createAutomation(automation: Automation): HTMLDivElement {
         const div = Object.assign(document.createElement('div'), { className: "created-board-automation", });
         div.dataset.id = `${automation.id}`;
 
-        const type = AutomationId[automation.automation_id]
+        const type = AutomationType[automation.automation_id]
                 .replace(/(?<=[a-z])(?=[A-Z])/g, ' ');
 
         div.innerHTML = DOMPurify.sanitize(`
@@ -72,4 +73,13 @@ export function createAutomation(automation: Automation): HTMLDivElement {
             `);
 
         return div;
+}
+
+export function getVisibleAutomationsCount(): number {
+        const existingDiv = HTML.modify.existingAutomations;
+        const visible = Array.from(existingDiv.children).filter(
+                child => (child as HTMLElement).style.display !== "none"
+        );
+
+        return visible.length;
 }

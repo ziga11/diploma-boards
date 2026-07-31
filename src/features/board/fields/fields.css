@@ -2,6 +2,7 @@
         transform: rotateX(180deg);
         display: flex;
         width: fit-content;
+        padding-right: 10px;
 }
 
 .field-div {
@@ -69,12 +70,17 @@
 
 .resizer {
         position: absolute;
+        background: transparent;
         top: 0;
         right: -3px;
-        width: 6px;
+        width: 8px;
         height: 100%;
         cursor: col-resize;
         z-index: 10;
+}
+
+.resizer.shown {
+        background: color-mix(in srgb, var(--bg-light) 65%, var(--bg-highlight));
 }
 
 .field-label {
@@ -248,7 +254,7 @@
 }
 
 /* | Edit Field |*/
-.edit-field {
+.field-dropdown-btn {
         display: block;
         position: absolute;
         opacity: 0;
@@ -262,16 +268,16 @@
         transition: opacity 0.3s;
 }
 
-.edit-field .ti {
+.field-dropdown-btn .ti {
         color: var(--white);
         transition: color 0.15s;
 }
 
-.edit-field:hover .ti {
+.field-dropdown-btn:hover .ti {
         color: #fff;
 }
 
-.edit-field.shown {
+.field-dropdown-btn.shown {
         opacity: 1;
 }
 

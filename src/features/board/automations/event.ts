@@ -1,156 +1,51 @@
 import { HTML } from "./html";
-import { deleteAutomation, insertAutomation } from "./logic";
-import { automationState, clearState } from "./state";
-import { addAutomations, fillFields, previousDiv, hideAutomation, setDiv, removeAutomation, showAutomation } from "./view";
-import { showToast } from "@/core/utils/dom";
-import { BoardState } from "../board-state";
+import { finishAutomationCreation, removeAutomation, selectAutomationField, selectAutomationType } from "./logic";
 import { automationEvents } from "./custom-events";
-import { AutomationId, type Automation } from "./types";
-import { supabase } from "@/core/api/supabase";
+import { AutomationsState } from "./state";
+import { addAutomationView, previousDiv, removeAutomationById, showCreatedAutomations, startCreationFlow } from "./ui/dom";
 
 export function initAutomationEvents() {
-        if (BoardState.isInitialized) return;
-
-        [HTML.create.btn, HTML.modify.createAutomationCta].forEach(btn => {
-                const hasFields = BoardState.fields.size > 0;
-
-                btn.addEventListener("click", () => setDiv(hasFields ? HTML.create.type.div : HTML.create.noFields));
+        [HTML.create.btn, HTML.modify.noAutomations.createAutomationCta].forEach(btn => {
+                btn.addEventListener("click", () => startCreationFlow());
         });
+
+        HTML.modify.btn.addEventListener("click", () => showCreatedAutomations());
 
         HTML.body.addEventListener("click", (e: MouseEvent) => {
                 const elem = e.target as HTMLElement;
-                if (elem.classList[0] != "back-btn") return;
-
-                previousDiv();
-        })
-
-        HTML.create.type.div.addEventListener("click", (e: MouseEvent) => {
-                const elem = e.target as HTMLElement;
-
-                if (elem.className !== "automation-option") return;
-
-                automationState.automationId = Number(elem.dataset.automationType);
-
-                fillFields()
-                setDiv(automationState.automationId > AutomationId.ButtonPress ? HTML.create.url.div : HTML.create.field.div);
-        });
-
-        HTML.create.field.div.addEventListener("click", (e: MouseEvent) => {
-                const elem = e.target as HTMLElement;
-
-                const automationFieldDiv = elem.closest(".automation-field-div") as HTMLDivElement;
-                if (!automationFieldDiv) return;
-
-                automationState.fieldId = automationFieldDiv.dataset.fieldId;
-
-                setDiv(HTML.create.url.div);
-        });
-
-        HTML.create.url.input.addEventListener("blur", () => automationState.url = HTML.create.url.input.value);
-
-        HTML.create.url.finish.addEventListener("click", async () => {
-                let errText = "";
-
-                const acc = await supabase.getAccount();
-                const boardId = BoardState.boardId;
-
-                if (!acc) { errText = "Failed to get the account"; }
-                else if (!boardId) { errText = "Failed to get the boardId"; }
-
-                else if (!automationState.automationId) {
-                        errText = "Failed to insert an automation: automationId not set";
+                if (elem.classList[0] == "back-btn") {
+                        previousDiv();
                 }
-                else if (!automationState.url) {
-                        errText = "Failed to insert an automation: url not set"
+                else if (elem.className === "automation-option") {
+                        selectAutomationType(Number(elem.dataset.automationType));
                 }
-
-                if (errText.length > 0) {
-                        showToast(errText, "error");
-                        return;
+                else if (elem.className === "automation-field-div") {
+                        selectAutomationField(elem.dataset.fieldId!);
                 }
-
-                const automation: Automation = {
-                        board_id: boardId!,
-                        automation_id: automationState.automationId!,
-                        field_id: automationState.fieldId,
-                        url_call: automationState.url!,
-                        account_id: acc!.id
-                };
-                const automationHTML = addAutomations(automation)[0];
-
-                insertAutomation(automation)
-                        .then(automation => {
-                                automationHTML.dataset.id = `${automation.id}`;
-
-                                BoardState.addAutomation(automation);
-
-                                setDiv(HTML.modify.existingAutomations);
-                                HTML.create.url.input.value = "";
-                                clearState();
-                        })
-                        .catch(err => {
-                                showToast(`Failed to insert the automation ${err}`, "error");
-                                automationHTML.remove();
-                        });
-        });
-
-
-        HTML.modify.btn.addEventListener("click", () => {
-                const hasAutomations = HTML.modify.existingAutomations.children.length > 0;
-
-                setDiv(hasAutomations ? HTML.modify.existingAutomations : HTML.modify.noAutomations);
-        });
-
-        HTML.modify.existingAutomations.addEventListener("click", (e: MouseEvent) => {
-                const elem = e.target as HTMLElement;
-
-                if (elem.className != "automation-entry-delete") return;
-
-                const parent = elem.closest(".created-board-automation") as HTMLDivElement;
-
-                const id = parent.dataset.id;
-                if (!id) {
-                        showToast(`id was not set, bug`, "error");
-                        return;
+                else if (elem.className === "#finish-automation") {
+                        finishAutomationCreation(HTML.create.url.input.value.trim());
                 }
-
-                const div = hideAutomation(id);
-
-                deleteAutomation(id)
-                        .then(a => {
-                                if ([AutomationId.EntryChange, AutomationId.ButtonPress].includes(a.automation_id)) {
-                                        BoardState.removeFieldAutomation(a.field_id!, a.id!);
-                                }
-                                else {
-                                        BoardState.removeTypeAutomation(a.automation_id, a.id!);
-                                }
-
-                                removeAutomation(div);
-                        })
-                        .catch(err => {
-                                showToast(`Failed to remove automation ${err}`, "error");
-                                showAutomation(div);
-                        });
-
+                else if (elem.className === "automation-entry-delete") {
+                        removeAutomation(elem);
+                }
         });
 
         window.addEventListener(automationEvents.showModal.type, () => {
-                const hasFields = BoardState.fields.size > 0;
-                setDiv(hasFields ? HTML.create.type.div : HTML.create.noFields);
+                startCreationFlow();
                 HTML.modal.showModal();
         });
 
         window.addEventListener(automationEvents.addAutomation.type, (e: Event) => {
                 const automation = (e as ReturnType<typeof automationEvents.addAutomation>).detail;
 
-                BoardState.addAutomation(automation);
-                addAutomations(automation);
+                AutomationsState.addAutomation(automation);
+                addAutomationView(automation);
         });
 
         window.addEventListener(automationEvents.removeAutomation.type, (e: Event) => {
                 const id = (e as ReturnType<typeof automationEvents.removeAutomation>).detail;
 
-                const elem = HTML.modify.existingAutomations.querySelector(`.created-board-automation[data-id="${id}"]`) as HTMLDivElement;
-                elem.remove();
+                AutomationsState.removeAutomation(id);
+                removeAutomationById(id);
         });
 }

@@ -17,3 +17,19 @@ export type EntryLog = {
         index?: string;
         value: string;
 }
+
+export enum ActionFilter {
+        All = 'ALL',
+        Insert = 'INSERT',
+        Update = 'UPDATE',
+        Delete = 'DELETE'
+}
+
+export enum ColumnFilter {
+        All = 'ALL',
+        Entry = 'Entry',
+        Field = 'Field',
+        FieldOption = 'Field Option',
+        Board = 'Board',
+        Automation = 'Automation',
+}

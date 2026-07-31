@@ -83,7 +83,7 @@ export class InfiniteScrollLoader<T> {
         private observer: IntersectionObserver;
         private sentinelEl: HTMLElement | null = null;
         private isFetching = false;
-        private gen: AsyncGenerator<T[]>;
+        private gen!: AsyncGenerator<T[]>;
         private allLoaded = false;
 
         private fetcher: () => AsyncGenerator<T[]>;
@@ -95,7 +95,7 @@ export class InfiniteScrollLoader<T> {
         }) {
                 this.fetcher = fetcher;
                 this.onBatch = onBatch;
-                this.gen = this.fetcher();
+
                 this.observer = new IntersectionObserver(
                         (entries) => {
                                 if (entries[0].isIntersecting) {
@@ -104,7 +104,8 @@ export class InfiniteScrollLoader<T> {
                         },
                         { rootMargin: '0px', threshold: 0 }
                 );
-                this.loadNextBatch();
+
+                this.reset();
         }
 
         setSentinel(el: HTMLElement | null) {
@@ -113,14 +114,26 @@ export class InfiniteScrollLoader<T> {
                 if (el) this.observer.observe(el);
         }
 
-        private async loadNextBatch() {
+        public async reset(beforeBatch?: () => void) {
+                this.gen = this.fetcher();
+                this.allLoaded = false;
+                this.isFetching = false;
+
+                await this.loadNextBatch(beforeBatch);
+        }
+
+        private async loadNextBatch(beforeBatch?: () => void) {
                 if (this.isFetching || this.allLoaded) return;
                 this.isFetching = true;
+
                 try {
                         const { value, done } = await this.gen.next();
                         if (done || !value) {
                                 this.allLoaded = true;
                         } else {
+                                if (beforeBatch) {
+                                        beforeBatch();
+                                }
                                 this.onBatch(value);
                         }
                 } catch (err) {

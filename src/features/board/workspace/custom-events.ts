@@ -33,4 +33,9 @@ export const workspaceEvents = {
                 (detail: string) => new CustomEvent("workspace:board-title-change", { detail }),
                 { type: "workspace:board-title-change" as const }
         ),
+
+        clearAll: Object.assign(
+                () => new CustomEvent("workspace:clear-all"),
+                { type: "workspace:clear-all" as const }
+        ),
 }
