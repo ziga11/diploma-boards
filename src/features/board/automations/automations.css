@@ -82,7 +82,7 @@
         max-width: 800px;
 }
 
-.automation-type-selection .url-call-header>div {
+.automation-type-selection .automations-header>div {
         margin-left: 40px;
 }
 
@@ -315,7 +315,7 @@
         display: block;
 }
 
-.url-call-header {
+.automations-header {
         display: flex;
         align-items: center;
         gap: 10px;
@@ -324,17 +324,26 @@
         border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-.url-call-title {
+.automations-header-title {
         color: var(--white);
         font-size: 17px;
         font-weight: 700;
         text-align: left;
 }
 
-.url-call-subtitle {
+.automations-header-subtitle {
         color: var(--bg-highlight);
         font-size: 12px;
         margin: 0;
+}
+
+.automations-header-type {
+        display: flex;
+        justify-content: space-between;
+}
+
+.automations-selected-options {
+        margin-left: auto;
 }
 
 .url-call-body {

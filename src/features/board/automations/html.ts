@@ -20,6 +20,13 @@ export const HTML = {
                         return {
                                 get div() { return activePage().querySelector(".field-automation-selection") as HTMLDivElement },
                                 get fieldsContainer() { return activePage().querySelector(".automation-fields-wrap") as HTMLDivElement },
+
+
+                                get header() {
+                                        return {
+                                                get type() { return activePage().querySelector(".field-automation-selection .automations-header-type") as HTMLDivElement }
+                                        }
+                                },
                         }
                 },
 
@@ -29,6 +36,13 @@ export const HTML = {
                                 get input() { return activePage().querySelector("#url-call") as HTMLInputElement },
                                 get finish() { return activePage().querySelector("#finish-automation") as HTMLButtonElement },
                                 get triggerType() { return activePage().querySelector("#url-call-subtitle") as HTMLButtonElement },
+
+                                get header() {
+                                        return {
+                                                get type() { return activePage().querySelector(".url-call-div .automations-header-type") as HTMLDivElement },
+                                                get field() { return activePage().querySelector(".url-call-div .automations-header-field-id") as HTMLDivElement },
+                                        }
+                                },
                         }
                 },
         },

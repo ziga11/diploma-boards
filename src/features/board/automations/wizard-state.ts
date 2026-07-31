@@ -1,5 +1,9 @@
+import { fieldsToken } from "../fields/registry";
+import { MasterRegistry } from "../master-registry";
 import { HTML } from "./html";
+import { automationTypeToString } from "./logic";
 import { AutomationType } from "./types";
+import { checkMenuTabBtn, clearFieldHeaderOptions, clearUrlHeaderOptions, setFieldHeaderOptions, setUrlHeaderOptions } from "./ui/dom";
 
 interface WizardState {
         automationId?: AutomationType;
@@ -25,10 +29,6 @@ export const AutomationsWizard = {
                 };
         },
 
-        getModifyAutomations() {
-                return [HTML.modify.existingAutomations, HTML.modify.noAutomations.div];
-        },
-
         setDraft(partial: Partial<Omit<WizardState, "history">>) {
                 Object.assign(state, partial);
         },
@@ -41,16 +41,12 @@ export const AutomationsWizard = {
 
                 state.history.push(div);
 
-                this.checkMenuTabBtn();
+                this.setHeaderOptions(div);
+
+                const modifyChecked = [HTML.modify.existingAutomations, HTML.modify.noAutomations.div].includes(div);
+                checkMenuTabBtn(modifyChecked);
+
                 div.classList.add("shown");
-        },
-
-        checkMenuTabBtn() {
-                if (!this.currentView) return;
-                const modifyChecked = this.getModifyAutomations().includes(this.currentView);
-
-                HTML.modify.btn.checked = modifyChecked;
-                HTML.create.btn.checked = !modifyChecked;
         },
 
         popView() {
@@ -59,11 +55,49 @@ export const AutomationsWizard = {
                 const removed = state.history.pop();
                 if (removed) removed.classList.remove("shown");
 
+                this.clearState(removed!);
+
                 const previous = this.currentView;
                 if (!previous) return;
 
+                this.setHeaderOptions(previous);
+
                 previous.classList.add("shown");
-                this.checkMenuTabBtn();
+
+                const modifyAutomations = [HTML.modify.existingAutomations, HTML.modify.noAutomations.div]
+                const modifyChecked = modifyAutomations.includes(this.currentView);
+                checkMenuTabBtn(modifyChecked);
+        },
+
+        setHeaderOptions(div: HTMLDivElement) {
+                if (div === HTML.create.field.div) {
+                        clearFieldHeaderOptions();
+                        const automationType = automationTypeToString(AutomationsWizard.draft.automationId!);
+
+                        setFieldHeaderOptions(automationType);
+                }
+                else if (div === HTML.create.url.div) {
+                        clearUrlHeaderOptions();
+                        const automationType = automationTypeToString(AutomationsWizard.draft.automationId!);
+                        if (AutomationsWizard.draft.fieldId) {
+                                const field = MasterRegistry.get(fieldsToken).getFieldById(AutomationsWizard.draft.fieldId!);
+
+                                setUrlHeaderOptions(automationType, field?.id!, field?.name!);
+                        }
+                        else {
+                                setUrlHeaderOptions(automationType);
+                        }
+
+                }
+        },
+
+        clearState(div: HTMLDivElement) {
+                if (div === HTML.create.field.div) {
+                        state.automationId = undefined;
+                }
+                else if (div === HTML.create.url.div) {
+                        state.fieldId = undefined;
+                }
         },
 
         reset() {

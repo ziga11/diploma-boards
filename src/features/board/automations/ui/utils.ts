@@ -2,6 +2,7 @@ import DOMPurify from 'dompurify';
 import { AutomationType, type Automation } from "../types";
 import type { Field } from '@/features/board/fields/types';
 import { HTML } from '../html';
+import { automationTypeToString } from '../logic';
 
 export function createFieldOption(field: Field): HTMLDivElement {
         const automationDiv = Object.assign(document.createElement('div'), {
@@ -55,8 +56,7 @@ export function createAutomation(automation: Automation): HTMLDivElement {
         const div = Object.assign(document.createElement('div'), { className: "created-board-automation", });
         div.dataset.id = `${automation.id}`;
 
-        const type = AutomationType[automation.automation_id]
-                .replace(/(?<=[a-z])(?=[A-Z])/g, ' ');
+        const type = automationTypeToString(automation.automation_id);
 
         div.innerHTML = DOMPurify.sanitize(`
                 <div class="automation-entry-icon">
@@ -83,3 +83,4 @@ export function getVisibleAutomationsCount(): number {
 
         return visible.length;
 }
+

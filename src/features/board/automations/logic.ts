@@ -26,6 +26,11 @@ function prepareAndRenderFields(id: AutomationType): void {
         renderFieldOptions(filteredFields);
 }
 
+export function automationTypeToString(type: AutomationType) {
+        return AutomationType[type]
+                .replace(/(?<=[a-z])(?=[A-Z])/g, ' ');
+}
+
 export function hideAutomationById(id: string): HTMLDivElement | null {
         const automationEntry = hideAutomationByIdView(id);
 

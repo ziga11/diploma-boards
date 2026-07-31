@@ -6,7 +6,6 @@ import { InfiniteScrollLoader } from "@/core/utils/dom";
 import { fieldsToken } from "@/features/board/fields/registry";
 import { workspaceToken } from "@/features/board//workspace/registry";
 import { addEntryRows } from "./logic/entry-actions";
-import { clearEntries } from "./ui";
 
 interface WizardState {
         oldEntryValue?: string,

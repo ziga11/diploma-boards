@@ -14,6 +14,33 @@ export function previousDiv(): void {
         AutomationsWizard.popView();
 }
 
+export function setFieldHeaderOptions(automationType: string) {
+        HTML.create.field.header.type.innerHTML = `<span>Automation Type:</span> <b>${automationType}</b>`;
+}
+
+export function clearFieldHeaderOptions() {
+        HTML.create.field.header.type.innerHTML = ``;
+}
+
+export function setUrlHeaderOptions(type: string, fieldId?: string, fieldName?: string) {
+        HTML.create.url.header.type.innerHTML = `<span>Automation Type:</span> <b>${type}</b>`;
+
+        if (!fieldId) return;
+        fieldName = fieldName ?? "";
+        const fieldContent = fieldName.length > 0 ? `${fieldName} (#${fieldId})` : `#${fieldId}`
+        HTML.create.url.header.field.innerHTML = `<span>Field:</span> <b>${fieldContent}</b>`;
+}
+
+export function clearUrlHeaderOptions() {
+        HTML.create.url.header.type.innerHTML = ``;
+        HTML.create.url.header.field.innerHTML = ``;
+}
+
+export function checkMenuTabBtn(isModify: boolean) {
+        HTML.modify.btn.checked = isModify;
+        HTML.create.btn.checked = !isModify;
+}
+
 export function showCreatedAutomations(): void {
         if (AutomationsState.anyExistingAutomations()) {
                 AutomationsWizard.pushView(HTML.modify.existingAutomations);
