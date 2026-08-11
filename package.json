@@ -1,5 +1,5 @@
 {
-    "name": "diploma-boards",
+    "name": "loom",
     "private": true,
     "version": "0.0.0",
     "type": "module",
@@ -11,7 +11,7 @@
     "devDependencies": {
         "@types/node": "^26.1.1",
         "typescript": "~5.8.3",
-        "vite": "^7.2.4"
+        "vite": "^7.3.6"
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.55.0",

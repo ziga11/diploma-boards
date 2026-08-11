@@ -3,7 +3,7 @@ import type { Entry } from "./types";
 
 export const entryEvents = {
         createFieldEntries: Object.assign(
-                (detail: { field: Field, entryIds: Array<string> }) => new CustomEvent("entry:new-field", { detail }),
+                (detail: { field: Field, entryIds: string[] }) => new CustomEvent("entry:new-field", { detail }),
                 { type: "entry:new-field" as const }
         ),
 
@@ -23,12 +23,12 @@ export const entryEvents = {
         ),
 
         updateRow: Object.assign(
-                (detail: { entryElems: NodeListOf<HTMLDivElement | HTMLInputElement>, entries: Array<Entry> }) => new CustomEvent("entry:update-row", { detail }),
+                (detail: { entryElems: NodeListOf<HTMLDivElement | HTMLInputElement>, entries: Entry[] }) => new CustomEvent("entry:update-row", { detail }),
                 { type: "entry:update-row" as const }
         ),
 
         realtimeNewRows: Object.assign(
-                (detail: Array<{ entries: Array<Entry>, index: number }>) => new CustomEvent("entry:realtime-new-row", { detail }),
+                (detail: { entries: Entry[], index: number }[]) => new CustomEvent("entry:realtime-new-row", { detail }),
                 { type: "entry:realtime-new-row" as const }
         ),
 
@@ -38,12 +38,12 @@ export const entryEvents = {
         ),
 
         updateFieldEntries: Object.assign(
-                (detail: { entries: Array<Entry>, index: number }) => new CustomEvent("entry:update-field-entries", { detail }),
+                (detail: { entries: Entry[], index: number }) => new CustomEvent("entry:update-field-entries", { detail }),
                 { type: "entry:update-field-entries" as const }
         ),
 
         removeEntriesUi: Object.assign(
-                (detail: { fieldId?: string, indices?: Array<number> }) => new CustomEvent("entry:delete-field", { detail }),
+                (detail: { fieldId?: string, indices?: number[] }) => new CustomEvent("entry:delete-field", { detail }),
                 { type: "entry:delete-field" as const }
         ),
 

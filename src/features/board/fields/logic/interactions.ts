@@ -159,6 +159,7 @@ export function resizeField(e: MouseEvent) {
         const newWidth = Math.max(50, startWidth + deltaX);
         resizeProps.newWidth = newWidth;
 
+
         const fieldId = resizeProps.field.dataset.fieldId;
         if (fieldId) {
                 updateLiveFieldWidth(fieldId, newWidth);
@@ -167,7 +168,7 @@ export function resizeField(e: MouseEvent) {
 
 export function onFieldResizeEnd() {
         const resizeProps = FieldsWizard.getResizeState();
-        if (!resizeProps.isResizing) return;
+        if (!resizeProps.isResizing || !resizeProps.newWidth) return;
 
         const fieldId = resizeProps.field!.dataset.fieldId!;
         const newWidth = resizeProps.newWidth!;

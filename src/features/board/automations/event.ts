@@ -22,7 +22,7 @@ export function initAutomationEvents() {
                 else if (elem.className === "automation-field-div") {
                         selectAutomationField(elem.dataset.fieldId!);
                 }
-                else if (elem.className === "#finish-automation") {
+                else if (elem.id === "finish-automation") {
                         finishAutomationCreation(HTML.create.url.input.value.trim());
                 }
                 else if (elem.className === "automation-entry-delete") {

@@ -24,14 +24,14 @@ export const EntryState = {
                 return state.rowCount;
         },
 
-        incrementRowCount() {
-                state.rowCount.rendered += 1;
-                state.rowCount.all += 1;
+        incrementRowCount(n: number = 1) {
+                state.rowCount.rendered += n;
+                state.rowCount.all += n;
         },
 
-        decrementRowCount() {
-                state.rowCount.rendered -= 1;
-                state.rowCount.all -= 1;
+        decrementRowCount(n: number = 1) {
+                state.rowCount.rendered -= n;
+                state.rowCount.all -= n;
         },
 
         setSearchQuery(search: string) {

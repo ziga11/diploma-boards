@@ -8,7 +8,7 @@ export function initAPIKeys() {
 
         fetchAPIKeys()
                 .then(apiKeys => {
-                        const apiKeyElems: Array<HTMLDivElement> = [];
+                        const apiKeyElems: HTMLDivElement[] = [];
                         for (const apiKey of apiKeys) {
                                 apikeyCache.set(`${apiKey.id}`, apiKey);
                                 const apiKeyElem = createAPIKeyElem(apiKey);

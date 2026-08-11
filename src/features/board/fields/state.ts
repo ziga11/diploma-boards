@@ -17,7 +17,7 @@ export const FieldsState = {
 
         setInitalized() { state.isInitialized = true; },
 
-        setFields(fields: Array<Field>) {
+        setFields(fields: Field[]) {
                 state.fields = new Map(fields.map((a) => [a.id!, a]));
         },
 

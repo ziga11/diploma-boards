@@ -12,7 +12,7 @@ export const AutomationsState = {
 
         setInitalized: () => state.isInitialized = true,
 
-        setAutomations(automations: Array<Automation>) {
+        setAutomations(automations: Automation[]) {
                 state.automations = new Map(automations.map(a => [a.id!, a]));
         },
 
@@ -24,14 +24,14 @@ export const AutomationsState = {
                 state.automations.delete(id);
         },
 
-        getByFieldId(fieldId: string): Array<Automation> {
-                return Array.from(state.automations.values()).filter(a => a.field_id === fieldId);
+        getByFieldId(fieldId: string): Automation[] {
+                return Array.from(state.automations.values()).filter(a => a.fieldId === fieldId);
         },
 
-        getAutomations({ typeId, fieldId }: { typeId: AutomationType, fieldId: string }): Array<Automation> {
+        getAutomations({ typeId, fieldId }: { typeId: AutomationType, fieldId: string }): Automation[] {
                 return Array.from(state.automations.values()).filter(a => {
-                        return typeId ? a.automation_id === typeId : true
-                                && fieldId ? a.field_id === fieldId : true;
+                        return typeId ? a.type === typeId : true
+                                && fieldId ? a.fieldId === fieldId : true;
                 });
         },
 

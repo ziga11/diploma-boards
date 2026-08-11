@@ -38,7 +38,7 @@ export function initWorkspaceEvents() {
         window.addEventListener(dashboardEvents.addMultipleBoards.type, (e: Event) => {
                 const detail = (e as ReturnType<typeof dashboardEvents.addMultipleBoards>).detail;
 
-                const boards = detail.boards as Array<Board>;
+                const boards = detail.boards as Board[];
                 const type = detail.type as "owned" | "shared" | "deleted";
 
                 const boardElems = boards.map(board => createBoard(board));

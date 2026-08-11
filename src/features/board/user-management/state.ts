@@ -3,8 +3,8 @@ import { PermissionId } from "@/core/types/auth";
 
 interface UsersState {
         isInitialized: boolean;
-        collaborators: Array<Collaborator>;
-        invitedCollaborators: Array<InvitedCollaborator>;
+        collaborators: Collaborator[];
+        invitedCollaborators: InvitedCollaborator[];
 }
 
 const state: UsersState = {

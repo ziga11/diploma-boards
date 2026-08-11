@@ -1,4 +1,4 @@
-import { AutomationType, type Automation } from "./types";
+import { AutomationType, type Automation, type AutomationDB, type AutomationInsert } from "./types";
 import { supabase } from "@/core/api/supabase";
 import { AutomationsWizard } from "./wizard-state";
 import { HTML } from "./html";
@@ -10,8 +10,8 @@ import { workspaceToken } from "@/features/board/workspace/registry";
 import { addAutomationView, clearUrlInput, hideAutomationByIdView, removeAutomationUi, renderFieldOptions, showAutomation, showCreatedAutomations } from "./ui/dom";
 import { getVisibleAutomationsCount } from "./ui/utils";
 
-function prepareAndRenderFields(id: AutomationType): void {
-        const aId = id ?? AutomationsWizard.draft.automationId;
+function prepareAndRenderFields(type: AutomationType): void {
+        const aId = type ?? AutomationsWizard.draft.type;
         if (!aId) return;
 
         const allFields = MasterRegistry.get(fieldsToken).getAllFields();
@@ -41,13 +41,13 @@ export function hideAutomationById(id: string): HTMLDivElement | null {
         return automationEntry;
 }
 
-export function selectAutomationType(typeId: AutomationType): void {
-        AutomationsWizard.setDraft({ automationId: typeId });
+export function selectAutomationType(type: AutomationType): void {
+        AutomationsWizard.setDraft({ type: type });
 
-        const needsFieldSelection = [AutomationType.EntryChange, AutomationType.ButtonPress].includes(typeId);
+        const needsFieldSelection = [AutomationType.EntryChange, AutomationType.ButtonPress].includes(type);
 
         if (needsFieldSelection) {
-                prepareAndRenderFields(typeId);
+                prepareAndRenderFields(type);
                 AutomationsWizard.pushView(HTML.create.field.div);
         } else {
                 AutomationsWizard.pushView(HTML.create.url.div);
@@ -81,44 +81,45 @@ export function setAutomationURL(url: string) {
 }
 
 export async function finishAutomationCreation(inputUrl: string): Promise<void> {
-        const draft = AutomationsWizard.draft;
-        const boardId = MasterRegistry.get(workspaceToken).getBoardId();
-        const acc = await supabase.getAccount();
-
-        if (!acc) {
-                showToast("Failed to get the account", "error");
-                return;
-        }
-        if (!boardId) {
-                showToast("Failed to get the boardId", "error");
-                return;
-        }
-        if (!draft.automationId) {
-                showToast("Failed to insert an automation: automationId not set", "error");
-                return;
-        }
         if (!inputUrl) {
                 showToast("Failed to insert an automation: url not set", "error");
                 return;
         }
 
+        const draft = AutomationsWizard.draft;
+        if (!draft.type) {
+                showToast("Failed to insert an automation: type not set", "error");
+                return;
+        }
+
+        const boardId = MasterRegistry.get(workspaceToken).getBoardId();
+        if (!boardId) {
+                showToast("Failed to get the boardId", "error");
+                return;
+        }
+
+        const acc = await supabase.getAccount();
+        if (!acc || !acc.id) {
+                showToast("Failed to get the account", "error");
+                return;
+        }
+
         AutomationsWizard.setDraft({ url: inputUrl });
 
-        const newAutomation: Automation = {
-                board_id: boardId,
-                automation_id: draft.automationId,
-                field_id: draft.fieldId,
-                url_call: inputUrl,
-                account_id: acc.id
-        };
+        const newAutomation = {
+                id: crypto.randomUUID(),
+                boardId: boardId,
+                type: draft.type,
+                fieldId: draft.fieldId ?? null,
+                urlCall: inputUrl,
+                accountId: acc.id,
+                dateCreated: Date(),
+        } as Automation;
 
         const automationHTML = addAutomationView(newAutomation);
 
         try {
                 const savedAutomation = await insertAutomation(newAutomation);
-
-                automationHTML.dataset.id = `${savedAutomation.id}`;
-
                 AutomationsState.addAutomation(savedAutomation);
 
                 clearUrlInput();
@@ -132,16 +133,47 @@ export async function finishAutomationCreation(inputUrl: string): Promise<void> 
 }
 
 export async function insertAutomation(automation: Automation): Promise<Automation> {
-        return supabase.insertFieldAutomation(automation);
+        const insertAutomation = AutomationToInsert(automation);
+
+        const dbAutomation = await supabase.insertFieldAutomation(insertAutomation);
+
+        return DBToAutomation(dbAutomation);
 }
 
 export async function deleteAutomation(id: string) {
-        return await supabase.deleteFieldAutomation(id);
+        const dbAutomation = await supabase.deleteFieldAutomation(id);
+        return DBToAutomation(dbAutomation);
 }
 
-export async function fetchAutomations(): Promise<Array<Automation>> {
+export async function fetchAutomations(): Promise<Automation[]> {
         const boardId = MasterRegistry.get(workspaceToken).getBoardId();
         if (!boardId) throw new Error("Failed to get the boardId");
 
-        return await supabase.fetchFieldAutomations(boardId);
+
+        const dbAutomations = await supabase.fetchFieldAutomations(boardId);
+
+        return dbAutomations.map(DBToAutomation);
+}
+
+export function AutomationToInsert(a: Automation): AutomationInsert {
+        return {
+                id: a.id!,
+                account_id: a.accountId,
+                board_id: a.boardId,
+                field_id: a.fieldId,
+                type: a.type,
+                url_call: a.urlCall,
+        };
+}
+
+export function DBToAutomation(a: AutomationDB): Automation {
+        return {
+                id: a.id,
+                type: a.type,
+                urlCall: a.url_call,
+                fieldId: a.field_id,
+                boardId: a.board_id,
+                accountId: a.account_id,
+                dateCreated: a.date_created
+        } as Automation;
 }

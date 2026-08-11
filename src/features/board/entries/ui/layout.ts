@@ -22,9 +22,9 @@ export function setRowIndex(row: HTMLDivElement, index: number): void {
 
 export function setOptionIdsToEntryRow(row: HTMLDivElement, entries: Entry[]): void {
         entries.forEach(e => {
-                if (e.option_id) {
+                if (e.optionId) {
                         const elem = row.querySelector(`[data-entry-id="${e.id!}"]`) as HTMLElement;
-                        if (elem) elem.dataset.optionId = e.option_id;
+                        if (elem) elem.dataset.optionId = e.optionId;
                 }
         });
 }
@@ -57,7 +57,7 @@ export function removeFieldEntries(fieldId: string): void {
         entries.forEach(e => e.remove());
 }
 
-export function updateFieldEntries(entries: Array<Entry>, index: number): void {
+export function updateFieldEntries(entries: Entry[], index: number): void {
         if (entries.length === 0) return;
 
         const entrySets = HTML.entriesList.querySelectorAll(".entry-set") as NodeListOf<HTMLDivElement>;
@@ -65,7 +65,7 @@ export function updateFieldEntries(entries: Array<Entry>, index: number): void {
         for (let i = 0; i < entries.length; i++) {
                 const elem = entrySets.item(i).children.item(index) as HTMLElement;
                 Object.assign(elem.dataset, {
-                        fieldId: `${entries[i].field_id}`,
+                        fieldId: `${entries[i].fieldId}`,
                         entryId: `${entries[i].id}`,
                 });
         }

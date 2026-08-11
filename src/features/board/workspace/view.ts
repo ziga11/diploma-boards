@@ -62,7 +62,7 @@ export function closeLeaveModal() {
 }
 
 export function setBoardTitle(newTitle: string) {
-        HTML.tabTitleTag.innerText = `Diploma Boards - ${newTitle}`;
+        HTML.tabTitleTag.innerText = `Loom - ${newTitle}`;
         HTML.titleSpan.innerText = newTitle;
 }
 

@@ -6,7 +6,7 @@ import { AutomationType } from "./types";
 import { checkMenuTabBtn, clearFieldHeaderOptions, clearUrlHeaderOptions, setFieldHeaderOptions, setUrlHeaderOptions } from "./ui/dom";
 
 interface WizardState {
-        automationId?: AutomationType;
+        type?: AutomationType;
         fieldId?: string;
         url?: string;
         history: HTMLDivElement[];
@@ -23,7 +23,7 @@ export const AutomationsWizard = {
 
         get draft() {
                 return {
-                        automationId: state.automationId,
+                        type: state.type,
                         fieldId: state.fieldId,
                         url: state.url,
                 };
@@ -72,13 +72,13 @@ export const AutomationsWizard = {
         setHeaderOptions(div: HTMLDivElement) {
                 if (div === HTML.create.field.div) {
                         clearFieldHeaderOptions();
-                        const automationType = automationTypeToString(AutomationsWizard.draft.automationId!);
+                        const automationType = automationTypeToString(AutomationsWizard.draft.type!);
 
                         setFieldHeaderOptions(automationType);
                 }
                 else if (div === HTML.create.url.div) {
                         clearUrlHeaderOptions();
-                        const automationType = automationTypeToString(AutomationsWizard.draft.automationId!);
+                        const automationType = automationTypeToString(AutomationsWizard.draft.type!);
                         if (AutomationsWizard.draft.fieldId) {
                                 const field = MasterRegistry.get(fieldsToken).getFieldById(AutomationsWizard.draft.fieldId!);
 
@@ -93,7 +93,7 @@ export const AutomationsWizard = {
 
         clearState(div: HTMLDivElement) {
                 if (div === HTML.create.field.div) {
-                        state.automationId = undefined;
+                        state.type = undefined;
                 }
                 else if (div === HTML.create.url.div) {
                         state.fieldId = undefined;
@@ -103,7 +103,7 @@ export const AutomationsWizard = {
         reset() {
                 state.history.forEach(div => (div.classList.remove("shown")));
                 state.history = [];
-                state.automationId = undefined;
+                state.type = undefined;
                 state.fieldId = undefined;
                 state.url = undefined;
         }

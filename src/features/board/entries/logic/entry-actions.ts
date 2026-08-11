@@ -4,11 +4,11 @@ import { fieldsToken } from "@/features/board/fields/registry";
 import { workspaceToken } from "@/features/board/workspace/registry";
 import { EntryState } from "../state";
 import { EntryWizard } from "../wizard";
-import type { Entry } from "../types";
+import type { DBEntry, Entry, InsertEntry, OptionEntry, ValueEntry } from "../types";
 import { HTML } from "../html";
 import { deleteRowsDB, insertEmptyEntryRowsDB, insertEntryRowsDB } from "./api";
 import { showToast } from "@/core/utils/dom";
-import { appendEntryRow, appendEntryRows, clearEntries, createEntryRow, extractEntryValue, firstDeepestNode, getEntryRowsByIndices, removeEntryRows, setEntryRowVisibility, setOptionIdsToEntryRow, setRowIndex } from "../ui";
+import { appendEntryRow, appendEntryRows, clearEntries, createEntryRow, getEntryRowsByIndices, removeEntryRows, setEntryRowVisibility, setOptionIdsToEntryRow, setRowIndex } from "../ui";
 
 export async function initEntriesView() {
         clearEntries();
@@ -26,7 +26,7 @@ export async function initEntriesView() {
         }
 }
 
-export function addEntryRows(entries: Array<Entry>) {
+export function addEntryRows(entries: Entry[]) {
         const fieldCount = MasterRegistry.get(fieldsToken).getFieldCount();
         const entryRows: Entry[][] = [];
 
@@ -48,17 +48,17 @@ export function createNewEmptyRow() {
         EntryState.incrementRowCount();
 
         const sortedFields = MasterRegistry.get(fieldsToken).getSortedFields();
-        const entries: Entry[] = sortedFields.map(field => ({
+
+        const entries = sortedFields.map(field => ({
                 id: crypto.randomUUID(),
-                field_id: field.id,
+                fieldId: field.id,
                 value: "",
                 type: field.type,
-                date_modified: new Date(),
-        }));
+                dateModified: new Date(),
+        })) as Entry[];
 
-        const fieldEntryIdMap: Record<string, string> = Object.fromEntries(
-                entries.map(entry => [entry.field_id!, entry.id!])
-        );
+        const fieldEntryIdMap: Record<string, string> =
+                Object.fromEntries(entries.map(entry => [entry.fieldId!, entry.id!]));
 
         const row = appendEntryRow(entries);
 
@@ -74,31 +74,47 @@ export function createNewEmptyRow() {
                 });
 }
 
-export async function createEntryCopiesFromRow(entrySet: HTMLDivElement): Promise<Array<Entry>> {
+export async function createEntryCopiesFromRow(entrySet: HTMLDivElement): Promise<Entry[]> {
         const acc = await supabase.getAccount();
-        if (!acc) throw new Error("Failed to get the account");
+        if (!acc || !acc.id) throw new Error("Failed to get the account");
 
         const boardId = MasterRegistry.get(workspaceToken).getBoardId();
         if (!boardId) throw new Error("Failed to get the boardId");
 
-        EntryState.incrementRowCount();
         const entryElems = entrySet.querySelectorAll(".entry") as NodeListOf<HTMLDivElement>;
 
-        return Array.from(entryElems).map(entryElem => {
-                const node = firstDeepestNode(entryElem) as HTMLInputElement | HTMLDivElement;
-                const val = extractEntryValue(node);
+        let entries: Entry[] = [];
 
-                return {
+        for (const elem of entryElems) {
+                const type = elem.dataset.type;
+                const fieldId = elem.dataset.fieldId
+
+                if (!fieldId || !type) continue;
+
+                let entry = {
                         id: crypto.randomUUID(),
-                        field_id: entryElem.dataset.fieldId,
-                        value: val,
-                        account_id: acc.id,
-                        board_id: boardId,
-                        date_modified: new Date(),
-                        type: entryElem.dataset.type,
-                        option_id: entryElem.dataset.optionId ?? undefined,
-                };
-        });
+                        fieldId: fieldId,
+                        index: 1000,
+                        accountId: acc.id,
+                        boardId: boardId,
+                        dateModified: new Date(),
+                        type: type,
+                } as Entry;
+
+                if (elem instanceof HTMLInputElement) {
+                        entry.value = elem.value;
+                }
+                else {
+                        const optionId = elem.dataset.optionId;
+                        if (!optionId) continue;
+
+                        entry.optionId = optionId;
+                }
+
+                entries.push(entry)
+        }
+
+        return entries;
 }
 
 export async function copyEntryRows(entryRows: NodeListOf<HTMLDivElement>) {
@@ -107,16 +123,17 @@ export async function copyEntryRows(entryRows: NodeListOf<HTMLDivElement>) {
 
         for (const row of entryRows) {
                 const entries = await createEntryCopiesFromRow(row);
+
                 rows.push(createEntryRow(entries));
                 entryRowsArr.push(entries);
         }
 
+        EntryState.incrementRowCount(rows.length);
+
         HTML.entriesList.append(...rows);
 
         insertEntryRowsDB(entryRowsArr)
-                .then(indArr => {
-                        indArr.forEach((index, i) => setRowIndex(rows[i], index));
-                })
+                .then(indArr => indArr.forEach((index, i) => setRowIndex(rows[i], index)))
                 .catch(() => {
                         removeEntryRows(rows);
                         const { rendered, all } = EntryState.getRowCount();
@@ -143,7 +160,50 @@ export function removeRowsByIndices(indices: number[]) {
                 });
 }
 
-export function removeRowsByElems(entryRows: Array<HTMLDivElement>) {
+export function removeRowsByElems(entryRows: HTMLDivElement[]) {
         const indices = entryRows.map(e => Number(e.dataset.index));
         removeRowsByIndices(indices);
+}
+
+export function EntryToInsert(entry: Entry): InsertEntry {
+        return {
+                id: entry.id,
+                board_id: entry.boardId,
+                field_id: entry.fieldId,
+                account_id: entry.accountId,
+                option_id: entry.optionId,
+                value: entry.value,
+        };
+}
+
+export function DBToEntry(db: DBEntry): Entry {
+        const field = MasterRegistry.get(fieldsToken).getFieldById(db.field_id);
+        if (!field) throw new Error(`field with id ${db.field_id} does not exist`);
+
+        if (field.type === "status" || field.type === "button") {
+                return {
+                        id: db.id,
+                        fieldId: db.field_id,
+                        accountId: db.account_id,
+                        boardId: db.board_id,
+                        optionId: db.option_id,
+                        dateModified: db.date_modified,
+                        index: db.index,
+                        type: field.type!,
+                } as OptionEntry;
+        }
+        else if (field.type === "text" || field.type === "date") {
+                return {
+                        id: db.id,
+                        fieldId: db.field_id,
+                        accountId: db.account_id,
+                        boardId: db.board_id,
+                        value: db.value,
+                        dateModified: db.date_modified,
+                        index: db.index,
+                        type: field.type!,
+                } as ValueEntry;
+        }
+
+        throw new Error("field type does not exist");
 }

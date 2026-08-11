@@ -1,16 +1,16 @@
 import { supabase } from "@/core/api/supabase";
-import type { Entry } from "./types";
+import type { DBEntry } from "./types";
 import { MasterRegistry } from "@/features/board/master-registry";
 import { EntryState } from "./state";
 import { InfiniteScrollLoader } from "@/core/utils/dom";
 import { fieldsToken } from "@/features/board/fields/registry";
 import { workspaceToken } from "@/features/board//workspace/registry";
-import { addEntryRows } from "./logic/entry-actions";
+import { addEntryRows, DBToEntry } from "./logic/entry-actions";
 
 interface WizardState {
         oldEntryValue?: string,
         debounceTimer?: NodeJS.Timeout,
-        scrollLoader?: InfiniteScrollLoader<Entry>
+        scrollLoader?: InfiniteScrollLoader<DBEntry>
 }
 
 const state: WizardState = {};
@@ -33,7 +33,7 @@ export const EntryWizard = {
         },
 
         initScrollLoader() {
-                state.scrollLoader = new InfiniteScrollLoader<Entry>({
+                state.scrollLoader = new InfiniteScrollLoader<DBEntry>({
                         fetcher: () => {
                                 const boardId = MasterRegistry.get(workspaceToken).getBoardId();
                                 if (!boardId) {
@@ -47,7 +47,11 @@ export const EntryWizard = {
                                         searchQuery: EntryState.getSearchQuery(),
                                 });
                         },
-                        onBatch: (entries) => addEntryRows(entries)
+                        onBatch: (dbEntries) => {
+                                const entries = dbEntries.map(DBToEntry);
+
+                                addEntryRows(entries);
+                        }
                 });
         },
 

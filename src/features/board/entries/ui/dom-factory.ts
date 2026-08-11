@@ -16,12 +16,12 @@ export function genEntry(entry: Entry, options?: Record<string, FieldOption>): H
 
         Object.assign(element.dataset, {
                 type: entry.type,
-                fieldId: `${entry.field_id}`,
+                fieldId: `${entry.fieldId}`,
                 entryId: `${entry.id}`,
         });
 
-        if (entry.option_id) {
-                element.dataset.optionId = entry.option_id;
+        if (entry.optionId) {
+                element.dataset.optionId = entry.optionId;
         }
 
         return element;
@@ -53,7 +53,7 @@ export function createEntryRow(entries: Entry[]): HTMLDivElement {
 
         const entryDivs: HTMLElement[] = [];
         for (let i = 0; i < entries.length; i++) {
-                const field = MasterRegistry.get(fieldsToken).getFieldById(entries[i].field_id!);
+                const field = MasterRegistry.get(fieldsToken).getFieldById(entries[i].fieldId!);
                 entries[i].type = entries[i].type ?? field?.type;
 
                 const divEntry = genEntry(entries[i], field?.options);
@@ -79,6 +79,7 @@ export function createEntryRow(entries: Entry[]): HTMLDivElement {
 export function appendEntryRow(entries: Entry[]): HTMLDivElement {
         const row = createEntryRow(entries);
         HTML.entriesList.appendChild(row);
+
         return row;
 }
 
@@ -87,12 +88,12 @@ export function appendEntryRows(entriesArr: Entry[][]): void {
         HTML.entriesList.append(...rows);
 }
 
-export function createFieldEntries(field: Field, entryIds: Array<string>): void {
+export function createFieldEntries(field: Field, entryIds: string[]): void {
         const entriesDivs = HTML.entriesList.querySelectorAll(".entries-div") as NodeListOf<HTMLDivElement>;
         if (entriesDivs.length === 0) return;
 
         for (let i = 0; i < entryIds.length; i++) {
-                const entry = genEntry({ id: entryIds[i], field_id: field.id, type: field.type } as Entry);
+                const entry = genEntry({ id: entryIds[i], fieldId: field.id, type: field.type } as Entry);
                 entry.dataset.order = `${field.index}`;
                 entry.style.order = `${field.index}`;
 

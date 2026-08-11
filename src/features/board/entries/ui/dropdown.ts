@@ -8,7 +8,7 @@ export function showStatusDropdown(left: number, top: number): void {
         HTML.dropdown.menu.showModal();
 }
 
-export function setDropdownOptions(options: Array<FieldOption>): void {
+export function setDropdownOptions(options: FieldOption[]): void {
         const optionElems = options.map(fh => createOption(fh));
 
         const emptyOption = Object.assign(document.createElement("div"), {

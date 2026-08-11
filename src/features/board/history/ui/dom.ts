@@ -21,8 +21,6 @@ export function appendHistoryLogs(logs: HistoryLog[]) {
 }
 
 export function appendPayloadLogs(logs: EntryLog[]) {
-        console.log(logs);
-
         if (!logs.length) {
                 HTML.list.innerHTML = `<div class="history-empty">No changes match this filter.</div>`;
                 return;
@@ -66,8 +64,8 @@ export function actionType(rawAction: string): string {
 export function setHistoryFilter(action: string, column: string) {
         addActiveStateToFilters(action, column);
 
-        const addHidden: Array<HTMLElement> = [];
-        const removeHidden: Array<HTMLElement> = [];
+        const addHidden: HTMLElement[] = [];
+        const removeHidden: HTMLElement[] = [];
 
         for (const child of HTML.list.children as HTMLCollectionOf<HTMLElement>) {
                 const actionMatch = action === "ALL" || child.dataset.action?.toUpperCase() === action.toUpperCase();

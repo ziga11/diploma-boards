@@ -76,7 +76,7 @@ export function addHTMLField(field: Field): HTMLDivElement {
         return fieldHTML;
 }
 
-export function setFieldDivs(fields: Array<Field>) {
+export function setFieldDivs(fields: Field[]) {
         removeAllFields();
 
         const fragment = document.createDocumentFragment();

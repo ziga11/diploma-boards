@@ -8,8 +8,8 @@ export interface Board {
 }
 
 export interface BoardFetchObject {
-        owned: Array<Board>,
-        shared: Array<Board>,
-        deleted: Array<Board>,
-        all: Array<Board>
+        owned: Board[],
+        shared: Board[],
+        deleted: Board[],
+        all: Board[]
 }

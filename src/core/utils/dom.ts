@@ -1,6 +1,6 @@
 import { toastContainer } from "@/features/global-html";
 
-export function setStateClass(addTo: Array<Element | null | undefined>, removeFrom: Array<Element | null | undefined>, state: string) {
+export function setStateClass(addTo: (Element | null | undefined)[], removeFrom: (Element | null | undefined)[], state: string) {
         addTo.filter((elem): elem is Element => elem != null).forEach((elem) => {
                 elem.classList.add(state);
         });

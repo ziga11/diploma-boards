@@ -2,7 +2,7 @@ import type { Board } from "./types";
 
 export const dashboardEvents = {
         addMultipleBoards: Object.assign(
-                (detail: { boards: Array<Board>, type: "owned" | "shared" | "deleted" }) => new CustomEvent("board:add-multiple", { detail }),
+                (detail: { boards: Board[], type: "owned" | "shared" | "deleted" }) => new CustomEvent("board:add-multiple", { detail }),
                 { type: "board:add-multiple" }
         ),
 

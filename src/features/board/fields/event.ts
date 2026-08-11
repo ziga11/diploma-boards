@@ -188,12 +188,15 @@ export function initFieldEvents() {
 
         document.addEventListener("mousedown", (e: MouseEvent) => {
                 const elem = e.target as HTMLDivElement;
+
                 if (elem.classList[0] == "field-div") {
                         onFieldDragStart(elem);
                 }
                 else if (elem.classList[0] == "resizer") {
                         const parentField = elem.closest(".field-div") as HTMLDivElement;
+
                         if (!parentField) return;
+
                         onFieldResizeStart(parentField)
                 }
         });

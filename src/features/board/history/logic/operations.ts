@@ -20,7 +20,7 @@ export function onFilterColumnPress(elem: HTMLElement) {
         setHistoryFilter(HistoryWizard.getAction(), HistoryWizard.getColumn());
 }
 
-export function addHistoryLogs(logs: Array<HistoryLog>) {
+export function addHistoryLogs(logs: HistoryLog[]) {
         const filtered = logs.filter(log => {
                 const activeAction = HistoryWizard.getAction();
                 const activeColumn = HistoryWizard.getColumn();

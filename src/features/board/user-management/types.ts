@@ -24,9 +24,9 @@ export interface ViewNotification {
 }
 
 export interface NotificationFetchObject {
-        sent: Array<ViewNotification>;
-        received: Array<ViewNotification>;
-        all: Array<ViewNotification>;
+        sent: ViewNotification[];
+        received: ViewNotification[];
+        all: ViewNotification[];
 }
 
 export interface Collaborator {

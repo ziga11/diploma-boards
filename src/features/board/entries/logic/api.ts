@@ -2,15 +2,21 @@ import { supabase } from "@/core/api/supabase";
 import type { Entry } from "../types";
 import { MasterRegistry } from "@/features/board/master-registry";
 import { workspaceToken } from "@/features/board/workspace/registry";
+import { DBToEntry } from "./entry-actions";
 
 export async function insertEmptyEntryRowsDB(ids: Record<string, string>[]): Promise<{ entries: Entry[], row_index: number }[]> {
         const boardId = MasterRegistry.get(workspaceToken).getBoardId();
         if (!boardId) throw new Error("BoardId not set");
 
-        return await supabase.insertEmptyEntryRows(boardId, ids);
+        const rows = await supabase.insertEmptyEntryRows(boardId, ids);
+
+        return rows.map(row => ({
+                ...row,
+                entries: row.entries.map(DBToEntry),
+        }));
 }
 
-export async function insertEntryRowsDB(entryRows: Entry[][]): Promise<Array<number>> {
+export async function insertEntryRowsDB(entryRows: Entry[][]): Promise<number[]> {
         const boardId = MasterRegistry.get(workspaceToken).getBoardId();
         if (!boardId) throw new Error(`Failed to fetch entries, board id not set`);
 
@@ -32,7 +38,7 @@ export async function updateEntryDB(id: string, value: string, optionId?: string
         return await supabase.updateEntry(payload);
 }
 
-export async function deleteRowsDB(indices: Array<number>) {
+export async function deleteRowsDB(indices: number[]) {
         const acc = await supabase.getAccount();
         if (!acc) throw new Error("Failed to get the account");
 

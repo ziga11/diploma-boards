@@ -9,7 +9,7 @@ import { dashboardEvents } from "@/features/dashboard/workspace/custom-events";
 import { userManagementEvents } from "@/features/board/user-management/custom-events";
 import { workspaceEvents } from "@/features/board/workspace/custom-events";
 import { automationEvents } from "@/features/board/automations/custom-events";
-import { type Automation } from "@/features/board/automations/types";
+import { type AutomationDB } from "@/features/board/automations/types";
 import { supabase } from "./supabase";
 import type { Entry } from "@/features/board/entries/types";
 import { topToolbarEvents } from "@/features/board/top-toolbar/custom-events";
@@ -18,6 +18,7 @@ import { usersToken } from "@/features/board/user-management/registry";
 import { workspaceToken } from "@/features/board/workspace/registry";
 import { automationsToken } from "@/features/board/automations/registry";
 import { PermissionId } from "@/core/types/auth";
+import { DBToAutomation } from "@/features/board/automations/logic";
 
 export class RealtimeManager {
         private client: SupabaseClient;
@@ -194,10 +195,11 @@ async function handleBoardCollaboratorRealtime(eventType: string, data: any, acc
         }
 }
 
-async function handleAutomationRealtime(eventType: string, data: Automation) {
+async function handleAutomationRealtime(eventType: string, data: AutomationDB) {
         switch (eventType) {
                 case 'INSERT':
-                        window.dispatchEvent(automationEvents.addAutomation(data));
+                        const automation = DBToAutomation(data);
+                        window.dispatchEvent(automationEvents.addAutomation(automation));
                         break;
                 case 'DELETE':
                         MasterRegistry.get(automationsToken).removeAutomationById(data.id!);
@@ -216,8 +218,6 @@ async function handleFieldRealtime(eventType: string, data: any) {
                         window.dispatchEvent(fieldEvents.fieldNameUpdate(data));
                         break;
                 case 'UPDATE-SWAP':
-                        console.log("UPDATE SWAPPPP", data);
-
                         window.dispatchEvent(fieldEvents.realtimeSwapField(data));
 
                         data.styleSwap = true;
@@ -246,7 +246,7 @@ async function handleFieldOptionRealtime(eventType: string, data: FieldOption) {
 async function handleEntryRealtime(eventType: string, data: any) {
         switch (eventType) {
                 case 'INSERT-ROWS':
-                        const rows = data as Array<{ entries: Array<Entry>, index: number }>;
+                        const rows = data as { entries: Array<Entry>, index: number }[];
 
                         window.dispatchEvent(entryEvents.realtimeNewRows(rows))
                         break;

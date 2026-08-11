@@ -50,6 +50,10 @@
 }
 
 /* Create | Modify */
+.create-automations-container {
+        width: 840px;
+}
+
 .modal-automation-options {
         display: inline-flex;
         gap: 0.5em;
@@ -79,7 +83,7 @@
 
 .automation-type-selection {
         display: none;
-        max-width: 800px;
+        width: 840px;
 }
 
 .automation-type-selection .automations-header>div {
@@ -173,6 +177,7 @@
 .field-automation-selection {
         display: none;
         flex-direction: column;
+        width: 800;
         gap: 0;
 }
 

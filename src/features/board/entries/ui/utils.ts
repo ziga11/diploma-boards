@@ -2,7 +2,7 @@ import type { FieldOption } from "@/features/board/fields/types";
 import type { Entry } from "../types";
 
 export function createStatusEntry(entry: Entry, options?: Record<string, FieldOption>): HTMLDivElement {
-        const val = entry.option_id && options?.[entry.option_id] ? options[entry.option_id].value : "";
+        const val = entry.optionId && options?.[entry.optionId] ? options[entry.optionId].value : "";
         const div = Object.assign(document.createElement("div"), {
                 className: "entry-status entry",
                 title: val,
@@ -15,7 +15,7 @@ export function createStatusEntry(entry: Entry, options?: Record<string, FieldOp
 
 export function createButtonEntry(entry: Entry, options?: Record<string, FieldOption>): HTMLDivElement {
         const div = Object.assign(document.createElement("div"), { className: "entry" });
-        const val = entry.option_id && options?.[entry.option_id] ? options[entry.option_id].value : "";
+        const val = entry.optionId && options?.[entry.optionId] ? options[entry.optionId].value : "";
 
         const btn = Object.assign(document.createElement("button"), {
                 type: "button",

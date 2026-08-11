@@ -92,11 +92,8 @@
         transition: background-color 0.2s ease, border-color 0.2s ease opacity 0.3s;
         width: var(--col-width, 220px);
         height: 34px;
-        box-sizing: border-box;
-}
-
-.entry-status {
         font-size: 13px;
+        box-sizing: border-box;
 }
 
 .entry.hidden {

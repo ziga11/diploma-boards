@@ -99,9 +99,9 @@ export function targetFieldName(column: string, id: string): string {
                 }
                 case "automation": {
                         const automation = MasterRegistry.get(automationsToken).getAutomationById(id);
-                        if (!automation?.field_id) return "";
+                        if (!automation?.fieldId) return "";
 
-                        return MasterRegistry.get(fieldsToken).getFieldById(automation?.field_id)?.name ?? "";
+                        return MasterRegistry.get(fieldsToken).getFieldById(automation?.fieldId)?.name ?? "";
                 }
                 default:
                         return "";

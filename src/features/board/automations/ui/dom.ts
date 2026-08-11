@@ -50,7 +50,7 @@ export function showCreatedAutomations(): void {
         }
 }
 
-export function setAutomationsView(automations: Array<Automation>): Array<HTMLDivElement> {
+export function setAutomationsView(automations: Automation[]): HTMLDivElement[] {
         const automationDivs = automations.map(automation => createAutomation(automation));
         HTML.modify.existingAutomations.replaceChildren(...automationDivs);
 
@@ -102,7 +102,7 @@ export function showAutomation(elem: HTMLDivElement): void {
         AutomationsWizard.pushView(HTML.modify.existingAutomations);
 }
 
-export function renderFieldOptions(fields: Array<Field>): void {
+export function renderFieldOptions(fields: Field[]): void {
         const options = fields.map(field => createFieldOption(field));
         HTML.create.field.fieldsContainer.replaceChildren(...options);
 }

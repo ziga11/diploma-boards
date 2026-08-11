@@ -4,7 +4,7 @@ export async function insertAPIKey(id: string, name: string): Promise<ApiKey> {
         return supabase.genApiKey(id, name);
 }
 
-export async function fetchAPIKeys(): Promise<Array<ApiKey>> {
+export async function fetchAPIKeys(): Promise<ApiKey[]> {
         return supabase.fetchApiKeys();
 }
 

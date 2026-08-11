@@ -1,8 +1,8 @@
 import { createClient, SupabaseClient, type PostgrestResponse } from '@supabase/supabase-js'
-import { AutomationType, type Automation } from '@/features/board/automations/types';
+import { AutomationType, type AutomationDB, type AutomationInsert } from '@/features/board/automations/types';
 import type { Collaborator, InvitedCollaborator, NotificationFetchObject, ViewNotification } from '@/features/board/user-management/types';
 import type { Field, FieldOption } from '@/features/board/fields/types';
-import type { Entry, FetchEntriesParams } from '@/features/board/entries/types';
+import type { DBEntry, Entry, FetchEntriesParams } from '@/features/board/entries/types';
 import type { Board } from '@/features/board/workspace/types';
 import type { BoardFetchObject } from '@/features/dashboard/workspace/types';
 import { RealtimeManager } from './realtime';
@@ -231,12 +231,6 @@ export class Supabase {
         }
 
         async kickCollaborator(boardId: string, otherAccId: string) {
-                console.log({
-                        p_board_id: boardId,
-                        p_other_acc_id: otherAccId,
-                        p_client_id: this.clientId
-                });
-
                 const { error } = await this.client.rpc("remove_collaborator", {
                         p_board_id: boardId,
                         p_other_acc_id: otherAccId,
@@ -246,7 +240,7 @@ export class Supabase {
                 if (error) console.warn("Error leaving the board:", error);
         }
 
-        async insertFieldWithEntries(field: Field, entryIds: Array<string>): Promise<{ field: Field, entries: Entry[] }> {
+        async insertFieldWithEntries(field: Field, entryIds: string[]): Promise<{ field: Field, entries: Entry[] }> {
                 const { data, error } = await this.client.rpc('create_field_with_entries', {
                         p_field_id: field.id,
                         p_entry_ids: entryIds,
@@ -304,7 +298,7 @@ export class Supabase {
                 return data || [];
         }
 
-        async *fetchPagedEntries({ boardId, fieldCount, searchQuery, sortedBy }: FetchEntriesParams): AsyncGenerator<Array<Entry>> {
+        async *fetchPagedEntries({ boardId, fieldCount, searchQuery, sortedBy }: FetchEntriesParams): AsyncGenerator<DBEntry[]> {
                 const BATCH_SIZE = fieldCount * 35;
                 let offset = 0;
 
@@ -322,7 +316,7 @@ export class Supabase {
 
                         if (!data || data.length === 0) return;
 
-                        yield data as Array<Entry>;
+                        yield data;
 
                         if (data.length < BATCH_SIZE) return;
 
@@ -354,7 +348,7 @@ export class Supabase {
                 }
         }
 
-        async fetchFieldOptions(fieldIds: Array<string>): Promise<Map<string, Array<FieldOption>>> {
+        async fetchFieldOptions(fieldIds: string[]): Promise<Map<string, FieldOption[]>> {
                 const { data, error } = await this.client
                         .from("field_option")
                         .select("id, field_id, value")
@@ -421,7 +415,7 @@ export class Supabase {
                 }
         }
 
-        async insertEmptyEntryRows(boardId: string, fieldIdEntryIdMap?: Record<string, string>[], rowCount: number = 1): Promise<{ entries: Entry[], row_index: number }[]> {
+        async insertEmptyEntryRows(boardId: string, fieldIdEntryIdMap?: Record<string, string>[], rowCount: number = 1): Promise<{ entries: DBEntry[], row_index: number }[]> {
                 const acc = this.account;
                 if (!acc) {
                         console.warn("account not set");
@@ -443,10 +437,10 @@ export class Supabase {
                         throw error;
                 }
 
-                return (rows as { entries: Entry[], row_index: number }[]);
+                return (rows as { entries: DBEntry[], row_index: number }[]);
         }
 
-        async insertEntryRows(boardId: string, entrySets: Array<Array<Entry>>): Promise<Array<number>> {
+        async insertEntryRows(boardId: string, entrySets: Entry[][]): Promise<number[]> {
                 if (!entrySets.length) {
                         console.warn("error inserting entries, board_id is null or there's no entries");
                 }
@@ -469,16 +463,16 @@ export class Supabase {
                         for (const entry of entries) {
                                 row.push({
                                         id: entry.id,
-                                        field_id: entry.field_id,
+                                        field_id: entry.fieldId,
                                         value: entry.value,
-                                        option_id: entry.option_id
+                                        option_id: entry.optionId
                                 } as json_entry);
                         }
                         payload.p_entry_rows.push(row);
                 }
 
                 type rowPayload = {
-                        entries: Array<Entry>
+                        entries: Entry[]
                         row_index: number,
                 };
 
@@ -530,7 +524,7 @@ export class Supabase {
                 }
         }
 
-        async deleteEntryRows(boardId: string, indices: Array<number>): Promise<void> {
+        async deleteEntryRows(boardId: string, indices: number[]): Promise<void> {
                 let query = this.client.rpc("delete_entry_rows", {
                         p_board_id: boardId,
                         p_indices: indices,
@@ -544,7 +538,7 @@ export class Supabase {
                 }
         }
 
-        async insertFieldAutomation(automation: Automation): Promise<Automation> {
+        async insertFieldAutomation(automation: AutomationInsert): Promise<AutomationDB> {
                 const { data, error } = await this.client.from('field_automations')
                         .insert(automation)
                         .select()
@@ -555,10 +549,10 @@ export class Supabase {
                         throw error;
                 }
 
-                return data as Automation;
+                return data as AutomationDB;
         }
 
-        async deleteFieldAutomation(id: string): Promise<Automation> {
+        async deleteFieldAutomation(id: string): Promise<AutomationDB> {
                 const { data, error } = await this.client
                         .from('field_automations')
                         .delete()
@@ -573,27 +567,27 @@ export class Supabase {
 
                 this.realtime.broadcastMutation("automation", "DELETE", data)
 
-                return data as Automation;
+                return data as AutomationDB;
         }
 
-        async fetchFieldAutomations(boardId: string, { fieldId, automationIds }:
-                { fieldId?: string, automationIds?: Array<AutomationType> } = {}): Promise<Array<Automation>> {
+        async fetchFieldAutomations(boardId: string, { fieldId, types }:
+                { fieldId?: string, types?: AutomationType[] } = {}): Promise<AutomationDB[]> {
                 let query = this.client
                         .from('field_automations')
-                        .select('id, automation_id, board_id, field_id, url_call')
+                        .select('id, type, board_id, field_id, url_call')
                         .eq('board_id', boardId);
 
                 if (fieldId !== undefined) {
                         query = query.eq('field_id', fieldId);
                 }
-                if (automationIds !== undefined) {
-                        query = query.in('automation_id', automationIds);
+                if (types !== undefined) {
+                        query = query.in('type', types);
                 }
 
                 const { data, error } = await query;
                 if (error) console.warn(`Failed to fetch action field link: ${error.message}`);
 
-                return data as Array<Automation>;
+                return data as unknown as AutomationDB[];
         }
 
         async genApiKey(id: string, name: string): Promise<ApiKey> {
@@ -619,7 +613,7 @@ export class Supabase {
                 if (error) console.warn("Error deleting board:", error);
         }
 
-        async fetchApiKeys(): Promise<Array<ApiKey>> {
+        async fetchApiKeys(): Promise<ApiKey[]> {
                 let { data, error } = await this.client.rpc("get_api_keys");
 
                 if (error) {
@@ -627,7 +621,7 @@ export class Supabase {
                         throw error;
                 }
 
-                return data as Array<ApiKey>;
+                return data as ApiKey[];
         }
 
         async inviteCollaborator({ board_id, id, to_email, permission_id }: { board_id: string, id: string, to_email: string, permission_id: number }): Promise<InvitedCollaborator> {
@@ -688,7 +682,7 @@ export class Supabase {
                 return all[0];
         }
 
-        async *fetchHistory(boardId: string): AsyncGenerator<Array<HistoryLog>> {
+        async *fetchHistory(boardId: string): AsyncGenerator<HistoryLog[]> {
                 const BATCH_SIZE = 250;
                 let lastCreatedAt: string | null = null;
 
@@ -709,14 +703,14 @@ export class Supabase {
                         if (error) throw error;
                         if (!data || data.length === 0) return;
 
-                        yield data as Array<HistoryLog>;
+                        yield data as HistoryLog[];
 
                         lastCreatedAt = data[data.length - 1].created_at;
                         if (data.length < BATCH_SIZE) return;
                 }
         }
 
-        async *fetchHistoryLogEntries(boardId: string, logId: string): AsyncGenerator<Array<EntryLog>> {
+        async *fetchHistoryLogEntries(boardId: string, logId: string): AsyncGenerator<EntryLog[]> {
                 const BATCH_SIZE = 250;
                 let returnCount = 0;
 
@@ -728,7 +722,7 @@ export class Supabase {
                         if (error) throw error;
                         if (!data || data.length === 0) return;
 
-                        yield data as Array<EntryLog>;
+                        yield data as EntryLog[];
 
                         returnCount += BATCH_SIZE;
                         if (data.length < BATCH_SIZE) return;
@@ -753,7 +747,7 @@ export class Supabase {
         async triggerButtonAutomation(boardId: string, entryId: string) {
                 const { error } = await this.client.rpc("trigger_automation", {
                         p_board_id: boardId,
-                        p_automation_id: AutomationType.ButtonPress,
+                        p_automation_type: AutomationType.ButtonPress,
                         p_entry_id: entryId,
                 });
 
