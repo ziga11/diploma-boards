@@ -1,9 +1,11 @@
+import type { FieldType } from "../fields/types";
+
 interface BaseEntry {
         id: string;
         boardId: string;
         dateModified: Date;
         index: number;
-        type: string;
+        type: FieldType;
         fieldId: string;
         accountId: string;
 }

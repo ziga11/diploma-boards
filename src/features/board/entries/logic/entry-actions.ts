@@ -9,6 +9,7 @@ import { HTML } from "../html";
 import { deleteRowsDB, insertEmptyEntryRowsDB, insertEntryRowsDB } from "./api";
 import { showToast } from "@/core/utils/dom";
 import { appendEntryRow, appendEntryRows, clearEntries, createEntryRow, getEntryRowsByIndices, removeEntryRows, setEntryRowVisibility, setOptionIdsToEntryRow, setRowIndex } from "../ui";
+import { FieldType } from "../../fields/types";
 
 export async function initEntriesView() {
         clearEntries();
@@ -98,7 +99,7 @@ export async function createEntryCopiesFromRow(entrySet: HTMLDivElement): Promis
                         accountId: acc.id,
                         boardId: boardId,
                         dateModified: new Date(),
-                        type: type,
+                        type: FieldType[type as keyof typeof FieldType],
                 } as Entry;
 
                 if (elem instanceof HTMLInputElement) {
@@ -180,7 +181,9 @@ export function DBToEntry(db: DBEntry): Entry {
         const field = MasterRegistry.get(fieldsToken).getFieldById(db.field_id);
         if (!field) throw new Error(`field with id ${db.field_id} does not exist`);
 
-        if (field.type === "status" || field.type === "button") {
+        const type = field.type;
+
+        if (type === FieldType.status || type === FieldType.button) {
                 return {
                         id: db.id,
                         fieldId: db.field_id,
@@ -192,7 +195,7 @@ export function DBToEntry(db: DBEntry): Entry {
                         type: field.type!,
                 } as OptionEntry;
         }
-        else if (field.type === "text" || field.type === "date") {
+        else if (type === FieldType.text || type === FieldType.date) {
                 return {
                         id: db.id,
                         fieldId: db.field_id,
@@ -205,5 +208,6 @@ export function DBToEntry(db: DBEntry): Entry {
                 } as ValueEntry;
         }
 
-        throw new Error("field type does not exist");
+
+        throw new Error(`field type (${type}) does not exist`);
 }

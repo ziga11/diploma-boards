@@ -1,4 +1,4 @@
-import type { Field, FieldOption } from "@/features/board/fields/types";
+import { FieldType, type Field, type FieldOption } from "@/features/board/fields/types";
 import { MasterRegistry } from "@/features/board/master-registry";
 import { fieldsToken } from "@/features/board/fields/registry";
 import { workspaceToken } from "@/features/board/workspace/registry";
@@ -6,16 +6,18 @@ import { createButtonEntry, createStatusEntry, createTextEntry } from "./utils";
 import type { Entry } from "../types";
 import { HTML } from "../html";
 import { PermissionId } from "@/core/types/auth";
+import type { DraftEntry } from "../render-types";
+import type { DraftField } from "../../fields/render-types";
 
-export function genEntry(entry: Entry, options?: Record<string, FieldOption>): HTMLElement {
+export function genEntry(entry: DraftEntry | Entry, options?: Record<string, FieldOption>): HTMLElement {
         let element: HTMLElement;
 
-        if (entry.type === "status") element = createStatusEntry(entry, options);
-        else if (entry.type === "button") element = createButtonEntry(entry, options);
+        if (entry.type === FieldType.status) element = createStatusEntry(entry, options);
+        else if (entry.type === FieldType.button) element = createButtonEntry(entry, options);
         else element = createTextEntry(entry);
 
         Object.assign(element.dataset, {
-                type: entry.type,
+                type: FieldType[entry.type],
                 fieldId: `${entry.fieldId}`,
                 entryId: `${entry.id}`,
         });
@@ -88,12 +90,12 @@ export function appendEntryRows(entriesArr: Entry[][]): void {
         HTML.entriesList.append(...rows);
 }
 
-export function createFieldEntries(field: Field, entryIds: string[]): void {
+export function createFieldEntries(field: Field | DraftField, entryIds: string[]): void {
         const entriesDivs = HTML.entriesList.querySelectorAll(".entries-div") as NodeListOf<HTMLDivElement>;
         if (entriesDivs.length === 0) return;
 
         for (let i = 0; i < entryIds.length; i++) {
-                const entry = genEntry({ id: entryIds[i], fieldId: field.id, type: field.type } as Entry);
+                const entry = genEntry({ id: entryIds[i], fieldId: field.id, type: field.type } as DraftEntry);
                 entry.dataset.order = `${field.index}`;
                 entry.style.order = `${field.index}`;
 

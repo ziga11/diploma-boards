@@ -1,4 +1,5 @@
 import { HTML } from "../html";
+import type { DraftField } from "../render-types";
 import type { Field } from "../types";
 import { closeDialog } from "@/core/utils/dom";
 
@@ -43,7 +44,7 @@ export function applyFieldWidthStyles(widthRecords: Record<string, number>): voi
         }
 }
 
-export function createHTMLField(field: Field): HTMLDivElement {
+export function createHTMLField(field: DraftField | Field): HTMLDivElement {
         const div = Object.assign(document.createElement('div'), {
                 className: "field-div",
         });
@@ -69,10 +70,12 @@ export function createHTMLField(field: Field): HTMLDivElement {
         return div;
 }
 
-export function addHTMLField(field: Field): HTMLDivElement {
+export function addHTMLField(field: DraftField | Field): HTMLDivElement {
         const fieldHTML = createHTMLField(field);
+
         const lastChild = HTML.fieldsDiv.lastElementChild;
         HTML.fieldsDiv.insertBefore(fieldHTML, lastChild);
+
         return fieldHTML;
 }
 

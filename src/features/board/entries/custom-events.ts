@@ -1,9 +1,10 @@
 import type { Field } from "@/features/board/fields/types";
 import type { Entry } from "./types";
+import type { DraftField } from "../fields/render-types";
 
 export const entryEvents = {
         createFieldEntries: Object.assign(
-                (detail: { field: Field, entryIds: string[] }) => new CustomEvent("entry:new-field", { detail }),
+                (detail: { field: Field | DraftField, entryIds: string[] }) => new CustomEvent("entry:new-field", { detail }),
                 { type: "entry:new-field" as const }
         ),
 

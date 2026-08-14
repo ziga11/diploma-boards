@@ -31,6 +31,7 @@ export const FieldsModule = {
                 const fields = await fetchFields();
 
                 FieldsState.setFields(fields);
+
                 restoreBoardSorting();
 
                 setFieldDivs(fields);

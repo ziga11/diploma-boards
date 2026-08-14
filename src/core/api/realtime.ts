@@ -232,13 +232,13 @@ async function handleFieldRealtime(eventType: string, data: any) {
 async function handleFieldOptionRealtime(eventType: string, data: FieldOption) {
         switch (eventType) {
                 case 'INSERT':
-                        window.dispatchEvent(fieldEvents.addFieldOption({ id: data.id!, value: data.value, fieldId: data.field_id!, accountId: data.account_id }));
+                        window.dispatchEvent(fieldEvents.addFieldOption({ id: data.id!, value: data.value, fieldId: data.fieldId!, accountId: data.accountId }));
                         break;
                 case 'UPDATE':
-                        window.dispatchEvent(fieldEvents.updateFieldOption({ id: data.id!, value: data.value, fieldId: data.field_id!, accountId: data.account_id }));
+                        window.dispatchEvent(fieldEvents.updateFieldOption({ id: data.id!, value: data.value, fieldId: data.fieldId!, accountId: data.accountId }));
                         break;
                 case 'DELETE':
-                        window.dispatchEvent(fieldEvents.removeFieldOption({ id: data.id!, fieldId: data.field_id! }));
+                        window.dispatchEvent(fieldEvents.removeFieldOption({ id: data.id!, fieldId: data.fieldId! }));
                         break;
         }
 }

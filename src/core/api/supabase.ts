@@ -1,7 +1,7 @@
 import { createClient, SupabaseClient, type PostgrestResponse } from '@supabase/supabase-js'
 import { AutomationType, type AutomationDB, type AutomationInsert } from '@/features/board/automations/types';
 import type { Collaborator, InvitedCollaborator, NotificationFetchObject, ViewNotification } from '@/features/board/user-management/types';
-import type { Field, FieldOption } from '@/features/board/fields/types';
+import type { DBField, DBFieldOption, FieldOption, InsertField, InsertFieldOption } from '@/features/board/fields/types';
 import type { DBEntry, Entry, FetchEntriesParams } from '@/features/board/entries/types';
 import type { Board } from '@/features/board/workspace/types';
 import type { BoardFetchObject } from '@/features/dashboard/workspace/types';
@@ -240,17 +240,29 @@ export class Supabase {
                 if (error) console.warn("Error leaving the board:", error);
         }
 
-        async insertFieldWithEntries(field: Field, entryIds: string[]): Promise<{ field: Field, entries: Entry[] }> {
+        async insertFieldWithEntries(insField: InsertField): Promise<{ field: DBField, entries: DBEntry[] }> {
+                console.log({
+                        p_field_id: insField.field_id,
+                        p_entry_ids: insField.entry_ids,
+                        p_board_id: insField.board_id,
+                        p_name: insField.name,
+                        p_type: insField.type,
+                        p_client_id: this.clientId,
+                });
+
                 const { data, error } = await this.client.rpc('create_field_with_entries', {
-                        p_field_id: field.id,
-                        p_entry_ids: entryIds,
-                        p_board_id: field.board_id,
-                        p_name: "",
-                        p_type: field.type,
+                        p_field_id: insField.field_id,
+                        p_entry_ids: insField.entry_ids,
+                        p_board_id: insField.board_id,
+                        p_name: insField.name,
+                        p_type: insField.type,
                         p_client_id: this.clientId,
                 });
 
                 if (error) throw error;
+
+                console.log(data);
+
 
                 return { field: data.field, entries: data.entries };
         }
@@ -324,7 +336,7 @@ export class Supabase {
                 }
         }
 
-        async fetchFields(boardId: string): Promise<Field[]> {
+        async fetchFields(boardId: string): Promise<DBField[]> {
                 const { data, error } = await this.client.rpc("fetch_fields", {
                         p_board_id: boardId,
                 });
@@ -334,7 +346,7 @@ export class Supabase {
                         throw error;
                 }
 
-                return data as Field[];
+                return data as DBField[];
         }
 
         async deleteField(fieldId: string): Promise<void> {
@@ -368,7 +380,7 @@ export class Supabase {
 
                         const option = {
                                 id: row.id,
-                                field_id: row.field_id,
+                                fieldId: row.field_id,
                                 value: row.value
                         } as FieldOption;
                         options.push(option);
@@ -387,11 +399,11 @@ export class Supabase {
                 if (error) throw new Error(`Failed to update field option ${error.message}`)
         }
 
-        async insertFieldOption(fieldOption: FieldOption): Promise<void> {
-                const { error } = await this.client.rpc("insert_option", {
-                        p_option_id: fieldOption.id,
-                        p_field_id: fieldOption.field_id,
-                        p_value: fieldOption.value,
+        async insertFieldOption(insFo: InsertFieldOption): Promise<DBFieldOption> {
+                const { data, error } = await this.client.rpc("insert_option", {
+                        p_option_id: insFo.id,
+                        p_field_id: insFo.field_id,
+                        p_value: insFo.value,
                         p_client_id: this.clientId,
                 });
 
@@ -399,6 +411,8 @@ export class Supabase {
                         console.warn(`Failed to insert fieldOption: ${error.message}`);
                         throw error;
                 }
+
+                return data;
         }
 
         async deleteFieldOptions({ id, fieldId, value }: { id?: string, fieldId?: string, value?: string }): Promise<void> {
@@ -429,6 +443,7 @@ export class Supabase {
                         p_row_count: rowCount,
                         p_client_id: this.clientId,
                 };
+
 
                 const { data: rows, error } = await this.client.rpc("insert_empty_entry_rows", payload);
 

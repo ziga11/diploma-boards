@@ -3,11 +3,17 @@ import type { Field, FieldOption } from "../types";
 import type { Entry } from "@/features/board/entries/types";
 import { MasterRegistry } from "@/features/board/master-registry";
 import { workspaceToken } from "@/features/board/workspace/registry";
+import type { DraftField, DraftFieldOption } from "../render-types";
+import { DBToField, DBToFieldOption, FieldOptionToInsert, FieldToInsert } from "./operations";
+import { DBToEntry } from "../../entries/logic/entry-actions";
 
-export async function fetchFields() {
+export async function fetchFields(): Promise<Field[]> {
         const boardId = MasterRegistry.get(workspaceToken).getBoardId();
         if (!boardId) throw new Error(`Cannot fetch fields, boardId not set`);
-        return supabase.fetchFields(boardId);
+
+        const fields = await supabase.fetchFields(boardId);
+
+        return fields.map(DBToField);
 }
 
 export async function deleteFieldInDB(fieldId: string) {
@@ -18,19 +24,12 @@ export async function updateFieldNameInDB(fieldId: string, newName: string) {
         await supabase.updateField(fieldId, newName);
 }
 
-export async function insertFieldAndEntriesToDB(type: string, fieldId: string, entryIds: string[]): Promise<{ field: Field; entries: Entry[] }> {
-        const acc = await supabase.getAccount();
-        const boardId = MasterRegistry.get(workspaceToken).getBoardId();
+export async function insertFieldAndEntriesToDB(f: DraftField | Field, entryIds: string[]): Promise<{ field: Field; entries: Entry[] }> {
+        const insField = FieldToInsert(f, entryIds);
 
-        if (!boardId || !acc) throw new Error("Bug occurred, account or boardId not set");
+        const { field, entries } = await supabase.insertFieldWithEntries(insField);
 
-        return await supabase.insertFieldWithEntries({
-                id: fieldId,
-                type: type,
-                account_id: acc.id,
-                board_id: boardId,
-                name: "",
-        } as Field, entryIds);
+        return { field: DBToField(field), entries: entries.map(DBToEntry) };
 }
 
 export async function switchIndexInDB(fieldId1: string, fieldId2: string) {
@@ -42,12 +41,12 @@ export async function switchIndexInDB(fieldId1: string, fieldId2: string) {
         });
 }
 
-export async function insertFieldOptionToDB(id: string, fieldId: string, value: string): Promise<void> {
-        const acc = await supabase.getAccount();
-        if (!acc) throw new Error("Not logged in");
+export async function insertFieldOptionToDB(draftFo: DraftFieldOption): Promise<FieldOption> {
+        const insFo = FieldOptionToInsert(draftFo);
 
-        const option = { id, field_id: fieldId, account_id: acc.id, value } as FieldOption;
-        await supabase.insertFieldOption(option);
+        const dbFo = await supabase.insertFieldOption(insFo);
+
+        return DBToFieldOption(dbFo);
 }
 
 export async function removeFieldOptionFromDB(id: string | undefined) {

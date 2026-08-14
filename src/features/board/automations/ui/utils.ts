@@ -1,6 +1,6 @@
 import DOMPurify from 'dompurify';
 import { AutomationType, type Automation } from "../types";
-import type { Field } from '@/features/board/fields/types';
+import { FieldType, type Field } from '@/features/board/fields/types';
 import { HTML } from '../html';
 import { automationTypeToString } from '../logic';
 
@@ -23,13 +23,14 @@ export function createFieldOption(field: Field): HTMLDivElement {
         return automationDiv;
 }
 
-function getFieldIcon(type: string): string {
-        const icons: Record<string, string> = {
-                status: `<i class="ti ti-list-details"></i>`,
-                text: `<i class="ti ti-text-scan-2"></i>`,
-                button: `<i class="ti ti-click"></i>`,
+function getFieldIcon(type: FieldType): string {
+        const icons: Omit<Record<FieldType, string>, FieldType.date> = {
+                [FieldType.status]: `<i class="ti ti-list-details"></i>`,
+                [FieldType.text]: `<i class="ti ti-text-scan-2"></i>`,
+                [FieldType.button]: `<i class="ti ti-click"></i>`,
         };
-        return icons[type] ?? icons.text;
+
+        return type == FieldType.date ? icons[FieldType.text] : icons[type];
 }
 
 function automationIcon(type: AutomationType): string {

@@ -1,6 +1,6 @@
 import DOMPurify from 'dompurify';
 import { FieldsState } from '../state';
-import type { Field, FieldOption } from '../types';
+import { FieldType, type Field, type FieldOption } from '../types';
 import { closeFieldMenu } from './field';
 import { HTML } from '../html';
 
@@ -18,9 +18,9 @@ export function populateFieldEditModal(field: Field): void {
         HTML.editModal.idSpan.textContent = `${field.id}`;
         HTML.editModal.title.innerText = `Edit Field: ${field.name}`;
 
-        if (field.type === "status") {
+        if (field.type === FieldType.status) {
                 populateStatusEditField(field.options ?? {});
-        } else if (field.type == "button") {
+        } else if (field.type == FieldType.button) {
                 const option = Object.values(field.options!)[0];
                 populateButtonEditField(field.id!, option.id!, option.value);
         } else {

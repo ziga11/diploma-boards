@@ -25,6 +25,10 @@ export const FieldsState = {
                 if (a.id) state.fields.set(a.id, a);
         },
 
+        updateField(id: string, field: Field) {
+                state.fields.set(id, field);
+        },
+
         updateFieldName(id: string, name: string) {
                 const field = state.fields.get(id);
                 if (!field) return;
@@ -74,9 +78,9 @@ export const FieldsState = {
         },
 
         addOption(option: FieldOption) {
-                if (!option.field_id || !option.id) return;
+                if (!option.fieldId || !option.id) return;
 
-                const field = state.fields.get(option.field_id);
+                const field = state.fields.get(option.fieldId);
                 if (!field) return;
 
                 if (!field.options) field.options = {};

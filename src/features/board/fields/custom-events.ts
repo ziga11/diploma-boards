@@ -42,7 +42,7 @@ export const fieldEvents = {
         ),
 
         addFieldOption: Object.assign(
-                (detail: { id: string, fieldId: string, value: string, accountId?: string }) => new CustomEvent("field-option:add", { detail }),
+                (detail: { id: string, fieldId: string, value: string, accountId: string }) => new CustomEvent("field-option:add", { detail }),
                 { type: "field-option:add" as const }
         ),
 

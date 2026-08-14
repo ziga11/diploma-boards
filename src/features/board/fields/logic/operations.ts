@@ -1,7 +1,7 @@
 import { showToast } from "@/core/utils/dom";
 import { entryEvents } from "@/features/board/entries/custom-events";
 import { FieldsState } from "../state";
-import type { Field } from "../types";
+import { FieldType, type DBField, type Field, type FieldOption, type DBFieldOption, type InsertField, type InsertFieldOption } from "../types";
 import { addHTMLField, closeNewFieldMenu, removeField, updateFieldNameUi } from "../ui/field";
 import { insertFieldAndEntriesToDB, deleteFieldInDB, insertFieldOptionToDB, removeFieldOptionFromDB, updateFieldOptionInDB, updateFieldNameInDB } from "./api";
 import { fieldEvents } from "../custom-events";
@@ -10,6 +10,8 @@ import { setEditFieldOptionVisibility, updateEditFieldOption } from "../ui/optio
 import { MasterRegistry } from "@/features/board/master-registry";
 import { entriesToken } from "@/features/board/entries/registry";
 import { workspaceToken } from "@/features/board/workspace/registry";
+import type { DraftField, DraftFieldOption } from "../render-types";
+import { supabase } from "@/core/api/supabase";
 
 export function restoreBoardSorting(): void {
         const boardId = MasterRegistry.get(workspaceToken).getBoardId();
@@ -22,9 +24,15 @@ export function restoreBoardSorting(): void {
         }
 }
 
-export async function handleCreateField(type: string) {
+export async function handleCreateField(type: FieldType) {
         const tempFieldId = crypto.randomUUID();
-        const tempField: Field = { id: tempFieldId, type: type, index: 10000 };
+
+        const tempField = {
+                id: tempFieldId,
+                type,
+                index: 10000,
+                name: "",
+        } as DraftField;
 
         const rowCount = MasterRegistry.get(entriesToken).getRowCount().all;
         const entryIds = Array.from({ length: rowCount }, () => crypto.randomUUID());
@@ -32,23 +40,25 @@ export async function handleCreateField(type: string) {
         closeNewFieldMenu();
         const fieldElem = addHTMLField(tempField);
 
+        FieldsState.addField(tempField as Field);
+
         window.dispatchEvent(entryEvents.createFieldEntries({ field: tempField, entryIds }));
 
         try {
-                const data = await insertFieldAndEntriesToDB(type, tempFieldId, entryIds);
+                const data = await insertFieldAndEntriesToDB(tempField, entryIds);
 
-                FieldsState.addField(data.field);
+                FieldsState.updateField(data.field.id, data.field);
                 updateFieldOrder(fieldElem, data.field.index!);
 
-                window.dispatchEvent(
-                        entryEvents.setFieldIndexToEntries({
-                                fieldId: data.field.id!,
-                                index: data.field.index!
-                        })
-                );
+                window.dispatchEvent(entryEvents.setFieldIndexToEntries({
+                        fieldId: data.field.id!,
+                        index: data.field.index!
+                }));
         } catch (err: any) {
                 removeField(fieldElem);
                 window.dispatchEvent(entryEvents.removeFieldEntries({ fieldId: tempFieldId }));
+                console.error(`Failed to add new field: ${err.message || err}`);
+
                 showToast(`Failed to add new field: ${err.message || err}`, "error");
         }
 }
@@ -93,7 +103,6 @@ export function updateFieldOrder(fieldDiv: HTMLDivElement, index: number) {
         fieldDiv.dataset.order = `${index}`;
 }
 
-
 /*INFO: Option */
 export async function handleAddFieldOption(fieldId: string, value: string): Promise<void> {
         if (!value) {
@@ -101,13 +110,21 @@ export async function handleAddFieldOption(fieldId: string, value: string): Prom
                 return;
         }
 
-        const optionId = crypto.randomUUID();
-        window.dispatchEvent(fieldEvents.addFieldOption({ id: optionId, fieldId, value }));
+        const id = crypto.randomUUID();
+
+        const acc = await supabase.getAccount();
+        if (!acc || !acc.id) {
+                return;
+        }
+
+        window.dispatchEvent(fieldEvents.addFieldOption({ id: id, fieldId, value, accountId: acc.id! }));
+
+        const draftFo = { id, value, fieldId } as DraftFieldOption;
 
         try {
-                await insertFieldOptionToDB(optionId, fieldId, value);
+                await insertFieldOptionToDB(draftFo);
         } catch (err: any) {
-                window.dispatchEvent(fieldEvents.removeFieldOption({ id: optionId, fieldId, inputValue: value }));
+                window.dispatchEvent(fieldEvents.removeFieldOption({ id: id, fieldId, inputValue: value }));
                 showToast(`Failed to add option: ${err.message || err}`, "error");
         }
 }
@@ -133,7 +150,7 @@ export function updateFieldOption(id: string, fieldId: string, value: string, ol
         if (!field) return;
 
         field.options![id].value = value;
-        field.options![id].account_id = accountId ?? value;
+        field.options![id].accountId = accountId ?? value;
 
         window.dispatchEvent(entryEvents.entryChangeFieldValues({ field_id: fieldId, value: value, old_value: oldValue }));
 
@@ -179,5 +196,56 @@ export async function handleStatusOptionChange(statusDiv: HTMLDivElement, newVal
                 console.error(err);
                 showToast("Failed to update field option text", "error");
                 window.dispatchEvent(fieldEvents.updateFieldOption({ id, oldValue, value: oldValue!, fieldId }));
+        }
+}
+
+export function DBToField(db: DBField): Field {
+        let options = {} as Record<string, FieldOption>;
+
+        if (db.options) {
+                for (const [key, val] of Object.entries(db.options)) {
+                        options[key] = DBToFieldOption(val);
+                }
+        }
+
+        return {
+                id: db.id,
+                accountId: db.account_id,
+                boardId: db.board_id,
+                name: db.name,
+                index: db.index,
+                options: options,
+                type: FieldType[db.type as keyof typeof FieldType],
+                dateModified: db.date_modified,
+        } as Field;
+}
+
+export function FieldToInsert(f: Field | DraftField, entryIds?: string[]): InsertField {
+        const boardId = MasterRegistry.get(workspaceToken).getBoardId();
+        if (!boardId) throw new Error("board ID not set");
+
+        return {
+                field_id: f.id,
+                type: FieldType[f.type],
+                entry_ids: entryIds,
+                name: f.name,
+                board_id: boardId,
+        };
+}
+
+export function FieldOptionToInsert(fo: FieldOption | DraftFieldOption): InsertFieldOption {
+        return {
+                id: fo.id,
+                value: fo.value,
+                field_id: fo.fieldId
+        }
+}
+
+export function DBToFieldOption(db: DBFieldOption): FieldOption {
+        return {
+                id: db.id,
+                value: db.value,
+                accountId: db.account_id,
+                fieldId: db.field_id
         }
 }

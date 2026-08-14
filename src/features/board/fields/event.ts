@@ -7,14 +7,17 @@ import { addStatusOption, showEditFieldModal } from "./ui/option";
 import { addHTMLField, applyPermissionRestrictions, clearAllFields, onFieldHover, onFieldHoverLeave, } from "./ui/field";
 import { fieldDrag, onFieldDragStart, onFieldResizeEnd, onFieldResizeStart, onFieldSwapEnd, onSortingOptionPress, resizeField, showEditFieldDropdown, showNewFieldDropdown, swapField } from "./logic/interactions";
 import { handleAddFieldOption, handleButtonOptionChange, handleCreateField, handleDeleteField, handleFieldNameChange, handleRemoveFieldOption, handleStatusOptionChange, updateFieldName, updateFieldOption } from "./logic/operations";
+import { FieldType } from "./types";
 
 export function initFieldEvents() {
         HTML.newFieldBtn.addEventListener("click", () => showNewFieldDropdown());
 
         HTML.newFieldMenu.addEventListener("click", (e: MouseEvent) => {
                 const elem = e.target as HTMLElement;
-                const fieldType = elem.dataset.fieldType;
-                if (!fieldType) return;
+                const type = elem.dataset.fieldType;
+                if (!type) return;
+
+                const fieldType = FieldType[type as keyof typeof FieldType];
 
                 handleCreateField(fieldType);
         });
@@ -163,7 +166,7 @@ export function initFieldEvents() {
                 const field = FieldsState.getFieldById(fieldId);
                 if (!field) return;
 
-                FieldsState.addOption({ id, field_id: fieldId, value, account_id: accountId })
+                FieldsState.addOption({ id, fieldId: fieldId, value, accountId })
                 addStatusOption(id, fieldId, value);
         });
 
